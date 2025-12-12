@@ -1,0 +1,10 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Environment
+.env
+
+# Frontend
+smartbiz-frontend/node_modules/
+smartbiz-frontend/dist/
