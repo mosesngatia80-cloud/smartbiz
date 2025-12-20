@@ -3,7 +3,7 @@ const router = express.Router();
 
 const Product = require("../models/Product");
 const Business = require("../models/Business");
-const verifyToken = require("../middleware/auth");
+const verifyToken = require("../middleware/authMiddleware").default;
 
 // CREATE PRODUCT
 router.post("/", verifyToken, async (req, res) => {

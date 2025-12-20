@@ -1,18 +1,18 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const saleController = require('../controllers/saleController');
-// const auth = require('../middleware/auth'); // uncomment if you have auth middleware
+const auth = require("../middleware/authMiddleware").default;
+const { createSale, getSales, getDailySummary } = require("../controllers/saleController");
 
-// Create sale
-router.post('/', /* auth, */ saleController.createSale);
+// Create a sale
+router.post("/", auth, createSale);
 
-// List sales
-router.get('/', /* auth, */ saleController.listSales);
+// Get all sales for logged-in business
+router.get("/", auth, getSales);
 
-// Get single sale
-router.get('/:id', /* auth, */ saleController.getSale);
-
-// Monthly report
-router.get('/reports/monthly', /* auth, */ saleController.monthlyReport);
+// Dashboard daily summary
+router.get("/summary", auth, getDailySummary);
 
 module.exports = router;
+
+// Monthly summary
+router.get("/summary/monthly", auth, require("../controllers/saleController").getMonthlySummary);

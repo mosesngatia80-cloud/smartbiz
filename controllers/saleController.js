@@ -1,110 +1,126 @@
-const mongoose = require('mongoose');
-const Sale = require('../models/Sale');
-const Product = require('../models/Product'); // adjust path if your Product model is elsewhere
+const Sale = require("../models/Sale");
+const Product = require("../models/Product");
 
-// Create a sale, reduce product stock atomically
+// Create a sale
 exports.createSale = async (req, res) => {
-  const session = await mongoose.startSession();
   try {
-    const { business, items, totalAmount, paymentMethod, customer } = req.body;
-    if (!business || !items || !items.length || !totalAmount) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    const { productId, quantity, unitPrice } = req.body;
+
+    const userId = req.user._id;
+    const businessId = req.user.businessId;
+
+    const product = await Product.findOne({ _id: productId, businessId });
+    if (!product) {
+      return res.status(404).json({ message: "Product not found in your business" });
     }
 
-    // Begin transaction
-    session.startTransaction();
-
-    // Validate & update stock
-    for (const it of items) {
-      const prod = await Product.findById(it.product).session(session);
-      if (!prod) throw new Error(`Product not found: ${it.product}`);
-      if (prod.stock == null) prod.stock = 0;
-      if (prod.stock < it.quantity) throw new Error(`Insufficient stock for ${prod.name || prod._id}`);
-      prod.stock = prod.stock - it.quantity;
-      await prod.save({ session });
+    if (product.stock < quantity) {
+      return res.status(400).json({
+        message: `Not enough stock. Available: ${product.stock}`
+      });
     }
 
-    // Create sale document
-    const sale = new Sale({
-      business,
-      items,
+    // Deduct stock
+    product.stock -= quantity;
+    await product.save();
+
+    // Total sale calculation
+    const totalAmount = quantity * unitPrice;
+
+    const sale = await Sale.create({
+      productId,
+      quantity,
+      unitPrice,
       totalAmount,
-      paymentMethod,
-      customer: customer || null,
+      soldBy: userId,
+      businessId
     });
 
-    await sale.save({ session });
-
-    // Commit
-    await session.commitTransaction();
-    session.endSession();
-
-    res.json({ message: 'Sale recorded', sale });
-  } catch (err) {
-    await session.abortTransaction().catch(()=>{});
-    session.endSession();
-    res.status(500).json({ error: err.message || 'Server error' });
+    res.status(201).json({
+      message: "Sale recorded successfully",
+      sale,
+      updatedProduct: product
+    });
+  } catch (error) {
+    console.error("Create Sale Error:", error);
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
-// List sales for a business (with simple pagination)
-exports.listSales = async (req, res) => {
+// Get all sales for a business
+exports.getSales = async (req, res) => {
   try {
-    const { business } = req.query;
-    const page = Math.max(0, parseInt(req.query.page || '0'));
-    const limit = Math.min(100, parseInt(req.query.limit || '20'));
-    const filter = {};
-    if (business) filter.business = business;
+    const businessId = req.user.businessId;
 
-    const sales = await Sale.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(page * limit)
-      .limit(limit)
-      .populate('items.product')
-      .exec();
+    const sales = await Sale.find({ businessId })
+      .populate("productId", "name")
+      .populate("soldBy", "name email");
 
-    res.json({ sales, page, limit });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(200).json(sales);
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
-exports.getSale = async (req, res) => {
+// Dashboard Daily Summary
+exports.getDailySummary = async (req, res) => {
   try {
-    const sale = await Sale.findById(req.params.id).populate('items.product').exec();
-    if (!sale) return res.status(404).json({ error: 'Sale not found' });
-    res.json({ sale });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const businessId = req.user.businessId;
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const sales = await Sale.find({
+      businessId,
+      createdAt: { $gte: start, $lt: end }
+    });
+
+    const totalAmount = sales.reduce((sum, s) => sum + s.totalAmount, 0);
+    const totalSales = sales.length;
+
+    res.status(200).json({
+      totalSales,
+      totalAmount,
+      date: new Date().toDateString(),
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
-// Optional: monthly report endpoint (group by month)
-exports.monthlyReport = async (req, res) => {
+// Monthly Summary
+exports.getMonthlySummary = async (req, res) => {
   try {
-    const { month } = req.query; // "YYYY-MM" or omit for current month
-    const match = {};
-    if (month) {
-      const start = new Date(month + '-01T00:00:00Z');
-      const end = new Date(start);
-      end.setMonth(end.getMonth() + 1);
-      match.createdAt = { $gte: start, $lt: end };
-    } else {
-      // current month
-      const now = new Date();
-      const s = new Date(now.getFullYear(), now.getMonth(), 1);
-      const e = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      match.createdAt = { $gte: s, $lt: e };
-    }
+    const businessId = req.user.businessId;
 
-    const result = await Sale.aggregate([
-      { $match: match },
-      { $unwind: '$items' },
-      { $group: { _id: null, total: { $sum: '$items.subtotal' }, count: { $sum: '$items.quantity' } } },
-    ]);
+    let start = new Date();
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
 
-    res.json({ month: month || `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`, total: result[0]?.total || 0, count: result[0]?.count || 0 });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    let end = new Date();
+    end.setMonth(end.getMonth() + 1);
+    end.setDate(0);
+    end.setHours(23, 59, 59, 999);
+
+    const sales = await Sale.find({
+      businessId,
+      createdAt: { $gte: start, $lte: end },
+    });
+
+    const totalAmount = sales.reduce((sum, s) => sum + s.totalAmount, 0);
+    const totalSales = sales.length;
+
+    res.status(200).json({
+      month: start.toLocaleString("default", { month: "long" }),
+      totalSales,
+      totalAmount,
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };

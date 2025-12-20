@@ -1,32 +1,20 @@
 const express = require("express");
 const router = express.Router();
+const auth = require("../middleware/authMiddleware").default;
 const Product = require("../models/Product");
 
-// Low stock alert (stock <= 5)
-router.get("/stock", async (req, res) => {
+router.get("/low-stock", auth, async (req, res) => {
   try {
-    const lowStock = await Product.find({ stock: { $lte: 5 } }).sort({ stock: 1 });
+    const businessId = req.user.businessId;
 
-    res.json({
-      count: lowStock.length,
-      products: lowStock
+    const items = await Product.find({
+      businessId,
+      stock: { $lte: 3 }
     });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
 
-// Out of stock alert (stock == 0)
-router.get("/out-of-stock", async (req, res) => {
-  try {
-    const outOfStock = await Product.find({ stock: 0 }).sort({ name: 1 });
-
-    res.json({
-      count: outOfStock.length,
-      products: outOfStock
-    });
+    res.status(200).json(items);
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server Error", error });
   }
 });
 

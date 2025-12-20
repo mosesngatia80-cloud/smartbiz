@@ -47,3 +47,22 @@ exports.getMonthlyExpenses = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// Expense summary
+exports.expenseSummary = async (req, res) => {
+  try {
+    const businessId = req.user.businessId;
+
+    const expenses = await Expense.find({ businessId });
+
+    const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+    res.status(200).json({
+      count: expenses.length,
+      total
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};

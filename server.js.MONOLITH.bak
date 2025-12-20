@@ -1,0 +1,151 @@
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
+
+dotenv.config();
+
+const app = express();
+const PORT = 5000;
+const HOST = "0.0.0.0";
+const JWT_SECRET = "navuSmartBizSecretKey2025";
+
+/* ================= MIDDLEWARE ================= */
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"]
+}));
+app.use(express.json());
+
+/* ================= DATABASE ================= */
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(err => console.error("Mongo error:", err));
+
+/* ================= MODELS ================= */
+const User = mongoose.model("User", new mongoose.Schema({
+  name: String,
+  email: String,
+  password: String
+}, { timestamps: true }));
+
+const Product = mongoose.model("Product", new mongoose.Schema({
+  name: String,
+  category: String,
+  price: Number,
+  stock: Number
+}, { timestamps: true }));
+
+const Order = mongoose.model("Order", new mongoose.Schema({
+  product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+  quantity: Number,
+  total: Number
+}, { timestamps: true }));
+
+/* ================= AUTH ================= */
+function auth(req, res, next) {
+  const header = req.headers.authorization;
+  if (!header) return res.status(401).json({ message: "No token" });
+
+  try {
+    const token = header.split(" ")[1];
+    req.user = jwt.verify(token, JWT_SECRET);
+    next();
+  } catch {
+    res.status(401).json({ message: "Invalid token" });
+  }
+}
+
+app.post("/api/auth/login", async (req, res) => {
+  const { email } = req.body;
+  const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: "7d" });
+  res.json({ token });
+});
+
+/* ================= PRODUCTS ================= */
+app.get("/api/products", async (req, res) => {
+  const products = await Product.find();
+  res.json(products);
+});
+
+/* ================= ORDERS ================= */
+app.post("/api/orders", async (req, res) => {
+  const { productId, quantity } = req.body;
+
+  const product = await Product.findById(productId);
+  if (!product) return res.status(404).json({ message: "Product not found" });
+
+  if (product.stock < quantity) {
+    return res.status(400).json({ message: "Insufficient stock" });
+  }
+
+  product.stock -= quantity;
+  await product.save();
+
+  const order = await Order.create({
+    product: product._id,
+    quantity,
+    total: product.price * quantity
+  });
+
+  res.json(order);
+});
+
+app.get("/api/orders", async (req, res) => {
+  const orders = await Order.find().populate("product");
+  res.json(orders);
+});
+
+/* ================= STATS ================= */
+app.get("/api/stats", async (req, res) => {
+  const products = await Product.countDocuments();
+  const orders = await Order.countDocuments();
+  const revenue = await Order.aggregate([
+    { $group: { _id: null, total: { $sum: "$total" } } }
+  ]);
+
+  res.json({
+    products,
+    orders,
+    revenue: revenue[0]?.total || 0
+  });
+});
+
+/* ================= REVENUE SUMMARY ================= */
+app.get("/api/revenue/summary", async (req, res) => {
+  const now = new Date();
+
+  const startOfDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+
+  const startOfMonth = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    1
+  );
+
+  const daily = await Order.aggregate([
+    { $match: { createdAt: { $gte: startOfDay } } },
+    { $group: { _id: null, total: { $sum: "$total" } } }
+  ]);
+
+  const monthly = await Order.aggregate([
+    { $match: { createdAt: { $gte: startOfMonth } } },
+    { $group: { _id: null, total: { $sum: "$total" } } }
+  ]);
+
+  res.json({
+    today: daily[0]?.total || 0,
+    month: monthly[0]?.total || 0
+  });
+});
+
+/* ================= START ================= */
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 Smart Biz API running on http://${HOST}:${PORT}`);
+});

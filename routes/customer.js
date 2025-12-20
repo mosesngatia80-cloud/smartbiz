@@ -3,7 +3,7 @@ const router = express.Router();
 
 const Customer = require("../models/Customer");
 const Business = require("../models/Business");
-const verifyToken = require("../middleware/auth");
+const verifyToken = require("../middleware/authMiddleware").default;
 
 // CREATE CUSTOMER
 router.post("/", verifyToken, async (req, res) => {

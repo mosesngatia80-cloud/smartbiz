@@ -1,19 +1,34 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
-const BusinessSchema = new mongoose.Schema(
+const businessSchema = new mongoose.Schema(
   {
-    owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    name: { type: String, required: true },
-    category: { type: String },
-    email: { type: String },
-    phone: { type: String },
-    address: { type: String },
-    tillNumber: { type: String },    // Safaricom Till
-    storeNumber: { type: String },   // Store number if any
-    operatorId: { type: String },    // e.g. MW
-    metadata: { type: Object }       // any extra data
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true, // one business per user for MVP
+    },
+    phone: {
+      type: String,
+      required: true,
+    },
+    location: {
+      type: String,
+      default: "",
+    },
+
+    // 🔑 Smart Pay wallet ID
+    walletId: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Business", BusinessSchema);
+export default mongoose.model("Business", businessSchema);

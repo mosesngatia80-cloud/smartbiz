@@ -1,7 +1,7 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-module.exports = async (req, res, next) => {
+const auth = async (req, res, next) => {
   const token = req.headers.authorization?.replace("Bearer ", "");
 
   if (!token) {
@@ -18,3 +18,5 @@ module.exports = async (req, res, next) => {
     res.status(401).json({ message: "Token is not valid" });
   }
 };
+
+export default auth;

@@ -1,49 +1,54 @@
-require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
+const dotenv = require("dotenv");
 
-// Middleware
-const auth = require("./middleware/authMiddleware");
-const { isAdmin, isCashier, isStaff } = require("./middleware/permissions");
-
-// Routes
-const authRoutes = require("./routes/auth");
-const businessRoutes = require("./routes/business");
-const productRoutes = require("./routes/product");
-const customerRoutes = require("./routes/customer");
-const salesRoutes = require("./routes/sales");
-const expenseRoutes = require("./routes/expense");
-const alertRoutes = require("./routes/alerts");
+dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
 
-// Connect to MongoDB
+// ROUTES (unwrap .default if present)
+const authRoutesRaw = require("./routes/auth");
+const businessRoutesRaw = require("./routes/business.routes");
+const productRoutesRaw = require("./routes/products");
+const customerRoutesRaw = require("./routes/customers");
+const orderRoutesRaw = require("./routes/orders.routes");
+const revenueRoutesRaw = require("./routes/revenue.routes");
+const expenseRoutesRaw = require("./routes/expense");
+const saleRoutesRaw = require("./routes/sales");
+const alertRoutesRaw = require("./routes/alerts");
+
+const authRoutes = authRoutesRaw.default || authRoutesRaw;
+const businessRoutes = businessRoutesRaw.default || businessRoutesRaw;
+const productRoutes = productRoutesRaw.default || productRoutesRaw;
+const customerRoutes = customerRoutesRaw.default || customerRoutesRaw;
+const orderRoutes = orderRoutesRaw.default || orderRoutesRaw;
+const revenueRoutes = revenueRoutesRaw.default || revenueRoutesRaw;
+const expenseRoutes = expenseRoutesRaw.default || expenseRoutesRaw;
+const saleRoutes = saleRoutesRaw.default || saleRoutesRaw;
+const alertRoutes = alertRoutesRaw.default || alertRoutesRaw;
+
+// USE ROUTES
+app.use("/api/auth", authRoutes);
+app.use("/api/business", businessRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/customers", customerRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/revenue", revenueRoutes);
+app.use("/api/expenses", expenseRoutes);
+app.use("/api/sales", saleRoutes);
+app.use("/api/alerts", alertRoutes);
+
+// DB + SERVER
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected successfully"))
-  .catch((err) => console.error("MongoDB error", err));
-
-// Public Routes
-app.use("/api/auth", authRoutes);
-
-// Protected Routes
-app.use("/api/business", auth, isAdmin, businessRoutes);
-app.use("/api/products", auth, isAdmin, productRoutes);
-app.use("/api/customers", auth, isStaff, customerRoutes);
-app.use("/api/sales", auth, isCashier, salesRoutes);
-app.use("/api/expenses", auth, isAdmin, expenseRoutes);
-app.use("/api/alerts", auth, isStaff, alertRoutes);
-
-// Default Route
-app.get("/", (req, res) => {
-  res.send("SmartBiz backend is running");
-});
-
-// Start Server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () =>
-  console.log(`SmartBiz backend running on port ${PORT}`)
-);
+  .then(() => {
+    console.log("MongoDB connected");
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () =>
+      console.log(`🚀 SmartBiz backend running on port ${PORT}`)
+    );
+  })
+  .catch(err => {
+    console.error("MongoDB connection failed:", err.message);
+  });
