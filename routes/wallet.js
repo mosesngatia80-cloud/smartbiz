@@ -5,18 +5,23 @@ const Wallet = require("../models/Wallet");
 const router = express.Router();
 
 /**
- * 🚨 ADMIN: DROP LEGACY phone_1 INDEX (RUN ONCE)
+ * 🚨 ADMIN: DROP LEGACY phone_1 INDEX (EXACT COLLECTION)
  */
 router.get("/__drop_phone_index", async (req, res) => {
   try {
-    const indexes = await Wallet.collection.indexes();
-    const hasPhoneIndex = indexes.find(i => i.name === "phone_1");
+    const db = mongoose.connection.db;
 
-    if (!hasPhoneIndex) {
-      return res.json({ message: "phone_1 index not found (already clean)" });
+    const collection = db.collection("AfriSmartPay.wallets");
+
+    const indexes = await collection.indexes();
+    const phoneIndex = indexes.find(i => i.name === "phone_1");
+
+    if (!phoneIndex) {
+      return res.json({ message: "phone_1 index not found (already removed)" });
     }
 
-    await Wallet.collection.dropIndex("phone_1");
+    await collection.dropIndex("phone_1");
+
     res.json({ message: "phone_1 index dropped successfully" });
   } catch (err) {
     console.error("❌ Index drop error:", err.message);
@@ -44,10 +49,7 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    wallet = await Wallet.create({
-      owner,
-      type
-    });
+    wallet = await Wallet.create({ owner, type });
 
     res.json({
       message: "Wallet created",
@@ -59,19 +61,12 @@ router.post("/create", async (req, res) => {
   }
 });
 
-/**
- * GET WALLET
- */
 router.get("/:owner", async (req, res) => {
   try {
     const wallet = await Wallet.findOne({ owner: req.params.owner });
-
-    if (!wallet) {
-      return res.status(404).json({ message: "Wallet not found" });
-    }
-
+    if (!wallet) return res.status(404).json({ message: "Wallet not found" });
     res.json(wallet);
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Server error" });
   }
 });
