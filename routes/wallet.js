@@ -1,16 +1,25 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const Wallet = require("../models/Wallet");
 
 const router = express.Router();
 
 /**
- * TEMP: RESET WALLET INDEX (RUN ONCE)
+ * 🚨 ADMIN: DROP LEGACY phone_1 INDEX (RUN ONCE)
  */
-router.get("/__reset_index", async (req, res) => {
+router.get("/__drop_phone_index", async (req, res) => {
   try {
-    await Wallet.collection.dropIndexes();
-    res.json({ message: "Wallet indexes dropped" });
+    const indexes = await Wallet.collection.indexes();
+    const hasPhoneIndex = indexes.find(i => i.name === "phone_1");
+
+    if (!hasPhoneIndex) {
+      return res.json({ message: "phone_1 index not found (already clean)" });
+    }
+
+    await Wallet.collection.dropIndex("phone_1");
+    res.json({ message: "phone_1 index dropped successfully" });
   } catch (err) {
+    console.error("❌ Index drop error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
