@@ -1,6 +1,6 @@
 /**
  * SMART PAY SERVER
- * Render-safe CommonJS setup
+ * Render-safe + Mongo index fix
  */
 
 const express = require("express");
@@ -20,11 +20,7 @@ app.use(express.json());
    HEALTH CHECK
 ========================= */
 app.get("/api/health", (req, res) => {
-  res.json({
-    status: "ok",
-    service: "Smart Pay",
-    time: new Date().toISOString()
-  });
+  res.json({ status: "Smart Pay running" });
 });
 
 /* =========================
@@ -38,17 +34,41 @@ app.use("/api/wallet", require("./routes/wallet"));
 const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
-  console.error("❌ MONGO_URI missing in environment variables");
+  console.error("❌ MONGO_URI missing");
   process.exit(1);
 }
 
 mongoose
   .connect(MONGO_URI)
-  .then(() => {
+  .then(async () => {
     console.log("✅ MongoDB connected");
+
+    // 🔥 CRITICAL FIX: DROP OLD phone_1 INDEX
+    try {
+      const collections = await mongoose.connection.db.listCollections().toArray();
+      const walletCollection = collections.find(c => c.name === "wallets");
+
+      if (walletCollection) {
+        const indexes = await mongoose.connection.db
+          .collection("wallets")
+          .indexes();
+
+        const phoneIndex = indexes.find(i => i.name === "phone_1");
+
+        if (phoneIndex) {
+          await mongoose.connection.db
+            .collection("wallets")
+            .dropIndex("phone_1");
+
+          console.log("🧹 Dropped legacy phone_1 index");
+        }
+      }
+    } catch (err) {
+      console.error("⚠️ Index cleanup skipped:", err.message);
+    }
   })
   .catch((err) => {
-    console.error("❌ MongoDB connection error:", err.message);
+    console.error("❌ MongoDB error:", err.message);
     process.exit(1);
   });
 
