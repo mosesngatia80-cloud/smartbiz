@@ -5,7 +5,8 @@ const Wallet = require("../models/Wallet");
 const router = express.Router();
 
 /**
- * 🚨 ADMIN: DROP LEGACY phone_1 INDEX (EXACT COLLECTION)
+ * 🚨 ADMIN: DROP LEGACY phone_1 INDEX
+ * MUST BE ABOVE /:owner
  */
 router.get("/__drop_phone_index", async (req, res) => {
   try {
@@ -61,12 +62,17 @@ router.post("/create", async (req, res) => {
   }
 });
 
+/**
+ * GET WALLET BY OWNER (KEEP LAST)
+ */
 router.get("/:owner", async (req, res) => {
   try {
     const wallet = await Wallet.findOne({ owner: req.params.owner });
-    if (!wallet) return res.status(404).json({ message: "Wallet not found" });
+    if (!wallet) {
+      return res.status(404).json({ message: "Wallet not found" });
+    }
     res.json(wallet);
-  } catch {
+  } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 });
