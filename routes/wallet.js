@@ -5,13 +5,22 @@ const Wallet = require("../models/Wallet");
 const router = express.Router();
 
 /**
+ * 🔎 DEBUG ROUTE – PROVE THIS FILE IS RUNNING
+ */
+router.get("/__debug_wallet_routes", (req, res) => {
+  res.json({
+    ok: true,
+    file: "routes/wallet.js",
+    time: new Date().toISOString()
+  });
+});
+
+/**
  * 🚨 ADMIN: DROP LEGACY phone_1 INDEX
- * MUST BE ABOVE /:owner
  */
 router.get("/__drop_phone_index", async (req, res) => {
   try {
     const db = mongoose.connection.db;
-
     const collection = db.collection("AfriSmartPay.wallets");
 
     const indexes = await collection.indexes();
@@ -31,7 +40,7 @@ router.get("/__drop_phone_index", async (req, res) => {
 });
 
 /**
- * CREATE WALLET (IDEMPOTENT)
+ * CREATE WALLET
  */
 router.post("/create", async (req, res) => {
   try {
@@ -42,20 +51,12 @@ router.post("/create", async (req, res) => {
     }
 
     let wallet = await Wallet.findOne({ owner });
-
     if (wallet) {
-      return res.json({
-        message: "Wallet already exists",
-        wallet
-      });
+      return res.json({ message: "Wallet already exists", wallet });
     }
 
     wallet = await Wallet.create({ owner, type });
-
-    res.json({
-      message: "Wallet created",
-      wallet
-    });
+    res.json({ message: "Wallet created", wallet });
   } catch (err) {
     console.error("❌ Wallet create error:", err.message);
     res.status(500).json({ message: "Wallet creation failed" });
@@ -63,18 +64,12 @@ router.post("/create", async (req, res) => {
 });
 
 /**
- * GET WALLET BY OWNER (KEEP LAST)
+ * GET WALLET (KEEP LAST)
  */
 router.get("/:owner", async (req, res) => {
-  try {
-    const wallet = await Wallet.findOne({ owner: req.params.owner });
-    if (!wallet) {
-      return res.status(404).json({ message: "Wallet not found" });
-    }
-    res.json(wallet);
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
+  const wallet = await Wallet.findOne({ owner: req.params.owner });
+  if (!wallet) return res.status(404).json({ message: "Wallet not found" });
+  res.json(wallet);
 });
 
 module.exports = router;
