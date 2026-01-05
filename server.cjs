@@ -1,5 +1,5 @@
 /**
- * SMART PAY SERVER
+ * SMART PAY + SMART BIZ SERVER
  * Render-safe + Mongo index fix
  */
 
@@ -24,9 +24,20 @@ app.get("/api/health", (req, res) => {
 });
 
 /* =========================
-   ROUTES
+   ROUTES (SMART BIZ + SMART PAY)
 ========================= */
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/business", require("./routes/business"));
+app.use("/api/products", require("./routes/products"));
+app.use("/api/orders", require("./routes/orders"));
 app.use("/api/wallet", require("./routes/wallet"));
+
+/* 🔥 PAYMENTS (THIS WAS MISSING) */
+app.use("/api/payments", require("./routes/payments"));
+
+/* 🔥 DASHBOARD & REPORTS */
+app.use("/api/stats", require("./routes/stats"));
+app.use("/api/reports", require("./routes/reports"));
 
 /* =========================
    MONGODB CONNECTION
@@ -42,30 +53,6 @@ mongoose
   .connect(MONGO_URI)
   .then(async () => {
     console.log("✅ MongoDB connected");
-
-    // 🔥 CRITICAL FIX: DROP OLD phone_1 INDEX
-    try {
-      const collections = await mongoose.connection.db.listCollections().toArray();
-      const walletCollection = collections.find(c => c.name === "wallets");
-
-      if (walletCollection) {
-        const indexes = await mongoose.connection.db
-          .collection("wallets")
-          .indexes();
-
-        const phoneIndex = indexes.find(i => i.name === "phone_1");
-
-        if (phoneIndex) {
-          await mongoose.connection.db
-            .collection("wallets")
-            .dropIndex("phone_1");
-
-          console.log("🧹 Dropped legacy phone_1 index");
-        }
-      }
-    } catch (err) {
-      console.error("⚠️ Index cleanup skipped:", err.message);
-    }
   })
   .catch((err) => {
     console.error("❌ MongoDB error:", err.message);
@@ -75,7 +62,7 @@ mongoose
 /* =========================
    START SERVER
 ========================= */
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
   console.log(`🚀 Smart Pay running on port ${PORT}`);
