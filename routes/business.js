@@ -5,8 +5,8 @@ const Business = require("../models/Business");
 const Wallet = require("../models/Wallet");
 
 /**
- * CREATE OR RETURN BUSINESS
- * Ensures business always has a wallet
+ * ENSURE BUSINESS + WALLET
+ * Idempotent & safe
  */
 router.post("/", auth, async (req, res) => {
   try {
@@ -16,11 +16,10 @@ router.post("/", auth, async (req, res) => {
       return res.status(400).json({ message: "Business name required" });
     }
 
-    // 1️⃣ Check if business already exists for this owner
+    // 1️⃣ Find or create business
     let business = await Business.findOne({ owner: req.user._id });
 
     if (!business) {
-      // Create business
       business = await Business.create({
         name,
         category,
@@ -28,22 +27,31 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    // 2️⃣ Ensure business has a wallet
-    if (!business.walletId) {
-      const wallet = await Wallet.create({
+    // 2️⃣ Find or create wallet for this business
+    let wallet = await Wallet.findOne({
+      owner: business._id,
+      ownerType: "BUSINESS"
+    });
+
+    if (!wallet) {
+      wallet = await Wallet.create({
         owner: business._id,
         ownerType: "BUSINESS",
         balance: 0,
         currency: "KES"
       });
+    }
 
+    // 3️⃣ Ensure business points to wallet
+    if (!business.walletId) {
       business.walletId = wallet._id;
       await business.save();
     }
 
     return res.status(200).json({
       message: "Business ready",
-      business
+      business,
+      wallet
     });
   } catch (err) {
     console.error("❌ Business setup error:", err.message);
