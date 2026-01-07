@@ -6,9 +6,11 @@ const Wallet = require("../models/Wallet");
 
 /**
  * CREATE BUSINESS
- * Auto-creates a wallet
+ * Auto-create BUSINESS wallet
  */
 router.post("/", auth, async (req, res) => {
+  console.log("🔥 NEW BUSINESS ROUTE HIT"); // <-- DEBUG MARKER
+
   try {
     const { name, category } = req.body;
 
@@ -16,27 +18,32 @@ router.post("/", auth, async (req, res) => {
       return res.status(400).json({ message: "Business name required" });
     }
 
-    // 1️⃣ Create wallet
+    const business = await Business.create({
+      name,
+      category,
+      owner: req.user._id
+    });
+
     const wallet = await Wallet.create({
+      owner: business._id,
+      ownerType: "BUSINESS",
       balance: 0,
       currency: "KES"
     });
 
-    // 2️⃣ Create business with wallet attached
-    const business = await Business.create({
-      name,
-      category,
-      owner: req.user._id,
-      walletId: wallet._id
-    });
+    business.walletId = wallet._id;
+    await business.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Business created",
       business
     });
   } catch (err) {
-    console.error("Create business error:", err.message);
-    res.status(500).json({ message: "Failed to create business" });
+    console.error("❌ Business create error:", err.message);
+    return res.status(500).json({
+      message: "Failed to create business",
+      error: err.message
+    });
   }
 });
 
