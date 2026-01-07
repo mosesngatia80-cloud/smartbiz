@@ -1,80 +1,42 @@
 const express = require("express");
 const router = express.Router();
-const Business = require("../models/Business");
-const User = require("../models/User");
-const Wallet = require("../models/Wallet");
 const auth = require("../middleware/auth");
+const Business = require("../models/Business");
+const Wallet = require("../models/Wallet");
 
-// =====================
-// CREATE BUSINESS
-// =====================
+/**
+ * CREATE BUSINESS
+ * Auto-creates a wallet
+ */
 router.post("/", auth, async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, category } = req.body;
 
     if (!name) {
-      return res
-        .status(400)
-        .json({ message: "Business name is required" });
+      return res.status(400).json({ message: "Business name required" });
     }
 
-    // Check if business already exists for this user
-    const existing = await Business.findOne({ owner: req.user.id });
-    if (existing) {
-      return res
-        .status(400)
-        .json({ message: "Business already exists" });
-    }
+    // 1️⃣ Create wallet
+    const wallet = await Wallet.create({
+      balance: 0,
+      currency: "KES"
+    });
 
-    // Create business
+    // 2️⃣ Create business with wallet attached
     const business = await Business.create({
       name,
-      owner: req.user.id,
+      category,
+      owner: req.user._id,
+      walletId: wallet._id
     });
-
-    // Link business to user
-    await User.findByIdAndUpdate(req.user.id, {
-      business: business._id,
-    });
-
-    // 🔥 AUTO-CREATE BUSINESS WALLET
-    const walletExists = await Wallet.findOne({
-      owner: business._id.toString(),
-    });
-
-    if (!walletExists) {
-      await Wallet.create({
-        owner: business._id.toString(),
-        type: "BUSINESS",
-        balance: 0,
-      });
-    }
 
     res.status(201).json({
       message: "Business created",
-      business,
+      business
     });
   } catch (err) {
-    console.error("CREATE BUSINESS ERROR:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// =====================
-// GET MY BUSINESS
-// =====================
-router.get("/me", auth, async (req, res) => {
-  try {
-    const business = await Business.findOne({ owner: req.user.id });
-
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
-
-    res.json(business);
-  } catch (err) {
-    console.error("GET BUSINESS ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Create business error:", err.message);
+    res.status(500).json({ message: "Failed to create business" });
   }
 });
 
