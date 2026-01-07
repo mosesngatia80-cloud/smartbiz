@@ -1,88 +1,33 @@
-import express from "express";
-import auth from "../middleware/auth.js";
-import Business from "../models/Business.js";
-
+const express = require("express");
 const router = express.Router();
+const auth = require("../middleware/authMiddleware").default;
+const Business = require("../models/Business");
 
 /**
- * 🏢 CREATE BUSINESS
+ * CREATE BUSINESS
  */
 router.post("/", auth, async (req, res) => {
   try {
-    const { name, phone, location } = req.body;
-
-    if (!name || !phone) {
-      return res.status(400).json({ message: "Name and phone are required" });
-    }
-
-    const existing = await Business.findOne({ owner: req.user._id });
-    if (existing) {
-      return res.status(400).json({ message: "Business already exists" });
-    }
-
     const business = await Business.create({
-      owner: req.user._id,
-      name,
-      phone,
-      location
+      ...req.body,
+      owner: req.user.id
     });
-
     res.status(201).json(business);
   } catch (err) {
-    res.status(500).json({ message: "Failed to create business" });
+    res.status(500).json({ message: err.message });
   }
 });
 
 /**
- * 🏢 GET MY BUSINESS
+ * GET MY BUSINESSES
  */
 router.get("/", auth, async (req, res) => {
   try {
-    const business = await Business.findOne({ owner: req.user._id });
-
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
-
-    res.json(business);
+    const businesses = await Business.find({ owner: req.user.id });
+    res.json(businesses);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch business" });
+    res.status(500).json({ message: err.message });
   }
 });
 
-/**
- * 🔧 LINK WALLET (LOCAL ONLY — CORRECT)
- */
-router.post("/repair-wallet", auth, async (req, res) => {
-  try {
-    const business = await Business.findOne({ owner: req.user._id });
-
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
-
-    if (business.walletId) {
-      return res.json({
-        message: "Wallet already linked",
-        walletId: business.walletId
-      });
-    }
-
-    // ✅ CREATE WALLET LOCALLY
-    business.walletId = `SB_WALLET_${business._id}`;
-    await business.save();
-
-    res.json({
-      message: "Wallet linked successfully",
-      walletId: business.walletId
-    });
-
-  } catch (err) {
-    res.status(500).json({
-      message: "Wallet repair failed",
-      error: err.message
-    });
-  }
-});
-
-export default router;
+module.exports = router;

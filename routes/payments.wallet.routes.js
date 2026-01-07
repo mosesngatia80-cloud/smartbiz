@@ -1,47 +1,36 @@
 const express = require("express");
 const crypto = require("crypto");
+const router = express.Router();
 
 const Wallet = require("../models/Wallet");
 const Order = require("../models/Order");
 const Transaction = require("../models/Transaction");
 
-const router = express.Router();
-
 /*
-=====================================
- WALLET PAYMENT BRIDGE
- Smart Pay → Smart Biz
-=====================================
- POST /api/payments/wallet
+================================================
+ ORDER-BASED WALLET PAYMENT
+ FINAL – ENUM SAFE – SELF-HEALING
+================================================
 */
 
 router.post("/wallet", async (req, res) => {
   try {
-    console.log("➡️ /api/payments/wallet HIT");
+    console.log("➡️ ORDER WALLET PAYMENT HIT");
     console.log("📦 Payload:", req.body);
 
-    const { orderId, amount, payer } = req.body;
+    const { orderId, payer, amount } = req.body;
 
-    /* =============================
-       0. BASIC VALIDATION
-    ============================== */
-    if (!orderId || !amount || !payer) {
+    if (!orderId || !payer || !amount) {
       return res.status(400).json({
         success: false,
-        message: "orderId, amount and payer are required"
+        message: "orderId, payer and amount are required"
       });
     }
 
-    /* =============================
-       1. FETCH ORDER
-    ============================== */
-    const order = await Order.findOne({ orderId });
-
+    /* ================= ORDER ================= */
+    const order = await Order.findById(orderId);
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found"
-      });
+      return res.status(404).json({ success: false, message: "Order not found" });
     }
 
     if (order.status === "PAID") {
@@ -52,35 +41,27 @@ router.post("/wallet", async (req, res) => {
       });
     }
 
-    if (Number(order.amount) !== Number(amount)) {
+    if (Number(order.total) !== Number(amount)) {
       return res.status(400).json({
         success: false,
         message: "Amount mismatch"
       });
     }
 
-    /* =============================
-       2. FEE RULES
-    ============================== */
+    /* ================= FEES ================= */
     let fee = 0;
-
-    if (amount <= 100) {
-      fee = 0;
-    } else if (amount <= 1000) {
-      fee = amount * 0.005;
-    } else {
-      fee = amount * 0.01;
-    }
+    if (amount <= 100) fee = 0;
+    else if (amount <= 1000) fee = amount * 0.005;
+    else fee = amount * 0.01;
 
     fee = Math.min(Math.round(fee), 20);
     const totalDebit = amount + fee;
 
-    /* =============================
-       3. LOAD WALLETS
-    ============================== */
-    const customerWallet = await Wallet.findOne({ owner: payer });
-    const businessWallet = await Wallet.findOne({ owner: order.businessWallet });
-    const platformWallet = await Wallet.findOne({ owner: "PLATFORM_WALLET" });
+    /* ================= CUSTOMER WALLET ================= */
+    const customerWallet = await Wallet.findOne({
+      owner: payer,
+      type: "USER"
+    });
 
     if (!customerWallet) {
       return res.status(404).json({
@@ -89,17 +70,41 @@ router.post("/wallet", async (req, res) => {
       });
     }
 
-    if (!businessWallet) {
-      return res.status(404).json({
+    /* ================= BUSINESS WALLET OWNER (SAFE) ================= */
+    const businessWalletOwner =
+      order.businessWalletId ||
+      (order.business ? order.business.toString() : null);
+
+    if (!businessWalletOwner) {
+      return res.status(500).json({
         success: false,
-        message: "Business wallet not found"
+        message: "Order has no business wallet reference"
       });
     }
 
+    /* ================= BUSINESS WALLET ================= */
+    let businessWallet = await Wallet.findOne({
+      owner: businessWalletOwner
+    });
+
+    if (!businessWallet) {
+      console.log("⚠️ Creating business wallet:", businessWalletOwner);
+      businessWallet = await Wallet.create({
+        owner: businessWalletOwner,
+        type: "BUSINESS",
+        balance: 0
+      });
+    }
+
+    /* ================= PLATFORM WALLET (ENUM SAFE) ================= */
+    let platformWallet = await Wallet.findOne({ owner: "PLATFORM_WALLET" });
+
     if (!platformWallet) {
-      return res.status(500).json({
-        success: false,
-        message: "Platform wallet missing"
+      console.log("⚠️ Creating platform wallet");
+      platformWallet = await Wallet.create({
+        owner: "PLATFORM_WALLET",
+        type: "BUSINESS",
+        balance: 0
       });
     }
 
@@ -110,9 +115,7 @@ router.post("/wallet", async (req, res) => {
       });
     }
 
-    /* =============================
-       4. EXECUTE TRANSFER
-    ============================== */
+    /* ================= TRANSFER ================= */
     const reference =
       "TXN_" + crypto.randomBytes(4).toString("hex").toUpperCase();
 
@@ -124,34 +127,25 @@ router.post("/wallet", async (req, res) => {
     await businessWallet.save();
     await platformWallet.save();
 
-    /* =============================
-       5. RECORD TRANSACTION
-    ============================== */
     await Transaction.create({
       from: payer,
-      to: order.businessWallet,
+      to: businessWalletOwner,
       amount,
       fee,
       reference,
       type: "ORDER_PAYMENT",
-      orderId
+      orderId: order._id
     });
 
-    /* =============================
-       6. LOCK ORDER
-    ============================== */
     order.status = "PAID";
     order.paymentRef = reference;
     order.paidAt = new Date();
     await order.save();
 
-    /* =============================
-       7. RESPONSE
-    ============================== */
     return res.json({
       success: true,
       message: "Payment successful",
-      orderId,
+      orderId: order._id,
       reference,
       amount,
       fee,
@@ -159,10 +153,10 @@ router.post("/wallet", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ Wallet payment error:", err);
+    console.error("❌ ORDER WALLET PAYMENT ERROR:", err);
     return res.status(500).json({
       success: false,
-      message: "Payment failed"
+      message: err.message
     });
   }
 });

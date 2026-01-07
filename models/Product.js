@@ -1,34 +1,31 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
-const productSchema = new mongoose.Schema({
-  owner: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true
-  },
-  business: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Business",
-    required: true
-  },
-  name: {
-    type: String,
-    required: true
-  },
-  category: {
-    type: String
-  },
-  price: {
-    type: Number,
-    required: true
-  },
-  stock: {
-    type: Number,
-    default: 0
-  },
-  description: {
-    type: String
-  }
-}, { timestamps: true });
+const ProductSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0
+    },
 
-export default mongoose.model("Product", productSchema);
+    // 🔐 Ownership
+    business: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Business",
+      required: true
+    },
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    }
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Product", ProductSchema);

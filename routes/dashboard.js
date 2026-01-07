@@ -1,54 +1,45 @@
 const express = require("express");
-const Sale = require("../models/Sale");
-const Business = require("../models/Business");
-const Customer = require("../models/Customer");
-const Product = require("../models/Product");
-
 const router = express.Router();
 
-// 📌 GET FULL DASHBOARD DATA
-router.get("/:businessId", async (req, res) => {
+/*
+  SMART BIZ – DASHBOARD ENDPOINTS (MVP)
+  These endpoints unblock the frontend dashboard.
+  Real aggregation logic can be added later.
+*/
+
+// GET /api/sales/summary
+router.get("/sales/summary", async (req, res) => {
   try {
-    const { businessId } = req.params;
-
-    // 1️⃣ BUSINESS CHECK
-    const business = await Business.findById(businessId);
-    if (!business) return res.status(404).json({ error: "Business not found" });
-
-    // 2️⃣ TOTAL SALES
-    const totalSales = await Sale.aggregate([
-      { $match: { business: business._id } },
-      { $group: { _id: null, total: { $sum: "$totalAmount" } } }
-    ]);
-
-    // 3️⃣ TOTAL CUSTOMERS
-    const totalCustomers = await Customer.countDocuments({
-      business: business._id
-    });
-
-    // 4️⃣ TOTAL PRODUCTS
-    const totalProducts = await Product.countDocuments({
-      business: business._id
-    });
-
-    // 5️⃣ RECENT SALES (limit 5)
-    const recentSales = await Sale.find({ business: business._id })
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .populate("customer")
-      .populate("items.product");
-
-    // 6️⃣ RESPONSE
     res.json({
-      business: business.name,
-      totalSales: totalSales[0]?.total || 0,
-      totalCustomers,
-      totalProducts,
-      recentSales
+      today: 0,
+      week: 0,
+      month: 0,
     });
+  } catch (error) {
+    console.error("Sales summary error:", error);
+    res.status(500).json({ message: "Failed to load sales summary" });
+  }
+});
 
-  } catch (err) {
-    res.status(500).json({ error: "Server error", details: err.message });
+// GET /api/sales/summary/monthly
+router.get("/sales/summary/monthly", async (req, res) => {
+  try {
+    res.json({
+      total: 0,
+    });
+  } catch (error) {
+    console.error("Monthly summary error:", error);
+    res.status(500).json({ message: "Failed to load monthly summary" });
+  }
+});
+
+// GET /api/alerts/low-stock
+router.get("/alerts/low-stock", async (req, res) => {
+  try {
+    res.json([]);
+  } catch (error) {
+    console.error("Low stock error:", error);
+    res.status(500).json({ message: "Failed to load low stock alerts" });
   }
 });
 

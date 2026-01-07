@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Biz Products</title>
+</head>
+<body>
+  <h2>Products</h2>
+  <ul id="products"></ul>
+
+  <script>
+    fetch("http://10.236.136.110:5001/api/products")
+      .then(res => res.json())
+      .then(data => {
+        const ul = document.getElementById("products");
+        data.forEach(p => {
+          const li = document.createElement("li");
+          li.textContent = p.name + " — KES " + p.price;
+          ul.appendChild(li);
+        });
+      })
+      .catch(err => {
+        document.body.innerHTML += "<p style='color:red'>Failed to load</p>";
+        console.error(err);
+      });
+  </script>
+</body>
+</html>

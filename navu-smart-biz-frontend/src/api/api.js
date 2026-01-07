@@ -1,16 +1,29 @@
 import axios from "axios";
 
+/*
+  Smart Biz API Client
+  Phone-safe configuration
+*/
+
+// 🔥 USE YOUR ACTUAL IP (NOT localhost)
 const API = axios.create({
-  baseURL: "http://127.0.0.1:5000/api",
+  baseURL: "http://10.236.136.110:5001/api",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  timeout: 15000
 });
 
-// Attach token if exists
-API.interceptors.request.use((req) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    req.headers.Authorization = `Bearer ${token}`;
-  }
-  return req;
-});
+// 🔐 Attach JWT automatically
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("smartbiz_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export default API;

@@ -1,52 +1,64 @@
 import { useState } from "react";
-import { login } from "../services/auth";
-import { useNavigate } from "react-router-dom";
+import API from "../api/api";
 
-export default function Login() {
+function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const navigate = useNavigate();
 
-  const submit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
     setError("");
 
     try {
-      await login(email, password);
-      navigate("/");
+      const res = await API.post("/auth/login", {
+        email,
+        password
+      });
+
+      localStorage.setItem("smartbiz_token", res.data.token);
+
+      // Reload app so App.jsx re-checks auth
+      window.location.reload();
     } catch (err) {
-      setError("Login failed");
+      setError("Login failed. Check credentials or network.");
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <form onSubmit={submit} className="border p-6 w-80">
-        <h2 className="text-xl font-bold mb-4">Smart Biz Login</h2>
+    <div style={{ maxWidth: 400 }}>
+      <h3>Login</h3>
 
-        {error && <p className="text-red-600 mb-2">{error}</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
+      <form onSubmit={handleLogin}>
         <input
           type="email"
-          className="border p-2 w-full mb-2"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
         />
+        <br /><br />
 
         <input
           type="password"
-          className="border p-2 w-full mb-4"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          required
         />
+        <br /><br />
 
-        <button className="bg-black text-white w-full py-2">
-          Login
+        <button type="submit" disabled={loading}>
+          {loading ? "Logging in..." : "Login"}
         </button>
       </form>
     </div>
   );
 }
+
+export default Login;

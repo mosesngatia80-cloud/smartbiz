@@ -1,26 +1,27 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Navbar from "./components/Navbar";
-
+import { useEffect, useState } from "react";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Business from "./pages/Business";
-import Products from "./pages/Products";
-import Orders from "./pages/Orders";
 
-export default function App() {
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("smartbiz_token");
+    setIsAuthenticated(!!token);
+    setCheckingAuth(false);
+  }, []);
+
+  if (checkingAuth) {
+    return <p style={{ padding: 20 }}>Loading...</p>;
+  }
+
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-
-        <Route path="/" element={<ProtectedRoute><Navbar /><Dashboard /></ProtectedRoute>} />
-        <Route path="/business" element={<ProtectedRoute><Navbar /><Business /></ProtectedRoute>} />
-        <Route path="/products" element={<ProtectedRoute><Navbar /><Products /></ProtectedRoute>} />
-        <Route path="/orders" element={<ProtectedRoute><Navbar /><Orders /></ProtectedRoute>} />
-
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </BrowserRouter>
+    <div style={{ padding: 20 }}>
+      <h2>Smart Biz</h2>
+      {isAuthenticated ? <Dashboard /> : <Login />}
+    </div>
   );
 }
+
+export default App;

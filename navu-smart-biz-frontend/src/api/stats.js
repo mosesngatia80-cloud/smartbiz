@@ -1,3 +1,6 @@
-import API from "./index";
+import API from "./api";
 
-export const getStats = () => API.get("/stats");
+export const fetchStats = async () => {
+  const res = await API.get("/stats");
+  return res.data;
+};

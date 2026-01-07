@@ -8,3 +8,6 @@ npm-debug.log*
 # Frontend
 smartbiz-frontend/node_modules/
 smartbiz-frontend/dist/
+
+# Local Netlify folder
+.netlify

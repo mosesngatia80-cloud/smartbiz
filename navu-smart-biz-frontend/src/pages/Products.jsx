@@ -2,34 +2,68 @@ import { useEffect, useState } from "react";
 import { getProducts, addProduct } from "../api/products";
 
 export default function Products() {
-  const [items, setItems] = useState([]);
+  const [products, setProducts] = useState([]);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [error, setError] = useState("");
 
-  const load = () => getProducts().then(r => setItems(r.data));
-  useEffect(load, []);
+  async function loadProducts() {
+    try {
+      const data = await getProducts();
+      setProducts(data);
+      setError("");
+    } catch (err) {
+      setError("Failed to load products");
+    }
+  }
 
-  const submit = async (e) => {
-    e.preventDefault();
-    await addProduct({ name, price: Number(price) });
-    setName(""); setPrice("");
-    load();
-  };
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  async function handleAdd() {
+    try {
+      await addProduct({
+        name,
+        price: Number(price),
+        stock: 100, // ✅ REQUIRED BY BACKEND
+      });
+
+      setName("");
+      setPrice("");
+      loadProducts();
+    } catch (err) {
+      alert("Failed to add product");
+    }
+  }
 
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold mb-4">Products</h2>
+    <div>
+      <h2>🛒 Products</h2>
 
-      <form onSubmit={submit} className="flex gap-2 mb-4">
-        <input className="border p-2" placeholder="Name" value={name} onChange={e=>setName(e.target.value)} />
-        <input className="border p-2" placeholder="Price" type="number" value={price} onChange={e=>setPrice(e.target.value)} />
-        <button className="bg-black text-white px-4">Add</button>
-      </form>
+      <input
+        placeholder="Product name"
+        value={name}
+        onChange={e => setName(e.target.value)}
+      />
+
+      <input
+        placeholder="Price (KES)"
+        type="number"
+        value={price}
+        onChange={e => setPrice(e.target.value)}
+      />
+
+      <button onClick={handleAdd}>➕ Add Product</button>
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      {products.length === 0 && <p>No products yet.</p>}
 
       <ul>
-        {items.map(p => (
-          <li key={p._id} className="border-b py-2">
-            {p.name} — KES {p.price}
+        {products.map(p => (
+          <li key={p._id}>
+            <strong>{p.name}</strong> — KES {p.price}
           </li>
         ))}
       </ul>

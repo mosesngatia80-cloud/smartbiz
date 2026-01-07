@@ -1,43 +1,48 @@
-import express from "express";
-import auth from "../middleware/auth.js";
-import Product from "../models/Product.js";
-
+const express = require("express");
 const router = express.Router();
+const Product = require("../models/Product");
+const auth = require("../middleware/auth");
 
-/**
- * GET PRODUCTS (BY BUSINESS)
- */
-router.get("/", auth, async (req, res) => {
+/*
+  PUBLIC: Get all products (DEV MODE)
+*/
+router.get("/", async (req, res) => {
   try {
-    const products = await Product.find({
-      business: req.user.business
-    });
+    const products = await Product.find().sort({ createdAt: -1 });
     res.json(products);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Load products error:", err.message);
+    res.status(500).json({ message: "Failed to load products" });
   }
 });
 
-/**
- * CREATE PRODUCT
- */
+/*
+  🔐 PROTECTED: Create product
+*/
 router.post("/", auth, async (req, res) => {
   try {
-    const { name, price, stock, description } = req.body;
+    const { name, price } = req.body;
+
+    if (!name || price == null) {
+      return res.status(400).json({ message: "Missing fields" });
+    }
+
+    if (!req.user.business) {
+      return res.status(400).json({ message: "No business context" });
+    }
 
     const product = await Product.create({
       name,
       price,
-      stock,
-      description,
       owner: req.user._id,
       business: req.user.business
     });
 
     res.status(201).json(product);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    console.error("Create product error:", err.message);
+    res.status(500).json({ message: err.message });
   }
 });
 
-export default router;
+module.exports = router;

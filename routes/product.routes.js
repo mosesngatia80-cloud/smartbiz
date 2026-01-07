@@ -1,8 +1,7 @@
-import express from "express";
-import auth from "../middleware/auth.js";
-import Product from "../models/Product.js";
-
+const express = require("express");
 const router = express.Router();
+const auth = require("../middleware/authMiddleware").default;
+const Product = require("../models/Product");
 
 /**
  * 📦 CREATE PRODUCT
@@ -12,11 +11,13 @@ router.post("/", auth, async (req, res) => {
     const { business, name, price, stock, category } = req.body;
 
     if (!business || !name || !price) {
-      return res.status(400).json({ message: "Business, name and price are required" });
+      return res.status(400).json({
+        message: "Business, name and price are required"
+      });
     }
 
     const product = await Product.create({
-      owner: req.user._id,
+      owner: req.user.id,
       business,
       name,
       price,
@@ -26,7 +27,7 @@ router.post("/", auth, async (req, res) => {
 
     res.status(201).json(product);
   } catch (err) {
-    console.error("Create product error:", err);
+    console.error("Create product error:", err.message);
     res.status(500).json({ message: "Failed to create product" });
   }
 });
@@ -36,12 +37,12 @@ router.post("/", auth, async (req, res) => {
  */
 router.get("/", auth, async (req, res) => {
   try {
-    const products = await Product.find({ owner: req.user._id });
+    const products = await Product.find({ owner: req.user.id });
     res.json(products);
   } catch (err) {
-    console.error("Get products error:", err);
+    console.error("Get products error:", err.message);
     res.status(500).json({ message: "Failed to fetch products" });
   }
 });
 
-export default router;
+module.exports = router;
