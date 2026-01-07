@@ -2,10 +2,11 @@
   "name": "navu-smart-biz",
   "version": "1.0.0",
   "description": "SmartBiz backend API",
-  "main": "server.js",
+  "type": "commonjs",
+  "main": "server.cjs",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.cjs",
+    "dev": "node server.cjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -13,11 +14,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.5.2",
+    "mongoose": "^8.12.1",
     "node-fetch": "^3.3.2"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.18",
-    "autoprefixer": "^10.4.23"
   }
 }
