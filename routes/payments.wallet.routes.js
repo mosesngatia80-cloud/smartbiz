@@ -11,20 +11,10 @@ const Transaction = require("../models/Transaction");
 const sendWhatsAppMessage = require("../utils/sendWhatsAppMessage");
 const formatReceipt = require("../utils/receiptFormatter");
 
-/*
-================================================
- ORDER-BASED WALLET PAYMENT
- FINAL FIX – USER OR PHONE WALLET RESOLUTION
-================================================
-*/
-
 const PLATFORM_OWNER_ID = new mongoose.Types.ObjectId("000000000000000000000001");
 
 router.post("/wallet", async (req, res) => {
   try {
-    console.log("➡️ ORDER WALLET PAYMENT HIT");
-    console.log("📦 Payload:", req.body);
-
     const { orderId, payer, amount } = req.body;
 
     if (!orderId || !payer || !amount) {
@@ -34,7 +24,6 @@ router.post("/wallet", async (req, res) => {
       });
     }
 
-    /* ================= ORDER ================= */
     const order = await Order.findById(orderId);
     if (!order) {
       return res.status(404).json({ success: false, message: "Order not found" });
@@ -62,36 +51,17 @@ router.post("/wallet", async (req, res) => {
     else fee = amount * 0.01;
 
     fee = Math.min(Math.round(fee), 20);
-    const totalDebit = amount + fee;
-
-    /* ================= CUSTOMER WALLET (FIXED) ================= */
-    const customerWallet = await Wallet.findOne({
-      ownerType: "USER",
-      $or: [
-        { owner: order.customerUserId },
-        { phone: payer }
-      ]
-    });
-
-    if (!customerWallet) {
-      return res.status(404).json({
-        success: false,
-        message: "Customer wallet not found"
-      });
-    }
 
     /* ================= BUSINESS WALLET ================= */
     let businessWallet = await Wallet.findOne({
-      owner: order.businessWalletId,
+      _id: order.businessWalletId,
       ownerType: "BUSINESS"
     });
 
     if (!businessWallet) {
-      businessWallet = await Wallet.create({
-        owner: order.businessWalletId,
-        ownerType: "BUSINESS",
-        balance: 0,
-        currency: "KES"
+      return res.status(500).json({
+        success: false,
+        message: "Business wallet not found"
       });
     }
 
@@ -110,27 +80,20 @@ router.post("/wallet", async (req, res) => {
       });
     }
 
-    if (customerWallet.balance < totalDebit) {
-      return res.status(400).json({
-        success: false,
-        message: "Insufficient balance"
-      });
+    /* ================= MOCK PAYMENT ================= */
+    if (process.env.PAYMENT_MODE === "mock") {
+      businessWallet.balance += amount;
+      platformWallet.balance += fee;
     }
 
-    /* ================= TRANSFER ================= */
     const reference =
       "TXN_" + crypto.randomBytes(4).toString("hex").toUpperCase();
 
-    customerWallet.balance -= totalDebit;
-    businessWallet.balance += amount;
-    platformWallet.balance += fee;
-
-    await customerWallet.save();
     await businessWallet.save();
     await platformWallet.save();
 
     await Transaction.create({
-      from: customerWallet.owner,
+      from: payer,
       to: order.businessWalletId,
       amount,
       fee,
@@ -144,7 +107,6 @@ router.post("/wallet", async (req, res) => {
     order.paidAt = new Date();
     await order.save();
 
-    /* ================= WHATSAPP RECEIPT (NON-BLOCKING) ================= */
     try {
       const receiptMessage = formatReceipt({
         type: "PAYMENT",
@@ -155,9 +117,7 @@ router.post("/wallet", async (req, res) => {
       });
 
       sendWhatsAppMessage(order.customerPhone, receiptMessage);
-    } catch (e) {
-      console.error("⚠️ WhatsApp receipt failed:", e.message);
-    }
+    } catch (e) {}
 
     return res.json({
       success: true,
@@ -166,11 +126,10 @@ router.post("/wallet", async (req, res) => {
       reference,
       amount,
       fee,
-      balance: customerWallet.balance
+      businessBalance: businessWallet.balance
     });
 
   } catch (err) {
-    console.error("❌ ORDER WALLET PAYMENT ERROR:", err.message);
     return res.status(500).json({
       success: false,
       message: err.message
