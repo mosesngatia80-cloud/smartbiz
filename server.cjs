@@ -23,7 +23,11 @@ app.use("/api/wallet", require("./routes/wallet"));
 app.use("/api/stats", require("./routes/stats"));
 app.use("/api/payments", require("./routes/payments.wallet.routes"));
 app.use("/api/receipts", require("./routes/receipt.routes"));
-app.use("/api/admin", require("./routes/admin"));
+
+/* 🔐 ADMIN ROUTES (MOCK WALLET CREDIT) */
+app.use("/api/admin", require("./routes/admin.wallet"));
+
+/* 🔔 SMART PAY WEBHOOK */
 app.use("/api/smartpay", require("./routes/smartpay.webhook"));
 
 /* ================= HEALTH ================= */
@@ -43,7 +47,7 @@ console.log("🟡 Connecting to MongoDB...");
 
 mongoose
   .connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 5000, // ⏱ prevent hanging forever
+    serverSelectionTimeoutMS: 5000
   })
   .then(() => {
     console.log("🟢 Smart Biz MongoDB connected");
