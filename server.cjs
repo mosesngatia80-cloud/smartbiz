@@ -5,7 +5,7 @@ require("dotenv").config();
 
 const app = express();
 
-/* ================= ROOT (PROOF SERVER IS RUNNING) ================= */
+/* ================= ROOT ================= */
 app.get("/", (req, res) => {
   res.send("SMART BIZ ROOT IS ALIVE");
 });
@@ -24,8 +24,6 @@ app.use("/api/stats", require("./routes/stats"));
 app.use("/api/payments", require("./routes/payments.wallet.routes"));
 app.use("/api/receipts", require("./routes/receipt.routes"));
 app.use("/api/admin", require("./routes/admin"));
-
-/* ================= SMART PAY WEBHOOK ================= */
 app.use("/api/smartpay", require("./routes/smartpay.webhook"));
 
 /* ================= HEALTH ================= */
@@ -33,27 +31,24 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "SMART_BIZ_OK" });
 });
 
-/* ================= CATCH-ALL (PROVES EXPRESS RECEIVES TRAFFIC) ================= */
-app.use((req, res) => {
-  res.status(404).json({
-    error: "Route not found",
-    path: req.originalUrl
-  });
-});
-
-/* ================= START SERVER ================= */
+/* ================= START SERVER FIRST ================= */
 const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Smart Biz running on port ${PORT}`);
 });
 
-/* ================= DATABASE ================= */
+/* ================= CONNECT TO MONGO (ASYNC) ================= */
+console.log("🟡 Connecting to MongoDB...");
+
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 5000, // ⏱ prevent hanging forever
+  })
   .then(() => {
-    console.log("✅ Smart Biz MongoDB connected");
+    console.log("🟢 Smart Biz MongoDB connected");
   })
   .catch((err) => {
-    console.error("❌ DB error:", err.message);
+    console.error("🔴 MongoDB connection failed:");
+    console.error(err.message || err);
   });
