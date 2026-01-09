@@ -14,7 +14,7 @@ const formatReceipt = require("../utils/receiptFormatter");
 /*
 ================================================
  ORDER-BASED WALLET PAYMENT
- FINAL FIX – OBJECTID SAFE + WHATSAPP RECEIPT
+ FINAL FIX – USER OR PHONE WALLET RESOLUTION
 ================================================
 */
 
@@ -64,10 +64,13 @@ router.post("/wallet", async (req, res) => {
     fee = Math.min(Math.round(fee), 20);
     const totalDebit = amount + fee;
 
-    /* ================= CUSTOMER WALLET ================= */
+    /* ================= CUSTOMER WALLET (FIXED) ================= */
     const customerWallet = await Wallet.findOne({
-      owner: payer,
-      ownerType: "USER"
+      ownerType: "USER",
+      $or: [
+        { owner: order.customerUserId },
+        { phone: payer }
+      ]
     });
 
     if (!customerWallet) {
@@ -78,16 +81,14 @@ router.post("/wallet", async (req, res) => {
     }
 
     /* ================= BUSINESS WALLET ================= */
-    const businessWalletOwner = order.businessWalletId;
-
     let businessWallet = await Wallet.findOne({
-      owner: businessWalletOwner,
+      owner: order.businessWalletId,
       ownerType: "BUSINESS"
     });
 
     if (!businessWallet) {
       businessWallet = await Wallet.create({
-        owner: businessWalletOwner,
+        owner: order.businessWalletId,
         ownerType: "BUSINESS",
         balance: 0,
         currency: "KES"
@@ -129,8 +130,8 @@ router.post("/wallet", async (req, res) => {
     await platformWallet.save();
 
     await Transaction.create({
-      from: payer,
-      to: businessWalletOwner,
+      from: customerWallet.owner,
+      to: order.businessWalletId,
       amount,
       fee,
       reference,
@@ -147,7 +148,7 @@ router.post("/wallet", async (req, res) => {
     try {
       const receiptMessage = formatReceipt({
         type: "PAYMENT",
-        businessName: "Auto Wallet Business",
+        businessName: "Navu Smart Biz",
         amount,
         reference,
         date: new Date()
