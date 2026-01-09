@@ -28,20 +28,22 @@ router.post("/", auth, async (req, res) => {
       return res.status(400).json({ message: "Missing fields" });
     }
 
-    // ✅ CORRECT USER ID FROM JWT
+    // ✅ USER ID FROM JWT
     const userId = req.user.user;
 
-    // ✅ DERIVE BUSINESS FROM DATABASE
+    // ✅ BUSINESS FROM DATABASE
     const business = await Business.findOne({ owner: userId });
     if (!business) {
       return res.status(400).json({ message: "User has no business" });
     }
 
+    // ✅ INCLUDE REQUIRED owner FIELD
     const product = await Product.create({
       name,
       price,
       currency,
       stock,
+      owner: userId,
       business: business._id
     });
 
