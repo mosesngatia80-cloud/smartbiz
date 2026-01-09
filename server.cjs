@@ -33,6 +33,14 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "SMART_BIZ_OK" });
 });
 
+/* ================= CATCH-ALL (PROVES EXPRESS RECEIVES TRAFFIC) ================= */
+app.use((req, res) => {
+  res.status(404).json({
+    error: "Route not found",
+    path: req.originalUrl
+  });
+});
+
 /* ================= START SERVER ================= */
 const PORT = process.env.PORT || 5001;
 
