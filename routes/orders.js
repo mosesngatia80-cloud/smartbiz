@@ -15,10 +15,8 @@ const mongoose = require("mongoose");
  */
 router.post("/", auth, async (req, res) => {
   try {
-    // ✅ CORRECT USER ID FROM JWT
     const userId = req.user.user;
 
-    // 1️⃣ Find business owned by this user
     const business = await Business.findOne({ owner: userId });
     if (!business || !business.walletId) {
       return res.status(400).json({ message: "User has no business" });
@@ -70,6 +68,21 @@ router.post("/", auth, async (req, res) => {
     res.status(201).json(order);
   } catch (err) {
     console.error("❌ Create order error:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/**
+ * GET ORDER BY ID
+ */
+router.get("/:orderId", auth, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    res.json(order);
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
