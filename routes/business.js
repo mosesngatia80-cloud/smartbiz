@@ -65,4 +65,23 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
+/**
+ * 🔒 GET MY BUSINESS (READ-ONLY)
+ */
+router.get("/me", auth, async (req, res) => {
+  try {
+    const userId = req.user.user;
+
+    const business = await Business.findOne({ owner: userId });
+    if (!business) {
+      return res.status(404).json({ message: "Business not found" });
+    }
+
+    res.json(business);
+  } catch (err) {
+    console.error("❌ Get business error:", err.message);
+    res.status(500).json({ message: "Failed to fetch business" });
+  }
+});
+
 module.exports = router;
