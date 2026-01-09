@@ -1,17 +1,24 @@
 const express = require("express");
 const crypto = require("crypto");
+const mongoose = require("mongoose");
 const router = express.Router();
 
 const Wallet = require("../models/Wallet");
 const Order = require("../models/Order");
 const Transaction = require("../models/Transaction");
 
+// 📲 WhatsApp utils
+const sendWhatsAppMessage = require("../utils/sendWhatsAppMessage");
+const formatReceipt = require("../utils/receiptFormatter");
+
 /*
 ================================================
  ORDER-BASED WALLET PAYMENT
- FINAL – ENUM SAFE – SELF-HEALING
+ FINAL FIX – OBJECTID SAFE + WHATSAPP RECEIPT
 ================================================
 */
+
+const PLATFORM_OWNER_ID = new mongoose.Types.ObjectId("000000000000000000000001");
 
 router.post("/wallet", async (req, res) => {
   try {
@@ -60,7 +67,7 @@ router.post("/wallet", async (req, res) => {
     /* ================= CUSTOMER WALLET ================= */
     const customerWallet = await Wallet.findOne({
       owner: payer,
-      type: "USER"
+      ownerType: "USER"
     });
 
     if (!customerWallet) {
@@ -70,41 +77,35 @@ router.post("/wallet", async (req, res) => {
       });
     }
 
-    /* ================= BUSINESS WALLET OWNER (SAFE) ================= */
-    const businessWalletOwner =
-      order.businessWalletId ||
-      (order.business ? order.business.toString() : null);
-
-    if (!businessWalletOwner) {
-      return res.status(500).json({
-        success: false,
-        message: "Order has no business wallet reference"
-      });
-    }
-
     /* ================= BUSINESS WALLET ================= */
+    const businessWalletOwner = order.businessWalletId;
+
     let businessWallet = await Wallet.findOne({
-      owner: businessWalletOwner
+      owner: businessWalletOwner,
+      ownerType: "BUSINESS"
     });
 
     if (!businessWallet) {
-      console.log("⚠️ Creating business wallet:", businessWalletOwner);
       businessWallet = await Wallet.create({
         owner: businessWalletOwner,
-        type: "BUSINESS",
-        balance: 0
+        ownerType: "BUSINESS",
+        balance: 0,
+        currency: "KES"
       });
     }
 
-    /* ================= PLATFORM WALLET (ENUM SAFE) ================= */
-    let platformWallet = await Wallet.findOne({ owner: "PLATFORM_WALLET" });
+    /* ================= PLATFORM WALLET ================= */
+    let platformWallet = await Wallet.findOne({
+      owner: PLATFORM_OWNER_ID,
+      ownerType: "BUSINESS"
+    });
 
     if (!platformWallet) {
-      console.log("⚠️ Creating platform wallet");
       platformWallet = await Wallet.create({
-        owner: "PLATFORM_WALLET",
-        type: "BUSINESS",
-        balance: 0
+        owner: PLATFORM_OWNER_ID,
+        ownerType: "BUSINESS",
+        balance: 0,
+        currency: "KES"
       });
     }
 
@@ -142,6 +143,21 @@ router.post("/wallet", async (req, res) => {
     order.paidAt = new Date();
     await order.save();
 
+    /* ================= WHATSAPP RECEIPT (NON-BLOCKING) ================= */
+    try {
+      const receiptMessage = formatReceipt({
+        type: "PAYMENT",
+        businessName: "Auto Wallet Business",
+        amount,
+        reference,
+        date: new Date()
+      });
+
+      sendWhatsAppMessage(order.customerPhone, receiptMessage);
+    } catch (e) {
+      console.error("⚠️ WhatsApp receipt failed:", e.message);
+    }
+
     return res.json({
       success: true,
       message: "Payment successful",
@@ -153,7 +169,7 @@ router.post("/wallet", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ ORDER WALLET PAYMENT ERROR:", err);
+    console.error("❌ ORDER WALLET PAYMENT ERROR:", err.message);
     return res.status(500).json({
       success: false,
       message: err.message

@@ -8,6 +8,9 @@ const User = require("../models/User");
   - Attaches active business from JWT
 */
 
+// ✅ SINGLE SOURCE OF TRUTH FOR JWT SECRET
+const JWT_SECRET = process.env.JWT_SECRET || "navuSmartBizSecretKey2025";
+
 module.exports = async function (req, res, next) {
   const authHeader = req.header("Authorization");
 
@@ -28,9 +31,10 @@ module.exports = async function (req, res, next) {
   const token = parts[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // 🔐 VERIFY TOKEN
+    const decoded = jwt.verify(token, JWT_SECRET);
 
-    // Load user from DB
+    // 🔎 Load user from DB
     const user = await User.findById(decoded.user).select("-password");
 
     if (!user) {
@@ -39,10 +43,10 @@ module.exports = async function (req, res, next) {
       });
     }
 
-    // 🔥 Attach BOTH user + business context
+    // 🔥 Attach user + business context
     req.user = {
       ...user.toObject(),
-      business: decoded.business
+      business: decoded.business || null
     };
 
     next();

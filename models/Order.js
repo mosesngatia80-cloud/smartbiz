@@ -10,6 +10,14 @@ const OrderSchema = new mongoose.Schema(
 
     businessWalletId: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "Wallet",
+      required: true
+    },
+
+    // ✅ REQUIRED FOR REFUNDS & AUDIT
+    customerUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true
     },
 
@@ -39,9 +47,13 @@ const OrderSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["UNPAID", "PAID", "CANCELLED"],
+      enum: ["UNPAID", "PAID", "REFUNDED"],
       default: "UNPAID"
-    }
+    },
+
+    paymentRef: String,
+    paidAt: Date,
+    refundedAt: Date
   },
   { timestamps: true }
 );

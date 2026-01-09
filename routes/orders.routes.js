@@ -54,4 +54,62 @@ router.post("/", smartConnectAuth, async (req, res) => {
   }
 });
 
+/**
+ * VERIFY ORDER (Smart Pay → Smart Biz)
+ */
+router.get("/:orderId/verify", async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId);
+
+    if (!order) {
+      return res.json({ valid: false });
+    }
+
+    if (order.status !== "pending") {
+      return res.json({ valid: false });
+    }
+
+    res.json({
+      valid: true,
+      amount: order.total,
+      status: order.status
+    });
+  } catch (err) {
+    console.error("Verify order error:", err.message);
+    res.status(500).json({ valid: false });
+  }
+});
+
+/**
+ * MARK ORDER AS PAID (Smart Pay → Smart Biz)
+ */
+router.post("/:orderId/mark-paid", async (req, res) => {
+  try {
+    const { paymentRef } = req.body;
+
+    if (!paymentRef) {
+      return res.status(400).json({ message: "Payment reference required" });
+    }
+
+    const order = await Order.findById(req.params.orderId);
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (order.status === "paid") {
+      return res.json({ success: true });
+    }
+
+    order.status = "paid";
+    order.paymentRef = paymentRef;
+    await order.save();
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Mark paid error:", err.message);
+    res.status(500).json({ message: "Failed to mark order paid" });
+  }
+});
+
 module.exports = router;

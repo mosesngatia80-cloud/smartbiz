@@ -1,14 +1,16 @@
-import Order from "../models/Order.js";
-import Product from "../models/Product.js";
-import Business from "../models/Business.js";
-import fetch from "node-fetch";
+const Order = require("../models/Order.js");
+const Product = require("../models/Product.js");
+const Business = require("../models/Business.js");
+const Receipt = require("../models/Receipt.js");
+const Transaction = require("../models/Transaction.js");
+const fetch = require("node-fetch");
 
 const SMART_PAY_BASE = "https://afri-smart-pay-4.onrender.com";
 
 /**
  * 🧾 CREATE ORDER
  */
-export const createOrder = async (req, res) => {
+exports.createOrder = async (req, res) => {
   try {
     const { business, items, paymentMethod } = req.body;
 
@@ -58,7 +60,7 @@ export const createOrder = async (req, res) => {
 /**
  * 💳 PAY ORDER (SMART PAY WALLET DEBIT)
  */
-export const markOrderPaid = async (req, res) => {
+exports.markOrderPaid = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) {
@@ -77,13 +79,11 @@ export const markOrderPaid = async (req, res) => {
         return res.status(400).json({ message: "Business phone not found" });
       }
 
-      // Normalize phone (0706... → 254706...)
       let phone = business.phone;
       if (phone.startsWith("0")) {
         phone = "254" + phone.slice(1);
       }
 
-      // 🔁 SELF-TRANSFER (TEST MODE)
       const payRes = await fetch(`${SMART_PAY_BASE}/api/send-money`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -109,6 +109,31 @@ export const markOrderPaid = async (req, res) => {
     order.status = "COMPLETED";
     await order.save();
 
+    // ================================
+    // 🧾 AUTO-ISSUE RECEIPT (IDEMPOTENT)
+    // ================================
+    const existingReceipt = await Receipt.findOne({
+      orderId: order._id
+    });
+
+    if (!existingReceipt) {
+      const transaction = await Transaction.findOne({
+        orderId: order._id,
+        status: "SUCCESS"
+      });
+
+      await Receipt.create({
+        receiptId: `RCT-${Date.now()}`,
+        orderId: order._id,
+        transactionId: transaction ? transaction._id : null,
+        businessId: order.business,
+        customerId: order.customer || null,
+        customerPhone: order.customerPhone || "",
+        amount: order.totalAmount,
+        paymentMethod: order.paymentMethod
+      });
+    }
+
     res.json(order);
   } catch (err) {
     console.error("Payment error:", err);
@@ -116,12 +141,12 @@ export const markOrderPaid = async (req, res) => {
   }
 };
 
-export const getOrders = async (req, res) => {
+exports.getOrders = async (req, res) => {
   const orders = await Order.find().sort({ createdAt: -1 });
   res.json(orders);
 };
 
-export const getOrderById = async (req, res) => {
+exports.getOrderById = async (req, res) => {
   const order = await Order.findById(req.params.id);
   res.json(order);
 };

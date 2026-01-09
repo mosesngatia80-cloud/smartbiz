@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const Business = require("../models/Business");
+const Wallet = require("../models/Wallet");
 
 const router = express.Router();
 
@@ -28,6 +29,14 @@ router.post("/register", async (req, res) => {
     const user = await User.create({
       email,
       password: hashedPassword
+    });
+
+    // ✅ AUTO-CREATE USER WALLET
+    await Wallet.create({
+      owner: user._id,
+      ownerType: "USER",
+      balance: 0,
+      currency: "KES"
     });
 
     const payload = {

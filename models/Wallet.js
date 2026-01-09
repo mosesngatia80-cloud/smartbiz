@@ -3,21 +3,22 @@ const mongoose = require("mongoose");
 const WalletSchema = new mongoose.Schema(
   {
     owner: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       required: true,
-      unique: true,
-      trim: true
+      index: true
     },
-
-    type: {
+    ownerType: {
       type: String,
       enum: ["USER", "BUSINESS"],
-      default: "USER"
+      required: true
     },
-
     balance: {
       type: Number,
       default: 0
+    },
+    currency: {
+      type: String,
+      default: "KES"
     }
   },
   { timestamps: true }

@@ -22,25 +22,21 @@ router.get("/__debug_wallet_routes", (req, res) => {
  */
 router.get("/balance", auth, async (req, res) => {
   try {
-    // Find user's business
     const business = await Business.findOne({ owner: req.user.id });
     if (!business) {
       return res.status(404).json({ message: "Business not found" });
     }
 
-    // Find business wallet
     const wallet = await Wallet.findOne({
-      owner: business._id.toString(),
-      type: "BUSINESS"
+      owner: business._id,
+      ownerType: "BUSINESS"
     });
 
     if (!wallet) {
       return res.status(404).json({ message: "Wallet not found" });
     }
 
-    res.json({
-      balance: wallet.balance
-    });
+    res.json({ balance: wallet.balance });
   } catch (err) {
     console.error("❌ Wallet balance error:", err.message);
     res.status(500).json({ message: "Failed to fetch wallet balance" });
@@ -52,7 +48,7 @@ router.get("/balance", auth, async (req, res) => {
  */
 router.post("/create", async (req, res) => {
   try {
-    const { owner, type = "USER" } = req.body;
+    const { owner, ownerType = "USER" } = req.body;
 
     if (!owner) {
       return res.status(400).json({ message: "Owner is required" });
@@ -63,7 +59,13 @@ router.post("/create", async (req, res) => {
       return res.json({ message: "Wallet already exists", wallet });
     }
 
-    wallet = await Wallet.create({ owner, type });
+    wallet = await Wallet.create({
+      owner,
+      ownerType,
+      balance: 0,
+      currency: "KES"
+    });
+
     res.json({ message: "Wallet created", wallet });
   } catch (err) {
     console.error("❌ Wallet create error:", err.message);
