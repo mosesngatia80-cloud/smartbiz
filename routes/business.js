@@ -16,14 +16,17 @@ router.post("/", auth, async (req, res) => {
       return res.status(400).json({ message: "Business name required" });
     }
 
+    // ✅ CORRECT USER ID FROM JWT
+    const userId = req.user.user;
+
     // 1️⃣ Find or create business
-    let business = await Business.findOne({ owner: req.user._id });
+    let business = await Business.findOne({ owner: userId });
 
     if (!business) {
       business = await Business.create({
         name,
         category,
-        owner: req.user._id
+        owner: userId
       });
     }
 
@@ -54,7 +57,7 @@ router.post("/", auth, async (req, res) => {
       wallet
     });
   } catch (err) {
-    console.error("❌ Business setup error:", err.message);
+    console.error("❌ Business setup error:", err);
     return res.status(500).json({
       message: "Failed to setup business",
       error: err.message
