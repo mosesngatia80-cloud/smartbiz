@@ -12,18 +12,16 @@ const mongoose = require("mongoose");
 
 /**
  * CREATE ORDER (USER / DASHBOARD FLOW)
- * ✅ Stores customerUserId for deterministic refunds
  */
 router.post("/", auth, async (req, res) => {
   try {
-    const businessId = req.user.business;
-    if (!businessId) {
-      return res.status(400).json({ message: "User has no business" });
-    }
+    // ✅ CORRECT USER ID FROM JWT
+    const userId = req.user.user;
 
-    const business = await Business.findById(businessId);
+    // 1️⃣ Find business owned by this user
+    const business = await Business.findOne({ owner: userId });
     if (!business || !business.walletId) {
-      return res.status(400).json({ message: "Business wallet not set" });
+      return res.status(400).json({ message: "User has no business" });
     }
 
     const { customerPhone, items } = req.body;
@@ -37,7 +35,7 @@ router.post("/", auth, async (req, res) => {
     for (const item of items) {
       const product = await Product.findOne({
         _id: item.productId,
-        business: businessId
+        business: business._id
       });
 
       if (!product) {
@@ -60,10 +58,10 @@ router.post("/", auth, async (req, res) => {
     }
 
     const order = await Order.create({
-      business: businessId,
+      business: business._id,
       businessWalletId: business.walletId,
       customerPhone,
-      customerUserId: req.user._id, // ✅ CRITICAL FIX
+      customerUserId: userId,
       items: orderItems,
       total,
       status: "UNPAID"
@@ -71,7 +69,7 @@ router.post("/", auth, async (req, res) => {
 
     res.status(201).json(order);
   } catch (err) {
-    console.error("❌ Create order error:", err.message);
+    console.error("❌ Create order error:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -130,13 +128,13 @@ router.post("/:orderId/mark-paid", async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error("❌ Mark paid error:", err.message);
+    console.error("❌ Mark paid error:", err);
     res.status(500).json({ message: "Failed to mark order paid" });
   }
 });
 
 /**
- * 🔁 REFUND ORDER (ID-BASED, SAFE, IDEMPOTENT)
+ * 🔁 REFUND ORDER
  */
 router.post("/:orderId/refund", auth, async (req, res) => {
   try {
@@ -155,12 +153,6 @@ router.post("/:orderId/refund", auth, async (req, res) => {
       return res.json({
         success: true,
         message: "Order already refunded"
-      });
-    }
-
-    if (!order.customerUserId) {
-      return res.status(400).json({
-        message: "Order has no customer user reference"
       });
     }
 
@@ -188,7 +180,6 @@ router.post("/:orderId/refund", auth, async (req, res) => {
       });
     }
 
-    // 🔁 Reverse funds
     businessWallet.balance -= amount;
     userWallet.balance += amount;
 
@@ -219,7 +210,7 @@ router.post("/:orderId/refund", auth, async (req, res) => {
       orderId: order._id
     });
   } catch (err) {
-    console.error("❌ Refund error:", err.message);
+    console.error("❌ Refund error:", err);
     res.status(500).json({
       message: "Refund failed",
       error: err.message
