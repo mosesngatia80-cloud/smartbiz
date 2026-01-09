@@ -5,6 +5,11 @@ require("dotenv").config();
 
 const app = express();
 
+/* ================= ROOT (PROOF SERVER IS RUNNING) ================= */
+app.get("/", (req, res) => {
+  res.send("SMART BIZ ROOT IS ALIVE");
+});
+
 /* ================= MIDDLEWARE ================= */
 app.use(cors());
 app.use(express.json());
@@ -28,14 +33,14 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "SMART_BIZ_OK" });
 });
 
-/* ================= START SERVER FIRST ================= */
+/* ================= START SERVER ================= */
 const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Smart Biz running on port ${PORT}`);
 });
 
-/* ================= DATABASE (BACKGROUND) ================= */
+/* ================= DATABASE ================= */
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
@@ -43,5 +48,4 @@ mongoose
   })
   .catch((err) => {
     console.error("❌ DB error:", err.message);
-    // DO NOT exit the process — keep server alive in Termux
   });
