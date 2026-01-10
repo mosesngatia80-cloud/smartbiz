@@ -28,6 +28,9 @@ app.use("/api/receipts", require("./routes/receipt.routes"));
 /* 🔐 ADMIN ROUTES (MOCK WALLET CREDIT) */
 app.use("/api/admin", require("./routes/admin.wallet"));
 
+/* 🔒 INTERNAL ROUTES (SMART CONNECT) */
+app.use("/api/internal", require("./routes/internal.wallet"));
+
 /* 🔔 SMART PAY WEBHOOK */
 app.use("/api/smartpay", require("./routes/smartpay.webhook"));
 
@@ -50,7 +53,7 @@ mongoose
     console.log("🟢 Smart Biz MongoDB connected");
 
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(`🚀 Smart Biz running on port ${PORT}`);
+      console.log();
     });
   })
   .catch((err) => {
