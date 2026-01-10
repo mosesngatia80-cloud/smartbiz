@@ -28,29 +28,33 @@ router.post("/register", async (req, res) => {
 
     const user = await User.create({
       email,
-      password: hashedPassword
+      password: hashedPassword,
     });
 
-    // ✅ AUTO-CREATE USER WALLET
+    // Auto-create user wallet
     await Wallet.create({
       owner: user._id,
       ownerType: "USER",
       balance: 0,
-      currency: "KES"
+      currency: "KES",
     });
 
     const payload = {
       user: user._id,
-      business: null
+      business: null,
     };
 
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET not set");
+    }
+
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "7d"
+      expiresIn: "7d",
     });
 
     res.status(201).json({ token });
   } catch (err) {
-    console.error("Register error:", err.message);
+    console.error("Register error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -62,12 +66,18 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password required" });
+    }
+
     const user = await User.findOne({ email });
-    if (!user) {
+
+    if (!user || !user.password) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
+
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -76,16 +86,20 @@ router.post("/login", async (req, res) => {
 
     const payload = {
       user: user._id,
-      business: business ? business._id : null
+      business: business ? business._id : null,
     };
 
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET not set");
+    }
+
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "7d"
+      expiresIn: "7d",
     });
 
     res.json({ token });
   } catch (err) {
-    console.error("Login error:", err.message);
+    console.error("Login error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });

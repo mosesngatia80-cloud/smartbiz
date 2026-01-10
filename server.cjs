@@ -1,7 +1,8 @@
+require("dotenv").config(); // MUST BE FIRST
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config();
 
 const app = express();
 
@@ -35,24 +36,25 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "SMART_BIZ_OK" });
 });
 
-/* ================= START SERVER FIRST ================= */
+/* ================= START SERVER AFTER DB ================= */
 const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Smart Biz running on port ${PORT}`);
-});
-
-/* ================= CONNECT TO MONGO (ASYNC) ================= */
 console.log("🟡 Connecting to MongoDB...");
 
 mongoose
   .connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 5000
+    serverSelectionTimeoutMS: 10000,
+    family: 4, // FORCE IPV4 (IMPORTANT FOR TERMUX / MOBILE NETWORKS)
   })
   .then(() => {
     console.log("🟢 Smart Biz MongoDB connected");
+
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Smart Biz running on port ${PORT}`);
+    });
   })
   .catch((err) => {
     console.error("🔴 MongoDB connection failed:");
     console.error(err.message || err);
+    process.exit(1);
   });
