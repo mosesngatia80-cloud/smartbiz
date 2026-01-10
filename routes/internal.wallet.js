@@ -5,6 +5,19 @@ const User = require("../models/User");
 const router = express.Router();
 
 /**
+ * 🧪 DEBUG PING (DEPLOYMENT CHECK)
+ * GET /api/internal/__ping
+ */
+router.get("/__ping", (req, res) => {
+  res.json({
+    ok: true,
+    service: "navu-smart-biz",
+    route: "internal.wallet",
+    time: new Date().toISOString()
+  });
+});
+
+/**
  * 🔐 INTERNAL AUTH MIDDLEWARE
  */
 function internalAuth(req, res, next) {
