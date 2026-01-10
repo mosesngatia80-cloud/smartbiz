@@ -18,28 +18,61 @@ router.get("/__debug_wallet_routes", (req, res) => {
 });
 
 /**
- * 🔒 GET MY WALLET BALANCE (SECURE)
+ * 🏢 GET BUSINESS WALLET BALANCE (SECURE)
+ * Uses businessId directly from JWT payload
  */
 router.get("/balance", auth, async (req, res) => {
   try {
-    const business = await Business.findOne({ owner: req.user.id });
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
+    const businessId = req.user.business;
+
+    if (!businessId) {
+      return res.status(400).json({ message: "User has no business" });
     }
 
     const wallet = await Wallet.findOne({
-      owner: business._id,
+      owner: businessId,
       ownerType: "BUSINESS"
     });
 
     if (!wallet) {
-      return res.status(404).json({ message: "Wallet not found" });
+      return res.status(404).json({ message: "Business wallet not found" });
     }
 
-    res.json({ balance: wallet.balance });
+    res.json({
+      walletId: wallet._id,
+      balance: wallet.balance,
+      currency: wallet.currency
+    });
   } catch (err) {
-    console.error("❌ Wallet balance error:", err.message);
-    res.status(500).json({ message: "Failed to fetch wallet balance" });
+    console.error("❌ Business wallet balance error:", err.message);
+    res.status(500).json({ message: "Failed to fetch business wallet balance" });
+  }
+});
+
+/**
+ * 👤 GET USER WALLET BALANCE (SECURE)
+ */
+router.get("/user/balance", auth, async (req, res) => {
+  try {
+    const userId = req.user.user;
+
+    const wallet = await Wallet.findOne({
+      owner: userId,
+      ownerType: "USER"
+    });
+
+    if (!wallet) {
+      return res.status(404).json({ message: "User wallet not found" });
+    }
+
+    res.json({
+      walletId: wallet._id,
+      balance: wallet.balance,
+      currency: wallet.currency
+    });
+  } catch (err) {
+    console.error("❌ User wallet balance error:", err.message);
+    res.status(500).json({ message: "Failed to fetch user wallet balance" });
   }
 });
 
@@ -112,30 +145,3 @@ router.get("/:owner", async (req, res) => {
 });
 
 module.exports = router;
-
-/**
- * 👤 USER WALLET BALANCE (NEW – SAFE ADDITION)
- */
-router.get("/user/balance", auth, async (req, res) => {
-  try {
-    const userId = req.user.user || req.user.id;
-
-    const wallet = await Wallet.findOne({
-      owner: userId,
-      ownerType: "USER"
-    });
-
-    if (!wallet) {
-      return res.status(404).json({ message: "User wallet not found" });
-    }
-
-    res.json({
-      walletId: wallet._id,
-      balance: wallet.balance,
-      currency: wallet.currency
-    });
-  } catch (err) {
-    console.error("❌ User wallet balance error:", err.message);
-    res.status(500).json({ message: "Failed to fetch user wallet balance" });
-  }
-});
