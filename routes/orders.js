@@ -73,22 +73,7 @@ router.post("/", auth, async (req, res) => {
 });
 
 /**
- * GET ORDER BY ID
- */
-router.get("/:orderId", auth, async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.orderId);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-    res.json(order);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-/**
- * MARK ORDER AS PAID (Smart Pay)
+ * MARK ORDER AS PAID (Smart Pay) + 💰 SETTLEMENT
  */
 router.post("/:orderId/mark-paid", async (req, res) => {
   try {
@@ -103,30 +88,47 @@ router.post("/:orderId/mark-paid", async (req, res) => {
     }
 
     if (order.status === "PAID") {
-      const existingReceipt = await Receipt.findOne({ orderId: order._id });
-
-      if (!existingReceipt) {
-        await Receipt.create({
-          receiptId: `RCT-${Date.now()}`,
-          orderId: order._id,
-          transactionId: new mongoose.Types.ObjectId(),
-          businessId: order.business,
-          customerId: order.customerUserId,
-          customerPhone: order.customerPhone,
-          amount: order.total,
-          paymentMethod: "M-PESA",
-          status: "ISSUED"
-        });
-      }
-
       return res.json({ success: true });
     }
 
+    // 🔎 FIND BUSINESS WALLET
+    const businessWallet = await Wallet.findOne({
+      owner: order.business,
+      ownerType: "BUSINESS"
+    });
+
+    if (!businessWallet) {
+      return res.status(500).json({ message: "Business wallet not found" });
+    }
+
+    // ❌ INSUFFICIENT FUNDS
+    if (businessWallet.balance < order.total) {
+      return res.status(400).json({
+        message: "Insufficient business balance for settlement"
+      });
+    }
+
+    // 💸 SETTLEMENT: DEBIT BUSINESS WALLET
+    businessWallet.balance -= order.total;
+    await businessWallet.save();
+
+    // 🧾 RECORD TRANSACTION
+    await Transaction.create({
+      from: businessWallet.owner,
+      to: order.customerUserId,
+      amount: order.total,
+      type: "SALE",
+      reference: paymentRef,
+      orderId: order._id
+    });
+
+    // ✅ UPDATE ORDER
     order.status = "PAID";
     order.paymentRef = paymentRef;
     order.paidAt = new Date();
     await order.save();
 
+    // 🧾 ISSUE RECEIPT
     await Receipt.create({
       receiptId: `RCT-${Date.now()}`,
       orderId: order._id,
@@ -135,6 +137,7 @@ router.post("/:orderId/mark-paid", async (req, res) => {
       customerId: order.customerUserId,
       customerPhone: order.customerPhone,
       amount: order.total,
+      currency: "KES",
       paymentMethod: "M-PESA",
       status: "ISSUED"
     });
@@ -143,91 +146,6 @@ router.post("/:orderId/mark-paid", async (req, res) => {
   } catch (err) {
     console.error("❌ Mark paid error:", err);
     res.status(500).json({ message: "Failed to mark order paid" });
-  }
-});
-
-/**
- * 🔁 REFUND ORDER
- */
-router.post("/:orderId/refund", auth, async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.orderId);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-
-    if (order.status !== "PAID") {
-      return res.status(400).json({
-        message: "Only PAID orders can be refunded"
-      });
-    }
-
-    if (order.refundedAt) {
-      return res.json({
-        success: true,
-        message: "Order already refunded"
-      });
-    }
-
-    const businessWallet = await Wallet.findOne({
-      owner: order.business,
-      ownerType: "BUSINESS"
-    });
-
-    const userWallet = await Wallet.findOne({
-      owner: order.customerUserId,
-      ownerType: "USER"
-    });
-
-    if (!businessWallet || !userWallet) {
-      return res.status(500).json({
-        message: "Wallets not found for refund"
-      });
-    }
-
-    const amount = order.total;
-
-    if (businessWallet.balance < amount) {
-      return res.status(400).json({
-        message: "Insufficient business balance for refund"
-      });
-    }
-
-    businessWallet.balance -= amount;
-    userWallet.balance += amount;
-
-    await businessWallet.save();
-    await userWallet.save();
-
-    await Transaction.create({
-      from: businessWallet.owner,
-      to: userWallet.owner,
-      amount,
-      type: "REFUND",
-      reference: `RFD-${Date.now()}`,
-      orderId: order._id
-    });
-
-    await Receipt.updateOne(
-      { orderId: order._id },
-      { status: "REFUNDED" }
-    );
-
-    order.status = "REFUNDED";
-    order.refundedAt = new Date();
-    await order.save();
-
-    res.json({
-      success: true,
-      message: "Refund successful",
-      orderId: order._id
-    });
-  } catch (err) {
-    console.error("❌ Refund error:", err);
-    res.status(500).json({
-      message: "Refund failed",
-      error: err.message
-    });
   }
 });
 
