@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const auth = require("../middleware/auth");
+const Receipt = require("../models/Receipt");
 
 const {
   getReceiptByOrder,
@@ -11,8 +13,6 @@ router.get("/order/:orderId", getReceiptByOrder);
 
 // 👤 Get all receipts for a customer
 router.get("/customer/:customerId", getReceiptsByCustomer);
-
-module.exports = router;
 
 /**
  * 🧾 RECEIPTS BY DATE RANGE (BUSINESS)
@@ -42,8 +42,7 @@ router.get("/range", auth, async (req, res) => {
       businessId,
       status: "ISSUED",
       issuedAt: { $gte: start, $lte: end }
-    })
-      .sort({ issuedAt: -1 });
+    }).sort({ issuedAt: -1 });
 
     const totalAmount = receipts.reduce(
       (sum, r) => sum + r.amount,
@@ -63,3 +62,5 @@ router.get("/range", auth, async (req, res) => {
     res.status(500).json({ message: "Failed to load receipts" });
   }
 });
+
+module.exports = router;
