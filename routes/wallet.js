@@ -112,3 +112,30 @@ router.get("/:owner", async (req, res) => {
 });
 
 module.exports = router;
+
+/**
+ * 👤 USER WALLET BALANCE (NEW – SAFE ADDITION)
+ */
+router.get("/user/balance", auth, async (req, res) => {
+  try {
+    const userId = req.user.user || req.user.id;
+
+    const wallet = await Wallet.findOne({
+      owner: userId,
+      ownerType: "USER"
+    });
+
+    if (!wallet) {
+      return res.status(404).json({ message: "User wallet not found" });
+    }
+
+    res.json({
+      walletId: wallet._id,
+      balance: wallet.balance,
+      currency: wallet.currency
+    });
+  } catch (err) {
+    console.error("❌ User wallet balance error:", err.message);
+    res.status(500).json({ message: "Failed to fetch user wallet balance" });
+  }
+});
