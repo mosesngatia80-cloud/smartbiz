@@ -30,6 +30,7 @@ app.use("/api/admin", require("./routes/admin.wallet"));
 
 /* 🔒 INTERNAL ROUTES (SMART CONNECT) */
 app.use("/api/internal", require("./routes/internal.wallet"));
+app.use("/api/internal", require("./routes/internal.register")); // ✅ ADDED ONLY THIS LINE
 
 /* 🔔 SMART PAY WEBHOOK */
 app.use("/api/smartpay", require("./routes/smartpay.webhook"));
