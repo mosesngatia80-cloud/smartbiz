@@ -4,23 +4,30 @@ const router = express.Router();
 const Business = require("../models/Business");
 const Wallet = require("../models/Wallet");
 
-/* =========================
-   INTERNAL AUTH
-========================= */
+/**
+ * 🔐 INTERNAL AUTH MIDDLEWARE
+ * MUST MATCH internal.wallet.js EXACTLY
+ */
 function internalAuth(req, res, next) {
   const auth = req.headers.authorization;
 
-  if (!auth || auth !== `Bearer ${process.env.SMARTCONNECT_SECRET}`) {
-    return res.status(401).json({ message: "Unauthorized" });
+  if (!auth || !auth.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Missing internal token" });
+  }
+
+  const token = auth.split(" ")[1];
+
+  if (token !== process.env.SMARTCONNECT_SECRET) {
+    return res.status(403).json({ message: "Invalid internal token" });
   }
 
   next();
 }
 
-/* =========================
-   REGISTER BUSINESS + WALLET
-   POST /api/internal/register
-========================= */
+/**
+ * 🏢 INTERNAL REGISTER BUSINESS + WALLET
+ * POST /api/internal/register
+ */
 router.post("/register", internalAuth, async (req, res) => {
   try {
     const { phone } = req.body;
@@ -29,20 +36,21 @@ router.post("/register", internalAuth, async (req, res) => {
       return res.status(400).json({ message: "Phone is required" });
     }
 
-    // 1. Check existing business
-    const existing = await Business.findOne({ phone });
-    if (existing) {
+    /* 1️⃣ Check if business already exists */
+    const existingBusiness = await Business.findOne({ phone });
+
+    if (existingBusiness) {
       return res.json({ alreadyExists: true });
     }
 
-    // 2. Create business
+    /* 2️⃣ Create business */
     const business = await Business.create({
       phone,
       status: "ACTIVE",
       tier: "NEW"
     });
 
-    // 3. Create wallet
+    /* 3️⃣ Create wallet */
     await Wallet.create({
       owner: business._id,
       ownerType: "BUSINESS",
@@ -58,7 +66,7 @@ router.post("/register", internalAuth, async (req, res) => {
     return res.json({ walletCreated: true });
 
   } catch (err) {
-    console.error("❌ INTERNAL REGISTER ERROR:", err);
+    console.error("❌ INTERNAL REGISTER ERROR:", err.message || err);
     return res.status(500).json({ message: "Server error" });
   }
 });
