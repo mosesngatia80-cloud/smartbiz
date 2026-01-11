@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const crypto = require("crypto");
 
 const User = require("../models/User");
 const Business = require("../models/Business");
@@ -41,27 +42,33 @@ router.post("/register", internalAuth, async (req, res) => {
       return res.status(400).json({ message: "Phone is required" });
     }
 
-    /* 1️⃣ Ensure User exists */
-    let user = await User.findOne({ phone });
+    /* 1️⃣ Ensure USER exists (schema requires email + password) */
+    const systemEmail = `${phone}@smartbiz.local`;
+
+    let user = await User.findOne({ email: systemEmail });
+
     if (!user) {
+      const systemPassword = crypto.randomBytes(16).toString("hex");
+
       user = await User.create({
-        phone
+        email: systemEmail,
+        password: systemPassword
       });
     }
 
-    /* 2️⃣ Check if Business already exists for this user */
+    /* 2️⃣ Check if BUSINESS already exists */
     const existingBusiness = await Business.findOne({ owner: user._id });
     if (existingBusiness) {
       return res.json({ alreadyExists: true });
     }
 
-    /* 3️⃣ Create Wallet */
+    /* 3️⃣ Create WALLET */
     const wallet = await Wallet.create({
       owner: user._id,
       ownerType: "BUSINESS"
     });
 
-    /* 4️⃣ Create Business */
+    /* 4️⃣ Create BUSINESS (schema-compliant) */
     const business = await Business.create({
       name: `Business ${phone}`,
       owner: user._id,
