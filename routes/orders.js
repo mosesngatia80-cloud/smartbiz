@@ -73,6 +73,54 @@ router.post("/", auth, async (req, res) => {
 });
 
 /**
+ * GET ALL ORDERS (DASHBOARD)
+ */
+router.get("/", auth, async (req, res) => {
+  try {
+    const userId = req.user.user;
+    const business = await Business.findOne({ owner: userId });
+    if (!business) {
+      return res.status(400).json({ message: "User has no business" });
+    }
+
+    const orders = await Order.find({ business: business._id })
+      .sort({ createdAt: -1 });
+
+    res.json(orders);
+  } catch (err) {
+    console.error("❌ Get orders error:", err);
+    res.status(500).json({ message: "Failed to fetch orders" });
+  }
+});
+
+/**
+ * GET SINGLE ORDER BY ID (READ-ONLY)
+ */
+router.get("/:orderId", auth, async (req, res) => {
+  try {
+    const userId = req.user.user;
+    const business = await Business.findOne({ owner: userId });
+    if (!business) {
+      return res.status(400).json({ message: "User has no business" });
+    }
+
+    const order = await Order.findOne({
+      _id: req.params.orderId,
+      business: business._id
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.json(order);
+  } catch (err) {
+    console.error("❌ Get order error:", err);
+    res.status(500).json({ message: "Failed to fetch order" });
+  }
+});
+
+/**
  * MARK ORDER AS PAID (Smart Pay) + 💰 SETTLEMENT
  */
 router.post("/:orderId/mark-paid", async (req, res) => {
@@ -91,7 +139,6 @@ router.post("/:orderId/mark-paid", async (req, res) => {
       return res.json({ success: true });
     }
 
-    // 🔎 FIND BUSINESS WALLET
     const businessWallet = await Wallet.findOne({
       owner: order.business,
       ownerType: "BUSINESS"
@@ -101,18 +148,15 @@ router.post("/:orderId/mark-paid", async (req, res) => {
       return res.status(500).json({ message: "Business wallet not found" });
     }
 
-    // ❌ INSUFFICIENT FUNDS
     if (businessWallet.balance < order.total) {
       return res.status(400).json({
         message: "Insufficient business balance for settlement"
       });
     }
 
-    // 💸 SETTLEMENT: DEBIT BUSINESS WALLET
     businessWallet.balance -= order.total;
     await businessWallet.save();
 
-    // 🧾 RECORD TRANSACTION
     await Transaction.create({
       from: businessWallet.owner,
       to: order.customerUserId,
@@ -122,13 +166,11 @@ router.post("/:orderId/mark-paid", async (req, res) => {
       orderId: order._id
     });
 
-    // ✅ UPDATE ORDER
     order.status = "PAID";
     order.paymentRef = paymentRef;
     order.paidAt = new Date();
     await order.save();
 
-    // 🧾 ISSUE RECEIPT
     await Receipt.create({
       receiptId: `RCT-${Date.now()}`,
       orderId: order._id,
