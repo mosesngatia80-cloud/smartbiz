@@ -30,7 +30,27 @@ app.use("/api/admin", require("./routes/admin.wallet"));
 
 /* 🔒 INTERNAL ROUTES (SMART CONNECT) */
 app.use("/api/internal", require("./routes/internal.wallet"));
-app.use("/api/internal", require("./routes/internal.register")); // ✅ ADDED ONLY THIS LINE
+app.use("/api/internal", require("./routes/internal.register"));
+
+/* 🧪 INTERNAL ENV DEBUG (TEMPORARY – SAFE) */
+app.get("/api/internal/__debug_env", (req, res) => {
+  res.json({
+    has_SMARTCONNECT_SECRET: !!process.env.SMARTCONNECT_SECRET,
+    len_SMARTCONNECT_SECRET: process.env.SMARTCONNECT_SECRET
+      ? process.env.SMARTCONNECT_SECRET.length
+      : 0,
+
+    has_SMARTCONNECT_INTERNAL_KEY: !!process.env.SMARTCONNECT_INTERNAL_KEY,
+    len_SMARTCONNECT_INTERNAL_KEY: process.env.SMARTCONNECT_INTERNAL_KEY
+      ? process.env.SMARTCONNECT_INTERNAL_KEY.length
+      : 0,
+
+    has_CT_INTERNAL_KEY: !!process.env.CT_INTERNAL_KEY,
+    len_CT_INTERNAL_KEY: process.env.CT_INTERNAL_KEY
+      ? process.env.CT_INTERNAL_KEY.length
+      : 0
+  });
+});
 
 /* 🔔 SMART PAY WEBHOOK */
 app.use("/api/smartpay", require("./routes/smartpay.webhook"));
@@ -48,7 +68,7 @@ console.log("🟡 Connecting to MongoDB...");
 mongoose
   .connect(process.env.MONGO_URI, {
     serverSelectionTimeoutMS: 10000,
-    family: 4, // FORCE IPV4 (IMPORTANT FOR TERMUX / MOBILE NETWORKS)
+    family: 4,
   })
   .then(() => {
     console.log("🟢 Smart Biz MongoDB connected");
