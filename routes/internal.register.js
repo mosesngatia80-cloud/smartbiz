@@ -6,7 +6,7 @@ const Wallet = require("../models/Wallet");
 
 /**
  * 🔐 INTERNAL AUTH MIDDLEWARE
- * Backward-compatible: supports both env keys
+ * Backward-compatible: supports existing env keys
  */
 function internalAuth(req, res, next) {
   const auth = req.headers.authorization;
@@ -17,7 +17,6 @@ function internalAuth(req, res, next) {
 
   const token = auth.split(" ")[1];
 
-  // 🔑 ACCEPT BOTH (SAFE)
   const expected =
     process.env.SMARTCONNECT_SECRET ||
     process.env.SMARTCONNECT_INTERNAL_KEY ||
@@ -57,12 +56,7 @@ router.post("/register", internalAuth, async (req, res) => {
       owner: business._id,
       ownerType: "BUSINESS",
       balance: 0,
-      currency: "KES",
-      limits: {
-        dailyWithdrawLimit: 5000,
-        perTxWithdrawLimit: 2000,
-        instantWithdrawEnabled: true
-      }
+      currency: "KES"
     });
 
     return res.json({ walletCreated: true });
