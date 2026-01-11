@@ -31,6 +31,7 @@ app.use("/api/admin", require("./routes/admin.wallet"));
 /* 🔒 INTERNAL ROUTES (SMART CONNECT) */
 app.use("/api/internal", require("./routes/internal.wallet"));
 app.use("/api/internal", require("./routes/internal.register"));
+app.use("/api/internal", require("./routes/internal.business.link"));
 
 /* 🧪 INTERNAL ENV DEBUG (TEMPORARY – SAFE) */
 app.get("/api/internal/__debug_env", (req, res) => {
@@ -61,7 +62,7 @@ app.get("/api/health", (req, res) => {
 });
 
 /* ================= START SERVER AFTER DB ================= */
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 3000;
 
 console.log("🟡 Connecting to MongoDB...");
 
@@ -74,7 +75,7 @@ mongoose
     console.log("🟢 Smart Biz MongoDB connected");
 
     app.listen(PORT, "0.0.0.0", () => {
-      console.log();
+      console.log(`🚀 Smart Biz server running on port ${PORT}`);
     });
   })
   .catch((err) => {

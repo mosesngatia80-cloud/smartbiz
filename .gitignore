@@ -11,3 +11,4 @@ smartbiz-frontend/dist/
 
 # Local Netlify folder
 .netlify
+.env
