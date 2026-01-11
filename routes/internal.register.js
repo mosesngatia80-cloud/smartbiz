@@ -6,7 +6,7 @@ const Wallet = require("../models/Wallet");
 
 /**
  * 🔐 INTERNAL AUTH MIDDLEWARE
- * MUST MATCH internal.wallet.js EXACTLY
+ * Backward-compatible: supports both env keys
  */
 function internalAuth(req, res, next) {
   const auth = req.headers.authorization;
@@ -17,7 +17,13 @@ function internalAuth(req, res, next) {
 
   const token = auth.split(" ")[1];
 
-  if (token !== process.env.SMARTCONNECT_SECRET) {
+  // 🔑 ACCEPT BOTH (SAFE)
+  const expected =
+    process.env.SMARTCONNECT_SECRET ||
+    process.env.SMARTCONNECT_INTERNAL_KEY ||
+    process.env.CT_INTERNAL_KEY;
+
+  if (!expected || token !== expected) {
     return res.status(403).json({ message: "Invalid internal token" });
   }
 
@@ -36,21 +42,17 @@ router.post("/register", internalAuth, async (req, res) => {
       return res.status(400).json({ message: "Phone is required" });
     }
 
-    /* 1️⃣ Check if business already exists */
     const existingBusiness = await Business.findOne({ phone });
-
     if (existingBusiness) {
       return res.json({ alreadyExists: true });
     }
 
-    /* 2️⃣ Create business */
     const business = await Business.create({
       phone,
       status: "ACTIVE",
       tier: "NEW"
     });
 
-    /* 3️⃣ Create wallet */
     await Wallet.create({
       owner: business._id,
       ownerType: "BUSINESS",
@@ -66,7 +68,7 @@ router.post("/register", internalAuth, async (req, res) => {
     return res.json({ walletCreated: true });
 
   } catch (err) {
-    console.error("❌ INTERNAL REGISTER ERROR:", err.message || err);
+    console.error("❌ INTERNAL REGISTER ERROR:", err);
     return res.status(500).json({ message: "Server error" });
   }
 });
