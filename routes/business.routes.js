@@ -11,7 +11,9 @@ router.post("/", auth, async (req, res) => {
     const { name, phone } = req.body;
 
     if (!name || !phone) {
-      return res.status(400).json({ message: "Business name and phone are required" });
+      return res.status(400).json({
+        message: "Business name and phone are required"
+      });
     }
 
     const encodedName = encodeURIComponent(name);
@@ -20,7 +22,7 @@ router.post("/", auth, async (req, res) => {
     const business = await Business.create({
       name,
       phone,
-      owner: req.user.id,
+      owner: req.user.user, // ✅ FIXED: correct JWT field
       whatsappLink
     });
 
@@ -30,7 +32,10 @@ router.post("/", auth, async (req, res) => {
     });
   } catch (err) {
     console.error("CREATE BUSINESS ERROR:", err);
-    return res.status(500).json({ message: err.message });
+    return res.status(500).json({
+      message: "Failed to setup business",
+      error: err.message
+    });
   }
 });
 
@@ -39,7 +44,9 @@ router.post("/", auth, async (req, res) => {
  */
 router.get("/", auth, async (req, res) => {
   try {
-    const businesses = await Business.find({ owner: req.user.id });
+    const businesses = await Business.find({
+      owner: req.user.user // ✅ also correct here
+    });
     return res.json(businesses);
   } catch (err) {
     return res.status(500).json({ message: err.message });
