@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const auth = require("../middleware/authMiddleware").default;
+const auth = require("../middleware/authMiddleware"); // CommonJS-safe
 const Business = require("../models/Business");
 
 /**
@@ -8,13 +8,29 @@ const Business = require("../models/Business");
  */
 router.post("/", auth, async (req, res) => {
   try {
+    const { name, phone } = req.body;
+
+    if (!name || !phone) {
+      return res.status(400).json({ message: "Business name and phone are required" });
+    }
+
+    const encodedName = encodeURIComponent(name);
+    const whatsappLink = `https://wa.me/${phone}?text=Hi%20I%20want%20to%20buy%20from%20${encodedName}`;
+
     const business = await Business.create({
-      ...req.body,
-      owner: req.user.id
+      name,
+      phone,
+      owner: req.user.id,
+      whatsappLink
     });
-    res.status(201).json(business);
+
+    return res.status(201).json({
+      message: "Business created successfully",
+      business
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("CREATE BUSINESS ERROR:", err);
+    return res.status(500).json({ message: err.message });
   }
 });
 
@@ -24,9 +40,9 @@ router.post("/", auth, async (req, res) => {
 router.get("/", auth, async (req, res) => {
   try {
     const businesses = await Business.find({ owner: req.user.id });
-    res.json(businesses);
+    return res.json(businesses);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: err.message });
   }
 });
 
