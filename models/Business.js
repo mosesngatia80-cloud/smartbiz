@@ -32,5 +32,7 @@ const BusinessSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.models.Business ||
+// 🔒 Prevent model overwrite / cache issues
+module.exports =
+  mongoose.models.Business ||
   mongoose.model("Business", BusinessSchema);
