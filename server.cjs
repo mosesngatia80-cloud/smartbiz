@@ -77,6 +77,9 @@ mongoose
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Smart Biz server running on port ${PORT}`);
     });
+
+    // 🔄 Start payment reconciliation worker (MVP mode, no paid infra)
+    require("./workers/reconcilePayments");
   })
   .catch((err) => {
     console.error("🔴 MongoDB connection failed:");
