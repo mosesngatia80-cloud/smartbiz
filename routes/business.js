@@ -10,13 +10,12 @@ const Wallet = require("../models/Wallet");
  */
 router.post("/", auth, async (req, res) => {
   try {
-    const { name, category } = req.body;
+    const { name, category, phone } = req.body;
 
-    if (!name) {
-      return res.status(400).json({ message: "Business name required" });
+    if (!name || !phone) {
+      return res.status(400).json({ message: "Business name and phone required" });
     }
 
-    // ✅ CORRECT USER ID FROM JWT
     const userId = req.user.user;
 
     // 1️⃣ Find or create business
@@ -26,11 +25,12 @@ router.post("/", auth, async (req, res) => {
       business = await Business.create({
         name,
         category,
+        phone,
         owner: userId
       });
     }
 
-    // 2️⃣ Find or create wallet for this business
+    // 2️⃣ Find or create wallet
     let wallet = await Wallet.findOne({
       owner: business._id,
       ownerType: "BUSINESS"
@@ -45,7 +45,7 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    // 3️⃣ Ensure business points to wallet
+    // 3️⃣ Link wallet
     if (!business.walletId) {
       business.walletId = wallet._id;
       await business.save();
@@ -66,20 +66,19 @@ router.post("/", auth, async (req, res) => {
 });
 
 /**
- * 🔒 GET MY BUSINESS (READ-ONLY)
+ * GET MY BUSINESS
  */
 router.get("/me", auth, async (req, res) => {
   try {
     const userId = req.user.user;
-
     const business = await Business.findOne({ owner: userId });
+
     if (!business) {
       return res.status(404).json({ message: "Business not found" });
     }
 
     res.json(business);
   } catch (err) {
-    console.error("❌ Get business error:", err.message);
     res.status(500).json({ message: "Failed to fetch business" });
   }
 });
