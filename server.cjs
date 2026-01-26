@@ -25,6 +25,9 @@ app.use("/api/stats", require("./routes/stats"));
 app.use("/api/payments", require("./routes/payments.wallet.routes"));
 app.use("/api/receipts", require("./routes/receipt.routes"));
 
+/* 🤖 AI ACTION ROUTES */
+app.use("/api/ai", require("./routes/ai"));
+
 /* 🔐 ADMIN ROUTES (MOCK WALLET CREDIT) */
 app.use("/api/admin", require("./routes/admin.wallet"));
 
