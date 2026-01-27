@@ -17,8 +17,7 @@ router.post("/", auth, async (req, res) => {
       return res.status(400).json({ message: "User has no business" });
     }
 
-    // ================= ADD PRODUCT =================
-    // add product sugar 120
+    /* ================= ADD PRODUCT ================= */
     if (text.startsWith("add product")) {
       const parts = text.replace("add product", "").trim().split(" ");
       const price = Number(parts.pop());
@@ -38,8 +37,7 @@ router.post("/", auth, async (req, res) => {
       return res.json({ action: "ADD_PRODUCT", product });
     }
 
-    // ================= SELL (AI POS) =================
-    // sell sugar 2
+    /* ================= SELL (AI POS) ================= */
     if (text.startsWith("sell")) {
       const parts = text.replace("sell", "").trim().split(" ");
       const quantity = Number(parts.pop());
@@ -61,7 +59,7 @@ router.post("/", auth, async (req, res) => {
       const totalAmount = product.price * quantity;
 
       const order = await Order.create({
-        owner: userId,                 // ✅ REQUIRED FIELD (FIX)
+        owner: userId,
         business: business._id,
         items: [
           {
@@ -72,19 +70,21 @@ router.post("/", auth, async (req, res) => {
           }
         ],
         totalAmount,
+        status: "COMPLETED",
+        paymentMethod: "CASH",
+        currency: "KES",
         source: "AI",
         createdBy: userId
       });
 
       return res.json({
         action: "SELL",
-        order,
+        orderId: order._id,
         totalAmount
       });
     }
 
-    // ================= ADD CUSTOMER =================
-    // add customer john 0706...
+    /* ================= ADD CUSTOMER ================= */
     if (text.startsWith("add customer")) {
       const parts = text.replace("add customer", "").trim().split(" ");
       const phone = parts.pop();
