@@ -3,7 +3,7 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 
 const Product = require("../models/Product");
-const Sale = require("../models/Sale");
+const Order = require("../models/Order");
 const Customer = require("../models/Customer");
 const Business = require("../models/Business");
 
@@ -37,11 +37,15 @@ router.post("/", auth, async (req, res) => {
       return res.json({ action: "ADD_PRODUCT", product });
     }
 
-    // SELL: sell sugar 2
+    // SELL: sell sugar 2  ✅ FIXED
     if (text.startsWith("sell")) {
       const parts = text.replace("sell", "").trim().split(" ");
-      const qty = Number(parts.pop());
+      const quantity = Number(parts.pop());
       const name = parts.join(" ");
+
+      if (!name || !quantity || quantity <= 0) {
+        return res.status(400).json({ message: "Invalid sell command" });
+      }
 
       const product = await Product.findOne({
         name: new RegExp(`^${name}$`, "i"),
@@ -52,20 +56,27 @@ router.post("/", auth, async (req, res) => {
         return res.status(404).json({ message: "Product not found" });
       }
 
-      const amount = product.price * qty;
+      const totalAmount = product.price * quantity;
 
-      const sale = await Sale.create({
-        amount,
-        owner: userId,
-        business: business._id
+      const order = await Order.create({
+        business: business._id,
+        items: [
+          {
+            product: product._id,
+            name: product.name,
+            price: product.price,
+            quantity
+          }
+        ],
+        totalAmount,
+        source: "AI",
+        createdBy: userId
       });
 
       return res.json({
         action: "SELL",
-        product: product.name,
-        quantity: qty,
-        amount,
-        sale
+        order,
+        totalAmount
       });
     }
 
