@@ -92,7 +92,7 @@ router.post("/", auth, async (req, res) => {
         paidAt: new Date()
       });
 
-      // ✅ SALE (THIS FIXES DASHBOARD & SALES TAB)
+      // ✅ SALE (already working)
       const sale = await Sale.create({
         business: business._id,
         owner: userId,
@@ -101,11 +101,16 @@ router.post("/", auth, async (req, res) => {
         orderId: order._id
       });
 
+      // 💰 CREDIT BUSINESS WALLET (ADDED)
+      wallet.balance += lineTotal;
+      await wallet.save();
+
       return res.json({
         action: "SELL",
         orderId: order._id,
         saleId: sale._id,
-        total: lineTotal
+        total: lineTotal,
+        walletBalance: wallet.balance
       });
     }
 
