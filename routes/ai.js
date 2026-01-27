@@ -6,6 +6,7 @@ const Product = require("../models/Product");
 const Order = require("../models/Order");
 const Customer = require("../models/Customer");
 const Business = require("../models/Business");
+const Wallet = require("../models/Wallet");
 
 router.post("/", auth, async (req, res) => {
   try {
@@ -15,6 +16,15 @@ router.post("/", auth, async (req, res) => {
     const business = await Business.findOne({ owner: userId });
     if (!business) {
       return res.status(400).json({ message: "User has no business" });
+    }
+
+    const wallet = await Wallet.findOne({
+      owner: business._id,
+      ownerType: "BUSINESS"
+    });
+
+    if (!wallet) {
+      return res.status(400).json({ message: "Business wallet missing" });
     }
 
     /* ================= ADD PRODUCT ================= */
@@ -40,10 +50,10 @@ router.post("/", auth, async (req, res) => {
     /* ================= SELL (AI POS) ================= */
     if (text.startsWith("sell")) {
       const parts = text.replace("sell", "").trim().split(" ");
-      const quantity = Number(parts.pop());
+      const qty = Number(parts.pop());
       const name = parts.join(" ");
 
-      if (!name || !quantity || quantity <= 0) {
+      if (!name || !qty || qty <= 0) {
         return res.status(400).json({ message: "Invalid sell command" });
       }
 
@@ -56,31 +66,35 @@ router.post("/", auth, async (req, res) => {
         return res.status(404).json({ message: "Product not found" });
       }
 
-      const totalAmount = product.price * quantity;
+      const lineTotal = product.price * qty;
 
       const order = await Order.create({
-        owner: userId,
         business: business._id,
+        businessWalletId: wallet._id,
+
+        // POS walk-in customer (seller)
+        customerUserId: userId,
+        customerPhone: "POS-WALKIN",
+
         items: [
           {
             product: product._id,
             name: product.name,
             price: product.price,
-            quantity
+            qty,
+            lineTotal
           }
         ],
-        totalAmount,
-        status: "COMPLETED",
-        paymentMethod: "CASH",
-        currency: "KES",
-        source: "AI",
-        createdBy: userId
+
+        total: lineTotal,
+        status: "PAID",
+        paidAt: new Date()
       });
 
       return res.json({
         action: "SELL",
         orderId: order._id,
-        totalAmount
+        total: lineTotal
       });
     }
 
@@ -107,7 +121,7 @@ router.post("/", auth, async (req, res) => {
     return res.status(400).json({ message: "Unknown AI command" });
 
   } catch (err) {
-    console.error("AI error:", err);
+    console.error("AI error FULL:", err);
     res.status(500).json({ message: "AI execution failed" });
   }
 });
