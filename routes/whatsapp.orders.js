@@ -7,6 +7,9 @@ const Order = require("../models/Order");
 // Simple in-memory session (OK for MVP)
 const lastOrderBySender = {};
 
+// =====================
+// WHATSAPP MESSAGE HANDLER
+// =====================
 router.post("/message", async (req, res) => {
   try {
     const { text, sender } = req.body;
@@ -17,7 +20,9 @@ router.post("/message", async (req, res) => {
 
     const message = text.trim().toLowerCase();
 
-    /* ================= PAY ================= */
+    // =====================
+    // PAY COMMAND
+    // =====================
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
 
@@ -29,70 +34,68 @@ router.post("/message", async (req, res) => {
 
       return res.json({
         reply:
-          "💳 Payment coming soon.\n\n" +
-          "Vendor will confirm your payment.\n" +
-          "You will receive a receipt.",
+          "💳 Payment initiated.\n\n" +
+          "Complete payment on your phone.\n" +
+          "You will receive a receipt shortly.",
         orderId,
       });
     }
 
-    /* ================= BUY ================= */
+    // =====================
+    // BUY COMMAND
+    // =====================
     const parts = message.split(/\s+/);
+
     if (parts[0] !== "buy") {
       return res.json({
-        reply: "❌ Invalid command.\nUse: Buy <product> <qty>",
+        reply: "❌ Invalid command.\nUse: Buy <product> <qty> or PAY",
       });
     }
 
     const qty = parseInt(parts.pop(), 10);
-    if (!qty || qty <= 0) {
+    if (isNaN(qty) || qty <= 0) {
       return res.json({ reply: "❌ Invalid quantity" });
     }
 
-    const name = parts.slice(1).join(" ");
+    const keywords = parts.slice(1).join(" ");
 
     const product = await Product.findOne({
-      name: { $regex: name, $options: "i" },
+      name: { $regex: keywords, $options: "i" },
     });
 
     if (!product) {
       return res.json({ reply: "❌ Product not found" });
     }
 
-    const total = product.price * qty;
-
     const order = await Order.create({
       business: product.business,
-      customerUserId: null,
-      customerPhone: sender,
       items: [
         {
           product: product._id,
           name: product.name,
           price: product.price,
           qty,
-          lineTotal: total,
+          lineTotal: product.price * qty,
         },
       ],
-      total,
+      total: product.price * qty,
       status: "UNPAID",
-      source: "WHATSAPP",
     });
 
     lastOrderBySender[sender] = order._id.toString();
 
-    return res.json({
+    res.json({
       reply:
-        `🛒 Order received!\n\n` +
+        `🛒 Order created!\n\n` +
         `Product: ${product.name}\n` +
         `Qty: ${qty}\n` +
-        `Total: KES ${total}\n\n` +
-        `💬 Vendor will guide you to pay.`,
+        `Total: KES ${order.total}\n\n` +
+        `💳 Reply PAY to complete payment.`,
       orderId: order._id,
     });
   } catch (err) {
-    console.error("WhatsApp ORDER error:", err.message);
-    return res.json({ reply: "⚠️ Server error" });
+    console.error("WhatsApp error FULL:", err);
+    res.json({ reply: "⚠️ Server error" });
   }
 });
 
