@@ -18,6 +18,39 @@ router.get("/__debug_wallet_routes", (req, res) => {
 });
 
 /**
+ * ✅ FRONTEND COMPATIBILITY ROUTE (ADDED)
+ * GET /api/wallet
+ * Internally behaves like /balance
+ */
+router.get("/", auth, async (req, res) => {
+  try {
+    const businessId = req.user.business;
+
+    if (!businessId) {
+      return res.status(400).json({ message: "User has no business" });
+    }
+
+    const wallet = await Wallet.findOne({
+      owner: businessId,
+      ownerType: "BUSINESS"
+    });
+
+    if (!wallet) {
+      return res.status(404).json({ message: "Business wallet not found" });
+    }
+
+    res.json({
+      walletId: wallet._id,
+      balance: wallet.balance,
+      currency: wallet.currency
+    });
+  } catch (err) {
+    console.error("❌ Wallet root fetch error:", err.message);
+    res.status(500).json({ message: "Failed to fetch wallet" });
+  }
+});
+
+/**
  * 🏢 GET BUSINESS WALLET BALANCE (SECURE)
  * Uses businessId directly from JWT payload
  */
