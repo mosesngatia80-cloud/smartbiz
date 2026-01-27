@@ -4,6 +4,7 @@ const auth = require("../middleware/auth");
 
 const Product = require("../models/Product");
 const Order = require("../models/Order");
+const Sale = require("../models/Sale"); // ✅ ADDED
 const Customer = require("../models/Customer");
 const Business = require("../models/Business");
 const Wallet = require("../models/Wallet");
@@ -68,11 +69,11 @@ router.post("/", auth, async (req, res) => {
 
       const lineTotal = product.price * qty;
 
+      // ✅ ORDER (already working)
       const order = await Order.create({
         business: business._id,
         businessWalletId: wallet._id,
 
-        // POS walk-in customer (seller)
         customerUserId: userId,
         customerPhone: "POS-WALKIN",
 
@@ -91,9 +92,19 @@ router.post("/", auth, async (req, res) => {
         paidAt: new Date()
       });
 
+      // ✅ SALE (THIS FIXES DASHBOARD & SALES TAB)
+      const sale = await Sale.create({
+        business: business._id,
+        owner: userId,
+        amount: lineTotal,
+        source: "AI",
+        orderId: order._id
+      });
+
       return res.json({
         action: "SELL",
         orderId: order._id,
+        saleId: sale._id,
         total: lineTotal
       });
     }
