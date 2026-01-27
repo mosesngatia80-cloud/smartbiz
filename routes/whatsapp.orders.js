@@ -3,6 +3,9 @@ const router = express.Router();
 
 const Product = require("../models/Product");
 const Order = require("../models/Order");
+const Sale = require("../models/Sale");
+const Wallet = require("../models/Wallet");
+const Business = require("../models/Business");
 
 // Simple in-memory session (OK for MVP)
 const lastOrderBySender = {};
@@ -21,7 +24,7 @@ router.post("/message", async (req, res) => {
     const message = text.trim().toLowerCase();
 
     // =====================
-    // PAY COMMAND
+    // PAY COMMAND (REAL PAYMENT LOGIC)
     // =====================
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
@@ -32,12 +35,47 @@ router.post("/message", async (req, res) => {
         });
       }
 
+      const order = await Order.findById(orderId);
+      if (!order || order.status === "PAID") {
+        return res.json({ reply: "⚠️ Order already paid or invalid." });
+      }
+
+      const business = await Business.findById(order.business);
+      const wallet = await Wallet.findOne({
+        owner: business._id,
+        ownerType: "BUSINESS",
+      });
+
+      if (!wallet) {
+        return res.json({ reply: "❌ Business wallet not found." });
+      }
+
+      // ✅ Mark order as PAID
+      order.status = "PAID";
+      order.paidAt = new Date();
+      await order.save();
+
+      // ✅ Create Sale
+      await Sale.create({
+        business: business._id,
+        owner: business.owner,
+        amount: order.total,
+        source: "WHATSAPP",
+        orderId: order._id,
+      });
+
+      // ✅ Credit wallet
+      wallet.balance += order.total;
+      await wallet.save();
+
+      delete lastOrderBySender[sender];
+
       return res.json({
         reply:
-          "💳 Payment initiated.\n\n" +
-          "Complete payment on your phone.\n" +
-          "You will receive a receipt shortly.",
-        orderId,
+          `✅ Payment successful!\n\n` +
+          `Order ID: ${order._id}\n` +
+          `Amount: KES ${order.total}\n\n` +
+          `💼 New Wallet Balance: KES ${wallet.balance}`,
       });
     }
 
@@ -63,7 +101,7 @@ router.post("/message", async (req, res) => {
       name: { $regex: keywords, $options: "i" },
     });
 
-    if (!product || product.stock < qty) {
+    if (!product) {
       return res.json({ reply: "❌ Product unavailable" });
     }
 
@@ -73,13 +111,15 @@ router.post("/message", async (req, res) => {
       items: [
         {
           product: product._id,
-          qty,
+          name: product.name,
           price: product.price,
+          qty,
+          lineTotal: product.price * qty,
         },
       ],
       total: product.price * qty,
-      paymentMethod: "wallet",
-      status: "pending",
+      status: "PENDING",
+      paymentMethod: "WALLET",
     });
 
     lastOrderBySender[sender] = order._id.toString();
