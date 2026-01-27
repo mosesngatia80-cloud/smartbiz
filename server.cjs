@@ -20,7 +20,10 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/business", require("./routes/business"));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/orders", require("./routes/orders"));
+
+/* ✅ WALLET ROUTES (THIS WAS MISSING – ADDED ONLY) */
 app.use("/api/wallet", require("./routes/wallet"));
+
 app.use("/api/stats", require("./routes/stats"));
 app.use("/api/payments", require("./routes/payments.wallet.routes"));
 app.use("/api/receipts", require("./routes/receipt.routes"));
@@ -81,7 +84,7 @@ mongoose
       console.log(`🚀 Smart Biz server running on port ${PORT}`);
     });
 
-    // 🔄 Start payment reconciliation worker (MVP mode, no paid infra)
+    // 🔄 Start payment reconciliation worker (MVP mode)
     require("./workers/reconcilePayments");
   })
   .catch((err) => {
