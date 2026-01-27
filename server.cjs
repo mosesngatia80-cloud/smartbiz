@@ -21,7 +21,7 @@ app.use("/api/business", require("./routes/business"));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/orders", require("./routes/orders"));
 
-/* ✅ WALLET ROUTES (THIS WAS MISSING – ADDED ONLY) */
+/* ✅ WALLET ROUTES */
 app.use("/api/wallet", require("./routes/wallet"));
 
 app.use("/api/stats", require("./routes/stats"));
@@ -31,7 +31,10 @@ app.use("/api/receipts", require("./routes/receipt.routes"));
 /* 🤖 AI ACTION ROUTES */
 app.use("/api/ai", require("./routes/ai"));
 
-/* 🔐 ADMIN ROUTES (MOCK WALLET CREDIT) */
+/* 📲 WHATSAPP CUSTOMER ORDERS (ADDED ONLY) */
+app.use("/api/whatsapp", require("./routes/whatsapp.orders"));
+
+/* 🔐 ADMIN ROUTES */
 app.use("/api/admin", require("./routes/admin.wallet"));
 
 /* 🔒 INTERNAL ROUTES (SMART CONNECT) */
@@ -39,7 +42,7 @@ app.use("/api/internal", require("./routes/internal.wallet"));
 app.use("/api/internal", require("./routes/internal.register"));
 app.use("/api/internal", require("./routes/internal.business.link"));
 
-/* 🧪 INTERNAL ENV DEBUG (TEMPORARY – SAFE) */
+/* 🧪 INTERNAL ENV DEBUG */
 app.get("/api/internal/__debug_env", (req, res) => {
   res.json({
     has_SMARTCONNECT_SECRET: !!process.env.SMARTCONNECT_SECRET,

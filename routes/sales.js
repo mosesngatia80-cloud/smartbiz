@@ -1,7 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/authMiddleware").default;
-const { createSale, getSales, getDailySummary } = require("../controllers/saleController");
+const {
+  createSale,
+  getSales,
+  getDailySummary,
+  getMonthlySummary
+} = require("../controllers/saleController");
 
 // Create a sale
 router.post("/", auth, createSale);
@@ -12,7 +17,7 @@ router.get("/", auth, getSales);
 // Dashboard daily summary
 router.get("/summary", auth, getDailySummary);
 
-module.exports = router;
-
 // Monthly summary
-router.get("/summary/monthly", auth, require("../controllers/saleController").getMonthlySummary);
+router.get("/summary/monthly", auth, getMonthlySummary);
+
+module.exports = router;

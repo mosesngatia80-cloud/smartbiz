@@ -42,6 +42,25 @@ router.get("/", verifyToken, async (req, res) => {
   }
 });
 
+// GET SINGLE CUSTOMER (ADDED BLOCK)
+router.get("/:id", verifyToken, async (req, res) => {
+  try {
+    const customer = await Customer.findOne({
+      _id: req.params.id,
+      owner: req.user._id
+    });
+
+    if (!customer) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    res.json({ customer });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // UPDATE CUSTOMER
 router.put("/:id", verifyToken, async (req, res) => {
   try {
