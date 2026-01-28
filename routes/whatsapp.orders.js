@@ -9,7 +9,7 @@ const Wallet = require("../models/Wallet");
  * 🔒 HARD-BINDED BUSINESS (MVP)
  * One WhatsApp number = One Business
  */
-const BUSINESS_ID = "6977c2df702c04b921141a40";
+const BUSINESS_ID = "6977a75f31747055b1f1f60b";
 
 // In-memory session (MVP)
 const lastOrderBySender = {};
@@ -28,7 +28,7 @@ router.post("/message", async (req, res) => {
     const message = text.trim().toLowerCase();
 
     // =====================
-    // LOAD BUSINESS WALLET (SOURCE OF TRUTH)
+    // LOAD BUSINESS WALLET
     // =====================
     const wallet = await Wallet.findOne({
       owner: BUSINESS_ID,
@@ -44,7 +44,6 @@ router.post("/message", async (req, res) => {
     // =====================
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
-
       if (!orderId) {
         return res.json({
           reply: "❌ No pending order. Send: Buy <product> <qty>",
@@ -64,7 +63,6 @@ router.post("/message", async (req, res) => {
     // BUY COMMAND
     // =====================
     const parts = message.split(/\s+/);
-
     if (parts[0] !== "buy") {
       return res.json({
         reply: "❌ Invalid command.\nUse: Buy <product> <qty>",
@@ -94,15 +92,13 @@ router.post("/message", async (req, res) => {
       businessWalletId: wallet._id,
       customerUserId: null,
       customerPhone: sender,
-      items: [
-        {
-          product: product._id,
-          name: product.name,
-          price: product.price,
-          qty,
-          lineTotal: total,
-        },
-      ],
+      items: [{
+        product: product._id,
+        name: product.name,
+        price: product.price,
+        qty,
+        lineTotal: total,
+      }],
       total,
       status: "UNPAID",
     });
