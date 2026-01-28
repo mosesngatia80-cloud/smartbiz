@@ -27,7 +27,6 @@ router.post("/message", async (req, res) => {
     // =====================
     let wallet = await Wallet.findOne({ ownerType: "BUSINESS" });
 
-    // Auto-create wallet if missing (MVP safety)
     if (!wallet) {
       const business = await Business.findOne();
       if (!business) {
@@ -45,19 +44,38 @@ router.post("/message", async (req, res) => {
     const businessId = wallet.owner;
 
     // =====================
-    // PAY
+    // PAY (UPDATED ONLY)
     // =====================
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
+
       if (!orderId) {
         return res.json({
           reply: "❌ No pending order. Send: Buy <product> <qty>",
         });
       }
 
+      const order = await Order.findById(orderId);
+      if (!order || order.status !== "UNPAID") {
+        return res.json({ reply: "❌ Order not found or already paid" });
+      }
+
+      // Credit wallet
+      wallet.balance += order.total;
+      await wallet.save();
+
+      // Mark order paid
+      order.status = "PAID";
+      order.paidAt = new Date();
+      await order.save();
+
       return res.json({
-        reply: "💳 Payment initiated. Complete on your phone.",
-        orderId,
+        reply:
+          "✅ Payment successful!\n\n" +
+          "Your order is confirmed.\n" +
+          "Thank you for shopping with us 🙏",
+        orderId: order._id,
+        walletBalance: wallet.balance,
       });
     }
 
@@ -112,7 +130,7 @@ router.post("/message", async (req, res) => {
         `🛒 Order created\n` +
         `${product.name} × ${qty}\n` +
         `Total: KES ${total}\n\n` +
-        `Reply PAY to continue`,
+        `Reply PAY to complete payment`,
       orderId: order._id,
     });
 
