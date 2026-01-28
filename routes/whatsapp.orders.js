@@ -9,6 +9,9 @@ const Business = require("../models/Business");
 // In-memory session (MVP)
 const lastOrderBySender = {};
 
+// =====================
+// WHATSAPP MESSAGE HANDLER (OPTION A)
+// =====================
 router.post("/message", async (req, res) => {
   try {
     const { text, sender } = req.body;
@@ -19,59 +22,56 @@ router.post("/message", async (req, res) => {
 
     const message = text.trim().toLowerCase();
 
-    let wallet = await Wallet.findOne({ ownerType: "BUSINESS" });
-
-    if (!wallet) {
-      const business = await Business.findOne();
-      if (!business) {
-        return res.json({ reply: "❌ Business not configured" });
-      }
-
-      wallet = await Wallet.create({
-        owner: business._id,
-        ownerType: "BUSINESS",
-        balance: 0,
-        currency: "KES",
-      });
+    // 🔒 OPTION A: ONE WHATSAPP = ONE BUSINESS
+    const business = await Business.findOne();
+    if (!business) {
+      return res.json({ reply: "❌ Business not configured" });
     }
 
-    const businessId = wallet.owner;
+    const wallet = await Wallet.findOne({
+      owner: business._id,
+      ownerType: "BUSINESS",
+    });
 
+    if (!wallet) {
+      return res.json({ reply: "❌ Business wallet missing" });
+    }
+
+    // =====================
+    // PAY COMMAND
+    // =====================
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
       if (!orderId) {
-        return res.json({ reply: "❌ No pending order" });
+        return res.json({
+          reply: "❌ No pending order. Send: Buy <product> <qty>",
+        });
       }
-
-      const order = await Order.findById(orderId);
-      if (!order || order.status !== "UNPAID") {
-        return res.json({ reply: "❌ Order not valid" });
-      }
-
-      wallet.balance += order.total;
-      await wallet.save();
-
-      order.status = "PAID";
-      order.paidAt = new Date();
-      await order.save();
 
       return res.json({
-        reply: "✅ Payment successful. Thank you!",
-        orderId: order._id,
+        reply: "💳 Payment initiated. Complete on your phone.",
+        orderId,
       });
     }
 
+    // =====================
+    // BUY COMMAND
+    // =====================
     const parts = message.split(/\s+/);
     if (parts[0] !== "buy") {
       return res.json({ reply: "❌ Use: Buy <product> <qty>" });
     }
 
     const qty = parseInt(parts.pop(), 10);
-    const keywords = parts.slice(1).join(" ");
+    if (!qty || qty <= 0) {
+      return res.json({ reply: "❌ Invalid quantity" });
+    }
+
+    const productName = parts.slice(1).join(" ");
 
     const product = await Product.findOne({
-      name: { $regex: keywords, $options: "i" },
-      business: businessId,
+      name: { $regex: `^${productName}$`, $options: "i" },
+      business: business._id,
     });
 
     if (!product) {
@@ -81,16 +81,19 @@ router.post("/message", async (req, res) => {
     const total = product.price * qty;
 
     const order = await Order.create({
-      business: businessId,
+      business: business._id,
       businessWalletId: wallet._id,
+      customerUserId: null,
       customerPhone: sender,
-      items: [{
-        product: product._id,
-        name: product.name,
-        price: product.price,
-        qty,
-        lineTotal: total,
-      }],
+      items: [
+        {
+          product: product._id,
+          name: product.name,
+          price: product.price,
+          qty,
+          lineTotal: total,
+        },
+      ],
       total,
       status: "UNPAID",
     });
@@ -98,12 +101,16 @@ router.post("/message", async (req, res) => {
     lastOrderBySender[sender] = order._id.toString();
 
     return res.json({
-      reply: `🛒 Order created\n${product.name} × ${qty}\nKES ${total}\nReply PAY`,
+      reply:
+        `🛒 Order created\n` +
+        `${product.name} × ${qty}\n` +
+        `Total: KES ${total}\n\n` +
+        `Reply PAY to continue`,
       orderId: order._id,
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("WhatsApp error:", err);
     return res.json({ reply: "⚠️ Server error" });
   }
 });
