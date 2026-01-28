@@ -23,21 +23,26 @@ router.post("/message", async (req, res) => {
     const message = text.trim().toLowerCase();
 
     // =====================
-    // RESOLVE BUSINESS (MVP: ONE BUSINESS)
+    // RESOLVE BUSINESS WALLET (SOURCE OF TRUTH)
     // =====================
-    const business = await Business.findOne();
-    if (!business) {
-      return res.json({ reply: "❌ Business not configured" });
-    }
+    let wallet = await Wallet.findOne({ ownerType: "BUSINESS" });
 
-    const wallet = await Wallet.findOne({
-      owner: business._id,
-      ownerType: "BUSINESS",
-    });
-
+    // Auto-create wallet if missing (MVP safety)
     if (!wallet) {
-      return res.json({ reply: "❌ Business wallet missing" });
+      const business = await Business.findOne();
+      if (!business) {
+        return res.json({ reply: "❌ Business not configured" });
+      }
+
+      wallet = await Wallet.create({
+        owner: business._id,
+        ownerType: "BUSINESS",
+        balance: 0,
+        currency: "KES",
+      });
     }
+
+    const businessId = wallet.owner;
 
     // =====================
     // PAY
@@ -73,7 +78,7 @@ router.post("/message", async (req, res) => {
 
     const product = await Product.findOne({
       name: { $regex: keywords, $options: "i" },
-      business: business._id,
+      business: businessId,
     });
 
     if (!product) {
@@ -83,7 +88,7 @@ router.post("/message", async (req, res) => {
     const total = product.price * qty;
 
     const order = await Order.create({
-      business: business._id,
+      business: businessId,
       businessWalletId: wallet._id,
       customerUserId: null,
       customerPhone: sender,
