@@ -10,7 +10,7 @@ const Business = require("../models/Business");
  * 🔒 HARD-BINDED BUSINESS (MVP)
  * One WhatsApp number = One Business
  */
-const BUSINESS_ID = "6977a75f31747055b1f1f60b";
+const BUSINESS_ID = "6977c2df702c04b921141a40";
 
 // In-memory session (MVP)
 const lastOrderBySender = {};
