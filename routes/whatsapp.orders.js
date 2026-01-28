@@ -4,13 +4,12 @@ const router = express.Router();
 const Product = require("../models/Product");
 const Order = require("../models/Order");
 const Wallet = require("../models/Wallet");
-const Business = require("../models/Business");
 
 // In-memory session (MVP)
 const lastOrderBySender = {};
 
 // =====================
-// WHATSAPP MESSAGE HANDLER (OPTION A)
+// WHATSAPP MESSAGE HANDLER (OPTION A - WALLET IS SOURCE OF TRUTH)
 // =====================
 router.post("/message", async (req, res) => {
   try {
@@ -22,20 +21,13 @@ router.post("/message", async (req, res) => {
 
     const message = text.trim().toLowerCase();
 
-    // 🔒 OPTION A: ONE WHATSAPP = ONE BUSINESS
-    const business = await Business.findOne();
-    if (!business) {
-      return res.json({ reply: "❌ Business not configured" });
-    }
-
-    const wallet = await Wallet.findOne({
-      owner: business._id,
-      ownerType: "BUSINESS",
-    });
-
+    // ✅ PICK BUSINESS VIA WALLET (GUARANTEED)
+    const wallet = await Wallet.findOne({ ownerType: "BUSINESS" });
     if (!wallet) {
       return res.json({ reply: "❌ Business wallet missing" });
     }
+
+    const businessId = wallet.owner;
 
     // =====================
     // PAY COMMAND
@@ -71,7 +63,7 @@ router.post("/message", async (req, res) => {
 
     const product = await Product.findOne({
       name: { $regex: `^${productName}$`, $options: "i" },
-      business: business._id,
+      business: businessId,
     });
 
     if (!product) {
@@ -81,7 +73,7 @@ router.post("/message", async (req, res) => {
     const total = product.price * qty;
 
     const order = await Order.create({
-      business: business._id,
+      business: businessId,
       businessWalletId: wallet._id,
       customerUserId: null,
       customerPhone: sender,
