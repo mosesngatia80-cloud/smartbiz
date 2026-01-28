@@ -4,7 +4,6 @@ const router = express.Router();
 const Product = require("../models/Product");
 const Order = require("../models/Order");
 const Wallet = require("../models/Wallet");
-const Business = require("../models/Business");
 
 /**
  * 🔒 HARD-BINDED BUSINESS (MVP)
@@ -29,15 +28,10 @@ router.post("/message", async (req, res) => {
     const message = text.trim().toLowerCase();
 
     // =====================
-    // LOAD BUSINESS (SOURCE OF TRUTH)
+    // LOAD BUSINESS WALLET (SOURCE OF TRUTH)
     // =====================
-    const business = await Business.findById(BUSINESS_ID);
-    if (!business) {
-      return res.json({ reply: "❌ Business not configured" });
-    }
-
     const wallet = await Wallet.findOne({
-      owner: business._id,
+      owner: BUSINESS_ID,
       ownerType: "BUSINESS",
     });
 
@@ -85,7 +79,7 @@ router.post("/message", async (req, res) => {
     const keywords = parts.slice(1).join(" ");
 
     const product = await Product.findOne({
-      business: business._id,
+      business: BUSINESS_ID,
       name: { $regex: keywords, $options: "i" },
     });
 
@@ -96,7 +90,7 @@ router.post("/message", async (req, res) => {
     const total = product.price * qty;
 
     const order = await Order.create({
-      business: business._id,
+      business: BUSINESS_ID,
       businessWalletId: wallet._id,
       customerUserId: null,
       customerPhone: sender,
@@ -125,7 +119,7 @@ router.post("/message", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("WhatsApp error FULL:", err);
+    console.error("❌ WhatsApp error FULL:", err);
     return res.json({ reply: "⚠️ Server error" });
   }
 });
