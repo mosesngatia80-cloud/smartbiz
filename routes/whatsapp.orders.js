@@ -3,20 +3,17 @@ const router = express.Router();
 
 const Product = require("../models/Product");
 const Order = require("../models/Order");
-const Wallet = require("../models/Wallet");
 
 /**
- * 🔒 HARD-BINDED BUSINESS (MVP)
- * One WhatsApp number = One Business
+ * ✅ MVP WHATSAPP ORDERS
+ * - No wallet dependency
+ * - No business guessing
+ * - Matches existing Order schema (same as AI)
  */
-const BUSINESS_ID = "6977a75f31747055b1f1f60b";
 
-// In-memory session (MVP)
+// In-memory session (OK for MVP)
 const lastOrderBySender = {};
 
-// =====================
-// WHATSAPP MESSAGE HANDLER
-// =====================
 router.post("/message", async (req, res) => {
   try {
     const { text, sender } = req.body;
@@ -27,21 +24,7 @@ router.post("/message", async (req, res) => {
 
     const message = text.trim().toLowerCase();
 
-    // =====================
-    // LOAD BUSINESS WALLET
-    // =====================
-    const wallet = await Wallet.findOne({
-      owner: BUSINESS_ID,
-      ownerType: "BUSINESS",
-    });
-
-    if (!wallet) {
-      return res.json({ reply: "❌ Business wallet missing" });
-    }
-
-    // =====================
-    // PAY COMMAND
-    // =====================
+    /* ================= PAY ================= */
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
       if (!orderId) {
@@ -59,25 +42,23 @@ router.post("/message", async (req, res) => {
       });
     }
 
-    // =====================
-    // BUY COMMAND
-    // =====================
+    /* ================= BUY ================= */
     const parts = message.split(/\s+/);
     if (parts[0] !== "buy") {
       return res.json({
-        reply: "❌ Invalid command.\nUse: Buy <product> <qty>",
+        reply: "❌ Use: Buy <product> <qty>",
       });
     }
 
-    const qty = parseInt(parts.pop(), 10);
+    const qty = Number(parts.pop());
     if (!qty || qty <= 0) {
       return res.json({ reply: "❌ Invalid quantity" });
     }
 
     const keywords = parts.slice(1).join(" ");
 
+    // 🔑 FIND PRODUCT (GLOBAL, MVP SAFE)
     const product = await Product.findOne({
-      business: BUSINESS_ID,
       name: { $regex: keywords, $options: "i" },
     });
 
@@ -87,18 +68,19 @@ router.post("/message", async (req, res) => {
 
     const total = product.price * qty;
 
+    // ✅ CREATE ORDER (SAME SHAPE AS AI ORDERS)
     const order = await Order.create({
-      business: BUSINESS_ID,
-      businessWalletId: wallet._id,
-      customerUserId: null,
+      business: product.business,
       customerPhone: sender,
-      items: [{
-        product: product._id,
-        name: product.name,
-        price: product.price,
-        qty,
-        lineTotal: total,
-      }],
+      items: [
+        {
+          product: product._id,
+          name: product.name,
+          price: product.price,
+          qty,
+          lineTotal: total,
+        },
+      ],
       total,
       status: "UNPAID",
     });
