@@ -2,21 +2,25 @@ const express = require("express");
 const router = express.Router();
 
 const Product = require("../models/Product");
-const Order = require("../models/Order"); // ✅ USE COMMONJS MODEL ONLY
+const Order   = require("../models/Order");
+const Wallet  = require("../models/Wallet");
 const Business = require("../models/Business");
-const Wallet = require("../models/Wallet");
 
 /**
- * MVP: One WhatsApp number = One Business
- * (Later this will be dynamic)
+ * 🔒 HARD-BINDED BUSINESS (MVP)
+ * One WhatsApp number = One Business
  */
 const BUSINESS_ID = "6977a75f31747055b1f1f60b";
 
-// In-memory pending orders per sender
+/**
+ * In-memory session store (MVP)
+ */
 const lastOrderBySender = {};
 
 /**
- * POST /api/whatsapp/message
+ * =====================
+ * WHATSAPP MESSAGE HANDLER
+ * =====================
  */
 router.post("/message", async (req, res) => {
   try {
@@ -28,16 +32,16 @@ router.post("/message", async (req, res) => {
 
     const message = text.trim().toLowerCase();
 
-    // 1️⃣ Load business
+    // Load business
     const business = await Business.findById(BUSINESS_ID);
     if (!business) {
       return res.json({ reply: "❌ Business not configured" });
     }
 
-    // 2️⃣ Load business wallet
+    // Load business wallet
     const wallet = await Wallet.findOne({
       owner: business._id,
-      ownerType: "BUSINESS",
+      ownerType: "BUSINESS"
     });
 
     if (!wallet) {
@@ -52,7 +56,7 @@ router.post("/message", async (req, res) => {
 
       if (!orderId) {
         return res.json({
-          reply: "❌ No pending order. Send: buy <product> <qty>",
+          reply: "❌ No pending order. Send: buy <product> <qty>"
         });
       }
 
@@ -61,7 +65,7 @@ router.post("/message", async (req, res) => {
           "💳 Payment initiated.\n" +
           "Complete payment on your phone.\n" +
           "You will receive confirmation shortly.",
-        orderId,
+        orderId
       });
     }
 
@@ -69,9 +73,10 @@ router.post("/message", async (req, res) => {
      * BUY COMMAND
      */
     const parts = message.split(/\s+/);
+
     if (parts[0] !== "buy") {
       return res.json({
-        reply: "❌ Use: buy <product> <qty>",
+        reply: "❌ Invalid command.\nUse: buy <product> <qty>"
       });
     }
 
@@ -80,14 +85,11 @@ router.post("/message", async (req, res) => {
       return res.json({ reply: "❌ Invalid quantity" });
     }
 
-    const productName = parts.slice(1).join(" ");
-    if (!productName) {
-      return res.json({ reply: "❌ Product name missing" });
-    }
+    const keywords = parts.slice(1).join(" ");
 
     const product = await Product.findOne({
       business: business._id,
-      name: { $regex: productName, $options: "i" },
+      name: { $regex: keywords, $options: "i" }
     });
 
     if (!product) {
@@ -98,7 +100,6 @@ router.post("/message", async (req, res) => {
 
     const order = await Order.create({
       business: business._id,
-      businessWalletId: wallet._id,
       customerPhone: sender,
       items: [
         {
@@ -106,11 +107,12 @@ router.post("/message", async (req, res) => {
           name: product.name,
           price: product.price,
           qty,
-          lineTotal: total,
-        },
+          lineTotal: total
+        }
       ],
       total,
-      status: "UNPAID",
+      status: "pending",
+      paymentMethod: "mpesa"
     });
 
     lastOrderBySender[sender] = order._id.toString();
@@ -121,11 +123,11 @@ router.post("/message", async (req, res) => {
         `${product.name} × ${qty}\n` +
         `Total: KES ${total}\n\n` +
         `Reply PAY to continue`,
-      orderId: order._id,
+      orderId: order._id
     });
 
   } catch (err) {
-    console.error("❌ WhatsApp Order Error:", err);
+    console.error("❌ WHATSAPP ORDER ERROR:", err);
     return res.json({ reply: "⚠️ Server error" });
   }
 });
