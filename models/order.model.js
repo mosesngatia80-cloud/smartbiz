@@ -42,4 +42,6 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Order", orderSchema);
+// ✅ PREVENT MODEL OVERWRITE (CRITICAL FIX)
+module.exports =
+  mongoose.models.Order || mongoose.model("Order", orderSchema);
