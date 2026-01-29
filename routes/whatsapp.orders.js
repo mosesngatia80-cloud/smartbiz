@@ -5,6 +5,7 @@ const Product  = require("../models/Product");
 const Order    = require("../models/Order");
 const Wallet   = require("../models/Wallet");
 const Business = require("../models/Business");
+const Customer = require("../models/Customer");
 
 /**
  * 🔒 HARD-BINDED BUSINESS (MVP)
@@ -32,25 +33,33 @@ router.post("/message", async (req, res) => {
 
     const message = text.trim().toLowerCase();
 
-    // Load business
+    /** =====================
+     * LOAD BUSINESS
+     * ===================== */
     const business = await Business.findById(BUSINESS_ID);
     if (!business) {
       return res.json({ reply: "❌ Business not configured" });
     }
 
-    // Load business wallet
-    const wallet = await Wallet.findOne({
-      owner: business._id,
-      ownerType: "BUSINESS"
+    /** =====================
+     * LOAD OR CREATE CUSTOMER (KEY FIX)
+     * ===================== */
+    let customer = await Customer.findOne({
+      phone: sender,
+      business: business._id
     });
 
-    if (!wallet) {
-      return res.json({ reply: "❌ Business wallet missing" });
+    if (!customer) {
+      customer = await Customer.create({
+        phone: sender,
+        business: business._id,
+        source: "WHATSAPP"
+      });
     }
 
-    /**
+    /** =====================
      * PAY COMMAND
-     */
+     * ===================== */
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
 
@@ -69,9 +78,9 @@ router.post("/message", async (req, res) => {
       });
     }
 
-    /**
+    /** =====================
      * BUY COMMAND
-     */
+     * ===================== */
     const parts = message.split(/\s+/);
 
     if (parts[0] !== "buy") {
@@ -98,14 +107,12 @@ router.post("/message", async (req, res) => {
 
     const total = product.price * qty;
 
-    /**
-     * ✅ FIXED ORDER CREATION (ALIGNED WITH models/Order.js)
-     */
+    /** =====================
+     * CREATE ORDER (FIXED)
+     * ===================== */
     const order = await Order.create({
       business: business._id,
-
-      // REQUIRED by Order.js
-      customer: null,
+      customer: customer._id,            // ✅ REQUIRED & VALID
       owner: business.owner || null,
 
       items: [
@@ -116,7 +123,7 @@ router.post("/message", async (req, res) => {
       ],
 
       status: "pending",
-      totalAmount: total,
+      totalAmount: total,                 // ✅ correct field
       paymentMethod: "mpesa"
     });
 
