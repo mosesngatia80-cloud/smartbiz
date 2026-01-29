@@ -8,20 +8,19 @@ const Business = require("../models/Business");
 
 /**
  * 🔒 HARD-BINDED BUSINESS (MVP)
- * One WhatsApp number = One Business
  */
 const BUSINESS_ID = "6977a75f31747055b1f1f60b";
 
 /**
- * In-memory session store (MVP)
+ * 👤 SYSTEM WHATSAPP GUEST USER (REQUIRED BY SCHEMA)
+ */
+const WHATSAPP_GUEST_USER_ID = "000000000000000000000001";
+
+/**
+ * In-memory session store
  */
 const lastOrderBySender = {};
 
-/**
- * =====================
- * WHATSAPP MESSAGE HANDLER
- * =====================
- */
 router.post("/message", async (req, res) => {
   try {
     const { sender, text } = req.body;
@@ -32,13 +31,11 @@ router.post("/message", async (req, res) => {
 
     const message = text.trim().toLowerCase();
 
-    // 1️⃣ Load business
     const business = await Business.findById(BUSINESS_ID);
     if (!business) {
       return res.json({ reply: "❌ Business not configured" });
     }
 
-    // 2️⃣ Load business wallet
     const wallet = await Wallet.findOne({
       owner: business._id,
       ownerType: "BUSINESS"
@@ -48,36 +45,25 @@ router.post("/message", async (req, res) => {
       return res.json({ reply: "❌ Business wallet missing" });
     }
 
-    /**
-     * PAY COMMAND
-     */
+    // PAY COMMAND
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
-
       if (!orderId) {
-        return res.json({
-          reply: "❌ No pending order. Send: buy <product> <qty>"
-        });
+        return res.json({ reply: "❌ No pending order" });
       }
 
       return res.json({
         reply:
           "💳 Payment initiated.\n" +
-          "Complete payment on your phone.\n" +
-          "You will receive confirmation shortly.",
+          "Complete payment on your phone.",
         orderId
       });
     }
 
-    /**
-     * BUY COMMAND
-     */
+    // BUY COMMAND
     const parts = message.split(/\s+/);
-
     if (parts[0] !== "buy") {
-      return res.json({
-        reply: "❌ Invalid command.\nUse: buy <product> <qty>"
-      });
+      return res.json({ reply: "❌ Use: buy <product> <qty>" });
     }
 
     const qty = parseInt(parts.pop(), 10);
@@ -98,11 +84,10 @@ router.post("/message", async (req, res) => {
 
     const total = product.price * qty;
 
-    // ✅ CREATE ORDER — MATCHES Order SCHEMA EXACTLY
     const order = await Order.create({
       business: business._id,
       businessWalletId: wallet._id,
-      customerUserId: null,
+      customerUserId: WHATSAPP_GUEST_USER_ID,
       customerPhone: sender,
       items: [
         {
@@ -110,7 +95,7 @@ router.post("/message", async (req, res) => {
           quantity: qty
         }
       ],
-      total: total,
+      total,
       status: "UNPAID"
     });
 
@@ -127,9 +112,7 @@ router.post("/message", async (req, res) => {
 
   } catch (err) {
     console.error("❌ WHATSAPP ORDER ERROR:", err.message);
-    return res.json({
-      reply: "❌ ERROR: " + err.message
-    });
+    return res.json({ reply: "❌ ERROR: " + err.message });
   }
 });
 
