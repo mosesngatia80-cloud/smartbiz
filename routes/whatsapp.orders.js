@@ -127,7 +127,8 @@ router.post("/message", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ WHATSAPP ORDER ERROR:", err);
+    // ✅ THIS IS THE ONLY ADDITION
+    console.error("❌ WHATSAPP ORDER ERROR:", err.message);
     return res.json({ reply: "⚠️ Server error" });
   }
 });
