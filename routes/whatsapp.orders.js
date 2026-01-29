@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
-const Product = require("../models/Product");
-const Order   = require("../models/Order");
-const Wallet  = require("../models/Wallet");
+const Product  = require("../models/Product");
+const Order    = require("../models/Order");
+const Wallet   = require("../models/Wallet");
 const Business = require("../models/Business");
 
 /**
@@ -98,20 +98,25 @@ router.post("/message", async (req, res) => {
 
     const total = product.price * qty;
 
+    /**
+     * ✅ FIXED ORDER CREATION (ALIGNED WITH models/Order.js)
+     */
     const order = await Order.create({
       business: business._id,
-      customerPhone: sender,
+
+      // REQUIRED by Order.js
+      customer: null,
+      owner: business.owner || null,
+
       items: [
         {
           product: product._id,
-          name: product.name,
-          price: product.price,
-          qty,
-          lineTotal: total
+          quantity: qty
         }
       ],
-      total,
+
       status: "pending",
+      totalAmount: total,
       paymentMethod: "mpesa"
     });
 
@@ -127,7 +132,6 @@ router.post("/message", async (req, res) => {
     });
 
   } catch (err) {
-    // ✅ THIS IS THE ONLY ADDITION
     console.error("❌ WHATSAPP ORDER ERROR:", err.message);
     return res.json({ reply: "⚠️ Server error" });
   }
