@@ -1,27 +1,36 @@
 const express = require("express");
-const fetch = require("node-fetch");
+const jwt = require("jsonwebtoken");
+
 const Product = require("../models/Product");
+const Order = require("../models/Order");
+const Wallet = require("../models/Wallet");
+const Business = require("../models/Business");
 
 const router = express.Router();
 
 /**
- * CONFIG (MVP – single business)
+ * 🔒 HARD-BINDED BUSINESS (MVP)
+ * One WhatsApp number = One Business
  */
-const SMART_BIZ_API = process.env.SMART_BIZ_API;
-const SMART_CONNECT_JWT = process.env.SMART_CONNECT_JWT;
-const BUSINESS_ID = process.env.BUSINESS_ID;
+const BUSINESS_ID = "6977a75f31747055b1f1f60b";
 
-/**
- * In-memory session:
- * sender -> last order id
- */
+// In-memory session (MVP)
 const lastOrderBySender = {};
 
 /**
- * ===========================
- * WHATSAPP MESSAGE HANDLER
- * ===========================
+ * INTERNAL SERVICE TOKEN (Smart Connect → Smart Biz)
  */
+function getServiceToken() {
+  return jwt.sign(
+    { id: BUSINESS_ID },
+    process.env.JWT_SECRET || "navuSmartBizSecretKey2025",
+    { expiresIn: "5m" }
+  );
+}
+
+/* =========================
+   WHATSAPP MESSAGE HANDLER
+   ========================= */
 router.post("/message", async (req, res) => {
   try {
     const { text, sender } = req.body;
@@ -32,14 +41,32 @@ router.post("/message", async (req, res) => {
 
     const message = text.trim().toLowerCase();
 
+    // 1️⃣ Load business
+    const business = await Business.findById(BUSINESS_ID);
+    if (!business) {
+      return res.json({ reply: "❌ Business not configured" });
+    }
+
+    // 2️⃣ Ensure business wallet exists
+    let wallet = await Wallet.findOne({
+      owner: business._id,
+      ownerType: "BUSINESS"
+    });
+
+    if (!wallet) {
+      wallet = await Wallet.create({
+        owner: business._id,
+        ownerType: "BUSINESS",
+        balance: 0,
+        currency: "KES"
+      });
+    }
+
     /**
-     * =====================
      * PAY COMMAND
-     * =====================
      */
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
-
       if (!orderId) {
         return res.json({
           reply: "❌ No pending order. Send: Buy <product> <qty>"
@@ -48,22 +75,19 @@ router.post("/message", async (req, res) => {
 
       return res.json({
         reply:
-          "💳 Payment started.\n" +
-          "Complete payment on your phone.\n" +
-          "You will receive confirmation shortly."
+          "💳 Payment initiated.\n" +
+          "Complete payment on your phone.",
+        orderId
       });
     }
 
     /**
-     * =====================
      * BUY COMMAND
-     * =====================
      */
     const parts = message.split(/\s+/);
-
     if (parts[0] !== "buy") {
       return res.json({
-        reply: "❌ Invalid command.\nUse: Buy <product> <qty>"
+        reply: "❌ Use: Buy <product> <qty>"
       });
     }
 
@@ -74,11 +98,8 @@ router.post("/message", async (req, res) => {
 
     const keywords = parts.slice(1).join(" ");
 
-    /**
-     * Find product (vendor-managed)
-     */
     const product = await Product.findOne({
-      business: BUSINESS_ID,
+      business: business._id,
       name: { $regex: keywords, $options: "i" }
     });
 
@@ -89,48 +110,47 @@ router.post("/message", async (req, res) => {
     const total = product.price * qty;
 
     /**
-     * =====================
-     * CREATE ORDER VIA API
-     * =====================
-     * 🔒 SAME PATH AS DASHBOARD
+     * CREATE ORDER IN SMART BIZ
      */
-    const orderRes = await fetch(`${SMART_BIZ_API}/api/orders`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${SMART_CONNECT_JWT}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        business: BUSINESS_ID,
-        items: [
-          {
-            product: product._id,
-            qty
-          }
-        ],
-        total
-      })
-    });
+    const response = await fetch(
+      `${process.env.SMART_BIZ_URL}/api/orders`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getServiceToken()}`
+        },
+        body: JSON.stringify({
+          business: business._id,
+          items: [
+            {
+              product: product._id,
+              quantity: qty
+            }
+          ],
+          total
+        })
+      }
+    );
 
-    if (!orderRes.ok) {
-      console.error("Order API error:", await orderRes.text());
-      return res.json({ reply: "⚠️ Failed to create order" });
+    if (!response.ok) {
+      throw new Error("Failed to create order in Smart Biz");
     }
 
-    const order = await orderRes.json();
-
-    lastOrderBySender[sender] = order._id;
+    const order = await response.json();
+    lastOrderBySender[sender] = order._id.toString();
 
     return res.json({
       reply:
         `🛒 Order created\n\n` +
         `${product.name} × ${qty}\n` +
         `Total: KES ${total}\n\n` +
-        `Reply PAY to continue`
+        `Reply PAY to continue`,
+      orderId: order._id
     });
 
   } catch (err) {
-    console.error("WhatsApp order error:", err.message);
+    console.error("❌ WhatsApp Order Error:", err.message);
     return res.json({ reply: "⚠️ Server error" });
   }
 });
