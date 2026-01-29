@@ -2,28 +2,22 @@ const express = require("express");
 const router = express.Router();
 
 const Product = require("../models/Product");
+const Order = require("../models/Order"); // ✅ USE COMMONJS MODEL ONLY
 const Business = require("../models/Business");
-
-// IMPORTANT: use the SAME Order model the dashboard uses
-const Order = require("../models/order.model").default;
+const Wallet = require("../models/Wallet");
 
 /**
- * HARD-LINKED BUSINESS (MVP)
- * One WhatsApp number → One Business
+ * MVP: One WhatsApp number = One Business
+ * (Later this will be dynamic)
  */
 const BUSINESS_ID = "6977a75f31747055b1f1f60b";
 
-/**
- * TEMP CUSTOMER ID (WhatsApp customers are not registered users yet)
- * This is VALID and CBK-acceptable for MVP
- */
-const WHATSAPP_CUSTOMER_ID = "000000000000000000000001";
-
-/**
- * Track pending orders per phone
- */
+// In-memory pending orders per sender
 const lastOrderBySender = {};
 
+/**
+ * POST /api/whatsapp/message
+ */
 router.post("/message", async (req, res) => {
   try {
     const { sender, text } = req.body;
@@ -34,83 +28,104 @@ router.post("/message", async (req, res) => {
 
     const message = text.trim().toLowerCase();
 
-    /* ================= BUSINESS ================= */
+    // 1️⃣ Load business
     const business = await Business.findById(BUSINESS_ID);
     if (!business) {
       return res.json({ reply: "❌ Business not configured" });
     }
 
-    /* ================= PAY ================= */
+    // 2️⃣ Load business wallet
+    const wallet = await Wallet.findOne({
+      owner: business._id,
+      ownerType: "BUSINESS",
+    });
+
+    if (!wallet) {
+      return res.json({ reply: "❌ Business wallet missing" });
+    }
+
+    /**
+     * PAY COMMAND
+     */
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
+
       if (!orderId) {
         return res.json({
-          reply: "❌ No pending order. Use: buy <product> <qty>"
+          reply: "❌ No pending order. Send: buy <product> <qty>",
         });
       }
 
       return res.json({
         reply:
           "💳 Payment initiated.\n" +
-          "Complete payment on your phone.",
-        orderId
+          "Complete payment on your phone.\n" +
+          "You will receive confirmation shortly.",
+        orderId,
       });
     }
 
-    /* ================= BUY ================= */
+    /**
+     * BUY COMMAND
+     */
     const parts = message.split(/\s+/);
-
     if (parts[0] !== "buy") {
       return res.json({
-        reply: "❌ Use: buy <product> <quantity>"
+        reply: "❌ Use: buy <product> <qty>",
       });
     }
 
-    const quantity = parseInt(parts.pop(), 10);
-    if (!quantity || quantity <= 0) {
+    const qty = parseInt(parts.pop(), 10);
+    if (!qty || qty <= 0) {
       return res.json({ reply: "❌ Invalid quantity" });
     }
 
-    const keywords = parts.slice(1).join(" ");
+    const productName = parts.slice(1).join(" ");
+    if (!productName) {
+      return res.json({ reply: "❌ Product name missing" });
+    }
 
     const product = await Product.findOne({
       business: business._id,
-      name: { $regex: keywords, $options: "i" }
+      name: { $regex: productName, $options: "i" },
     });
 
     if (!product) {
       return res.json({ reply: "❌ Product not found" });
     }
 
-    const totalAmount = product.price * quantity;
+    const total = product.price * qty;
 
-    /* ================= CREATE ORDER ================= */
     const order = await Order.create({
       business: business._id,
-      customer: WHATSAPP_CUSTOMER_ID,
+      businessWalletId: wallet._id,
+      customerPhone: sender,
       items: [
         {
           product: product._id,
-          quantity
-        }
+          name: product.name,
+          price: product.price,
+          qty,
+          lineTotal: total,
+        },
       ],
-      totalAmount,
-      status: "pending"
+      total,
+      status: "UNPAID",
     });
 
     lastOrderBySender[sender] = order._id.toString();
 
     return res.json({
       reply:
-        "🛒 Order created\n\n" +
-        `${product.name} × ${quantity}\n` +
-        `Total: KES ${totalAmount}\n\n` +
-        "Reply PAY to continue",
-      orderId: order._id
+        `🛒 Order created\n\n` +
+        `${product.name} × ${qty}\n` +
+        `Total: KES ${total}\n\n` +
+        `Reply PAY to continue`,
+      orderId: order._id,
     });
 
   } catch (err) {
-    console.error("❌ WHATSAPP ORDER ERROR:", err);
+    console.error("❌ WhatsApp Order Error:", err);
     return res.json({ reply: "⚠️ Server error" });
   }
 });
