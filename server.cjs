@@ -31,7 +31,7 @@ app.use("/api/receipts", require("./routes/receipt.routes"));
 /* 🤖 AI ACTION ROUTES */
 app.use("/api/ai", require("./routes/ai"));
 
-/* 📲 WHATSAPP CUSTOMER ORDERS (ADDED ONLY) */
+/* 📲 WHATSAPP CUSTOMER ORDERS */
 app.use("/api/whatsapp", require("./routes/whatsapp.orders"));
 
 /* 🔐 ADMIN ROUTES */
@@ -80,8 +80,30 @@ mongoose
     serverSelectionTimeoutMS: 10000,
     family: 4,
   })
-  .then(() => {
+  .then(async () => {
     console.log("🟢 Smart Biz MongoDB connected");
+
+    /* =================================================
+       🔍 TEMP DEBUG: LIST BUSINESS WALLETS (REMOVE LATER)
+       ================================================= */
+    const Wallet = require("./models/Wallet");
+
+    app.get("/api/internal/__debug_wallets", async (req, res) => {
+      try {
+        const wallets = await Wallet.find({ ownerType: "BUSINESS" });
+        res.json(
+          wallets.map(w => ({
+            walletId: w._id,
+            ownerType: w.ownerType,
+            balance: w.balance
+          }))
+        );
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+    });
+
+    /* ================================================= */
 
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Smart Biz server running on port ${PORT}`);
