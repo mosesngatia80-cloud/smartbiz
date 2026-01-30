@@ -55,15 +55,17 @@ router.post("/", smartConnectAuth, async (req, res) => {
 });
 
 /**
- * 📋 LIST ORDERS FOR BUSINESS (DASHBOARD)
- * THIS MAKES ORDERS AUTO-SHOW
+ * 📋 LIST PAID ORDERS FOR BUSINESS (DASHBOARD)
+ * AUTO-SHOWS ONLY CONFIRMED PAYMENTS
  */
 router.get("/business/:businessId", async (req, res) => {
   try {
     const { businessId } = req.params;
 
-    const orders = await Order.find({ business: businessId })
-      .sort({ createdAt: -1 });
+    const orders = await Order.find({
+      business: businessId,
+      status: "paid"
+    }).sort({ createdAt: -1 });
 
     res.json(orders);
   } catch (err) {
