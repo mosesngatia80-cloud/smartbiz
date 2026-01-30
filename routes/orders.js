@@ -94,6 +94,34 @@ router.get("/", auth, async (req, res) => {
 });
 
 /**
+ * ✅ VERIFY ORDER (READ-ONLY)
+ * Used by Smart Pay before payment
+ */
+router.get("/:orderId/verify", async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId);
+
+    if (!order) {
+      return res.json({ valid: false });
+    }
+
+    if (order.status !== "UNPAID") {
+      return res.json({ valid: false });
+    }
+
+    res.json({
+      valid: true,
+      amount: order.total,
+      businessWalletId: order.businessWalletId,
+      status: order.status
+    });
+  } catch (err) {
+    console.error("❌ Verify order error:", err.message);
+    res.status(500).json({ valid: false });
+  }
+});
+
+/**
  * GET SINGLE ORDER BY ID (READ-ONLY)
  */
 router.get("/:orderId", auth, async (req, res) => {
