@@ -55,6 +55,24 @@ router.post("/", smartConnectAuth, async (req, res) => {
 });
 
 /**
+ * 📋 LIST ORDERS FOR BUSINESS (DASHBOARD)
+ * THIS MAKES ORDERS AUTO-SHOW
+ */
+router.get("/business/:businessId", async (req, res) => {
+  try {
+    const { businessId } = req.params;
+
+    const orders = await Order.find({ business: businessId })
+      .sort({ createdAt: -1 });
+
+    res.json(orders);
+  } catch (err) {
+    console.error("Fetch orders error:", err.message);
+    res.status(500).json({ message: "Failed to fetch orders" });
+  }
+});
+
+/**
  * VERIFY ORDER (Smart Pay → Smart Biz)
  */
 router.get("/:orderId/verify", async (req, res) => {
