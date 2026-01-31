@@ -28,11 +28,11 @@ router.post("/", auth, async (req, res) => {
         name,
         category,
         phone,
-        whatsappNumber: whatsappNumber || phone,
+        whatsappNumber: whatsappNumber || phone, // default link
         owner: userId
       });
     } else {
-      // 🔗 Allow linking WhatsApp later
+      // 🔗 Allow linking / updating WhatsApp later
       if (whatsappNumber && business.whatsappNumber !== whatsappNumber) {
         business.whatsappNumber = whatsappNumber;
         await business.save();
