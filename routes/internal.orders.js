@@ -7,8 +7,20 @@ const router = express.Router();
 const Order = require("../models/Order");
 
 /**
+ * 🧪 DEBUG ROUTE — CONFIRM ROUTE IS MOUNTED
+ * TEMPORARY (REMOVE AFTER CONFIRMATION)
+ */
+router.get("/orders/__ping", (req, res) => {
+  res.json({
+    ok: true,
+    route: "internal.orders",
+    time: new Date().toISOString()
+  });
+});
+
+/**
  * 🔐 INTERNAL AUTH (SMART PAY → SMART BIZ)
- * Uses INTERNAL_KEY (server-to-server)
+ * Uses CT_INTERNAL_KEY (server-to-server)
  */
 function internalAuth(req, res, next) {
   const key = req.headers["x-internal-key"];
