@@ -10,10 +10,12 @@ const Wallet = require("../models/Wallet");
  */
 router.post("/", auth, async (req, res) => {
   try {
-    const { name, category, phone } = req.body;
+    const { name, category, phone, whatsappNumber } = req.body;
 
     if (!name || !phone) {
-      return res.status(400).json({ message: "Business name and phone required" });
+      return res.status(400).json({
+        message: "Business name and phone required"
+      });
     }
 
     const userId = req.user.user;
@@ -26,8 +28,15 @@ router.post("/", auth, async (req, res) => {
         name,
         category,
         phone,
+        whatsappNumber: whatsappNumber || phone,
         owner: userId
       });
+    } else {
+      // 🔗 Allow linking WhatsApp later
+      if (whatsappNumber && business.whatsappNumber !== whatsappNumber) {
+        business.whatsappNumber = whatsappNumber;
+        await business.save();
+      }
     }
 
     // 2️⃣ Find or create wallet
