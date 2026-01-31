@@ -7,20 +7,22 @@ const Wallet   = require("../models/Wallet");
 const Business = require("../models/Business");
 
 /**
- * 🔒 HARD-BINDED BUSINESS (MVP)
- */
-const BUSINESS_ID = "6977a75f31747055b1f1f60b";
-
-/**
  * 👤 SYSTEM WHATSAPP GUEST USER (REQUIRED BY SCHEMA)
+ * Used for customers who do not have dashboard accounts
  */
 const WHATSAPP_GUEST_USER_ID = "000000000000000000000001";
 
 /**
- * In-memory session store
+ * 🧠 In-memory session store (MVP)
+ * sender -> last pending orderId
  */
 const lastOrderBySender = {};
 
+/**
+ * ===========================
+ * WHATSAPP MESSAGE HANDLER
+ * ===========================
+ */
 router.post("/message", async (req, res) => {
   try {
     const { sender, text } = req.body;
@@ -31,11 +33,25 @@ router.post("/message", async (req, res) => {
 
     const message = text.trim().toLowerCase();
 
-    const business = await Business.findById(BUSINESS_ID);
+    /**
+     * 🔗 FIND BUSINESS BY LINKED WHATSAPP NUMBER
+     * This replaces hard-coded BUSINESS_ID
+     */
+    const business = await Business.findOne({
+      whatsappNumber: sender
+    });
+
     if (!business) {
-      return res.json({ reply: "❌ Business not configured" });
+      return res.json({
+        reply:
+          "❌ This WhatsApp number is not linked to any business.\n" +
+          "Please ask the merchant to link WhatsApp in their dashboard."
+      });
     }
 
+    /**
+     * 💼 LOAD BUSINESS WALLET
+     */
     const wallet = await Wallet.findOne({
       owner: business._id,
       ownerType: "BUSINESS"
@@ -45,9 +61,12 @@ router.post("/message", async (req, res) => {
       return res.json({ reply: "❌ Business wallet missing" });
     }
 
-    // PAY COMMAND
+    /**
+     * 💳 PAY COMMAND
+     */
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
+
       if (!orderId) {
         return res.json({ reply: "❌ No pending order" });
       }
@@ -60,8 +79,12 @@ router.post("/message", async (req, res) => {
       });
     }
 
-    // BUY COMMAND
+    /**
+     * 🛒 BUY COMMAND
+     * Format: buy <product> <qty>
+     */
     const parts = message.split(/\s+/);
+
     if (parts[0] !== "buy") {
       return res.json({ reply: "❌ Use: buy <product> <qty>" });
     }
@@ -84,6 +107,9 @@ router.post("/message", async (req, res) => {
 
     const total = product.price * qty;
 
+    /**
+     * 🧾 CREATE ORDER (UNPAID)
+     */
     const order = await Order.create({
       business: business._id,
       businessWalletId: wallet._id,

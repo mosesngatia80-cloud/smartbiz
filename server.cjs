@@ -19,7 +19,9 @@ app.use(express.json());
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/business", require("./routes/business"));
 app.use("/api/products", require("./routes/products"));
-app.use("/api/orders", require("./routes/orders"));
+
+/* ✅ FIXED: CORRECT ORDERS ROUTE FILE */
+app.use("/api/orders", require("./routes/orders.routes"));
 
 /* ✅ WALLET ROUTES */
 app.use("/api/wallet", require("./routes/wallet"));
@@ -37,10 +39,11 @@ app.use("/api/whatsapp", require("./routes/whatsapp.orders"));
 /* 🔐 ADMIN ROUTES */
 app.use("/api/admin", require("./routes/admin.wallet"));
 
-/* 🔒 INTERNAL ROUTES (SMART CONNECT) */
+/* 🔒 INTERNAL ROUTES (SMART CONNECT / SMART PAY) */
 app.use("/api/internal", require("./routes/internal.wallet"));
 app.use("/api/internal", require("./routes/internal.register"));
 app.use("/api/internal", require("./routes/internal.business.link"));
+app.use("/api/internal", require("./routes/internal.orders")); // ✅ ADDED
 
 /* 🧪 INTERNAL ENV DEBUG */
 app.get("/api/internal/__debug_env", (req, res) => {
@@ -102,7 +105,6 @@ mongoose
         res.status(500).json({ error: err.message });
       }
     });
-
     /* ================================================= */
 
     app.listen(PORT, "0.0.0.0", () => {
