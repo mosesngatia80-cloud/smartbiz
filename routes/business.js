@@ -5,8 +5,12 @@ const Business = require("../models/Business");
 const Wallet = require("../models/Wallet");
 
 /**
- * ENSURE BUSINESS + WALLET
- * Idempotent & safe
+ * ================================
+ * CREATE / ENSURE BUSINESS + WALLET
+ * ================================
+ * - Idempotent
+ * - Safe to call multiple times
+ * - Allows WhatsApp number linking
  */
 router.post("/", auth, async (req, res) => {
   try {
@@ -18,21 +22,22 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    const userId = req.user.user;
+    const userId = req.user.user; // MUST be ObjectId string
 
-    // 1️⃣ Find or create business
+    // 1️⃣ Find existing business
     let business = await Business.findOne({ owner: userId });
 
     if (!business) {
+      // CREATE BUSINESS
       business = await Business.create({
         name,
         category,
         phone,
-        whatsappNumber: whatsappNumber || phone, // default link
+        whatsappNumber: whatsappNumber || phone,
         owner: userId
       });
     } else {
-      // 🔗 Allow linking / updating WhatsApp later
+      // UPDATE WHATSAPP NUMBER IF PROVIDED
       if (whatsappNumber && business.whatsappNumber !== whatsappNumber) {
         business.whatsappNumber = whatsappNumber;
         await business.save();
@@ -54,7 +59,7 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    // 3️⃣ Link wallet
+    // 3️⃣ Link wallet to business (once)
     if (!business.walletId) {
       business.walletId = wallet._id;
       await business.save();
@@ -65,8 +70,9 @@ router.post("/", auth, async (req, res) => {
       business,
       wallet
     });
+
   } catch (err) {
-    console.error("❌ Business setup error:", err);
+    console.error("❌ Business setup error:", err.message);
     return res.status(500).json({
       message: "Failed to setup business",
       error: err.message
@@ -75,7 +81,9 @@ router.post("/", auth, async (req, res) => {
 });
 
 /**
+ * =================
  * GET MY BUSINESS
+ * =================
  */
 router.get("/me", auth, async (req, res) => {
   try {
