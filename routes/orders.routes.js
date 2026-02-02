@@ -1,6 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const Order = require("../models/Order");
+const Business = require("../models/Business");
 
 const router = express.Router();
 
@@ -26,6 +27,40 @@ function smartConnectAuth(req, res, next) {
     return res.status(401).json({ message: "Invalid service token" });
   }
 }
+
+/**
+ * ✅ LIST ORDERS FOR LOGGED-IN BUSINESS (FRONTEND)
+ * Used by: Dashboard, Sales, Orders, Customers
+ */
+router.get("/", async (req, res) => {
+  try {
+    const auth = req.headers.authorization;
+    if (!auth || !auth.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Missing token" });
+    }
+
+    const token = auth.split(" ")[1];
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "navuSmartBizSecretKey2025"
+    );
+
+    const ownerId = decoded.id;
+
+    const business = await Business.findOne({ owner: ownerId });
+    if (!business) {
+      return res.json([]);
+    }
+
+    const orders = await Order.find({ business: business._id })
+      .sort({ createdAt: -1 });
+
+    res.json(orders);
+  } catch (err) {
+    console.error("Fetch orders error:", err.message);
+    res.status(500).json({ message: "Failed to fetch orders" });
+  }
+});
 
 /**
  * CREATE ORDER
@@ -56,7 +91,6 @@ router.post("/", smartConnectAuth, async (req, res) => {
 
 /**
  * 📋 LIST PAID ORDERS FOR BUSINESS (DASHBOARD)
- * AUTO-SHOWS ONLY CONFIRMED PAYMENTS
  */
 router.get("/business/:businessId", async (req, res) => {
   try {
