@@ -13,6 +13,13 @@ const BusinessSchema = new mongoose.Schema(
       index: true
     },
 
+    // ✅ ADD THIS (DO NOT REMOVE ANYTHING ELSE)
+    whatsappNumber: {
+      type: String,
+      trim: true,
+      index: true
+    },
+
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -24,6 +31,7 @@ const BusinessSchema = new mongoose.Schema(
       ref: "Wallet"
     },
 
+    // 🔒 KEEP EXISTING FIELD (DO NOT DELETE)
     whatsappLink: {
       type: String,
       default: ""
