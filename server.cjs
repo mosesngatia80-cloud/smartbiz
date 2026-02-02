@@ -17,11 +17,15 @@ app.use(express.json());
 
 /* ================= ROUTES ================= */
 app.use("/api/auth", require("./routes/auth"));
+app.use("/api/auth", require("./routes/auth.password")); // PASSWORD RESET
 app.use("/api/business", require("./routes/business"));
 app.use("/api/products", require("./routes/products"));
 
-/* ✅ FIXED: CORRECT ORDERS ROUTE FILE */
-app.use("/api/orders", require("./routes/orders.routes"));
+/* ✅ DASHBOARD ORDERS (USER JWT) */
+app.use("/api/orders", require("./routes/orders"));
+
+/* ✅ INTERNAL ORDERS (SMART CONNECT / WHATSAPP) */
+app.use("/api/internal/orders", require("./routes/orders.routes"));
 
 /* ✅ WALLET ROUTES */
 app.use("/api/wallet", require("./routes/wallet"));
@@ -39,11 +43,11 @@ app.use("/api/whatsapp", require("./routes/whatsapp.orders"));
 /* 🔐 ADMIN ROUTES */
 app.use("/api/admin", require("./routes/admin.wallet"));
 
-/* 🔒 INTERNAL ROUTES (SMART CONNECT / SMART PAY) */
+/* 🔒 INTERNAL ROUTES */
 app.use("/api/internal", require("./routes/internal.wallet"));
 app.use("/api/internal", require("./routes/internal.register"));
 app.use("/api/internal", require("./routes/internal.business.link"));
-app.use("/api/internal", require("./routes/internal.orders")); // ✅ ADDED
+app.use("/api/internal", require("./routes/internal.orders"));
 
 /* 🧪 INTERNAL ENV DEBUG */
 app.get("/api/internal/__debug_env", (req, res) => {
@@ -81,14 +85,12 @@ console.log("🟡 Connecting to MongoDB...");
 mongoose
   .connect(process.env.MONGO_URI, {
     serverSelectionTimeoutMS: 10000,
-    family: 4,
+    family: 4
   })
   .then(async () => {
     console.log("🟢 Smart Biz MongoDB connected");
 
-    /* =================================================
-       🔍 TEMP DEBUG: LIST BUSINESS WALLETS (REMOVE LATER)
-       ================================================= */
+    /* 🔍 TEMP DEBUG: LIST BUSINESS WALLETS */
     const Wallet = require("./models/Wallet");
 
     app.get("/api/internal/__debug_wallets", async (req, res) => {
@@ -105,13 +107,11 @@ mongoose
         res.status(500).json({ error: err.message });
       }
     });
-    /* ================================================= */
 
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Smart Biz server running on port ${PORT}`);
     });
 
-    // 🔄 Start payment reconciliation worker (MVP mode)
     require("./workers/reconcilePayments");
   })
   .catch((err) => {
