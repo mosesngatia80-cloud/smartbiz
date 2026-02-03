@@ -68,7 +68,7 @@ router.post("/message", async (req, res) => {
     }
 
     /* ===============================
-       💳 PAY (MARK ORDER AS PAID)
+       💳 PAY (MARK ORDER AS PAID + RECEIPT)
        =============================== */
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
@@ -93,12 +93,22 @@ router.post("/message", async (req, res) => {
 
       delete lastOrderBySender[sender];
 
-      return res.json({
-        reply:
-          "✅ Payment received.\n" +
-          "Order completed successfully.\n\n" +
-          "Thank you for your purchase 🙏"
-      });
+      /* 🧾 BUILD RECEIPT (ADDED ONLY) */
+      let receipt = `🧾 RECEIPT\n\n`;
+      receipt += `${business.name}\n`;
+      receipt += `----------------------\n`;
+
+      for (const item of order.items) {
+        const p = await Product.findById(item.product);
+        receipt += `${p.name} × ${item.quantity}\n`;
+      }
+
+      receipt += `\nTotal: KES ${order.total}\n`;
+      receipt += `Status: PAID\n`;
+      receipt += `Date: ${order.paidAt.toLocaleString()}\n\n`;
+      receipt += `Thank you for your purchase 🙏`;
+
+      return res.json({ reply: receipt });
     }
 
     /* ===============================
