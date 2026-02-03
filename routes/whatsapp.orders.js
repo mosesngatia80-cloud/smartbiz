@@ -47,7 +47,7 @@ router.post("/message", async (req, res) => {
     }
 
     /* ===============================
-       🛍 SHOW PRODUCTS (NEW — SIMPLE)
+       🛍 SHOW PRODUCTS
        =============================== */
     if (message === "show products") {
       const products = await Product.find({ business: business._id });
@@ -67,22 +67,43 @@ router.post("/message", async (req, res) => {
       return res.json({ reply });
     }
 
-    /* 💳 PAY */
+    /* ===============================
+       💳 PAY (MARK ORDER AS PAID)
+       =============================== */
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
+
       if (!orderId) {
         return res.json({ reply: "❌ No pending order" });
       }
 
+      const order = await Order.findById(orderId);
+
+      if (!order) {
+        return res.json({ reply: "❌ Order not found" });
+      }
+
+      if (order.status === "PAID") {
+        return res.json({ reply: "✅ Order already paid" });
+      }
+
+      order.status = "PAID";
+      order.paidAt = new Date();
+      await order.save();
+
+      delete lastOrderBySender[sender];
+
       return res.json({
         reply:
-          "💳 Payment initiated.\n" +
-          "Complete payment on your phone.",
-        orderId
+          "✅ Payment received.\n" +
+          "Order completed successfully.\n\n" +
+          "Thank you for your purchase 🙏"
       });
     }
 
-    /* 🛒 BUY */
+    /* ===============================
+       🛒 BUY
+       =============================== */
     const parts = message.split(/\s+/);
     if (parts[0] !== "buy") {
       return res.json({ reply: "❌ Use: buy <product> <qty>" });
