@@ -7,22 +7,15 @@ const Wallet   = require("../models/Wallet");
 const Business = require("../models/Business");
 
 /**
- * 👤 SYSTEM WHATSAPP GUEST USER (REQUIRED BY SCHEMA)
- * Used for customers who do not have dashboard accounts
+ * 👤 SYSTEM WHATSAPP GUEST USER
  */
 const WHATSAPP_GUEST_USER_ID = "000000000000000000000001";
 
 /**
  * 🧠 In-memory session store (MVP)
- * sender -> last pending orderId
  */
 const lastOrderBySender = {};
 
-/**
- * ===========================
- * WHATSAPP MESSAGE HANDLER
- * ===========================
- */
 router.post("/message", async (req, res) => {
   try {
     const { sender, text } = req.body;
@@ -33,14 +26,8 @@ router.post("/message", async (req, res) => {
 
     const message = text.trim().toLowerCase();
 
-    /**
-     * 🔗 FIND BUSINESS BY LINKED WHATSAPP NUMBER
-     * This replaces hard-coded BUSINESS_ID
-     */
-    const business = await Business.findOne({
-      whatsappNumber: sender
-    });
-
+    /* 🔗 FIND BUSINESS */
+    const business = await Business.findOne({ whatsappNumber: sender });
     if (!business) {
       return res.json({
         reply:
@@ -49,9 +36,7 @@ router.post("/message", async (req, res) => {
       });
     }
 
-    /**
-     * 💼 LOAD BUSINESS WALLET
-     */
+    /* 💼 LOAD WALLET */
     const wallet = await Wallet.findOne({
       owner: business._id,
       ownerType: "BUSINESS"
@@ -61,12 +46,30 @@ router.post("/message", async (req, res) => {
       return res.json({ reply: "❌ Business wallet missing" });
     }
 
-    /**
-     * 💳 PAY COMMAND
-     */
+    /* ===============================
+       🛍 SHOW PRODUCTS (NEW — SIMPLE)
+       =============================== */
+    if (message === "show products") {
+      const products = await Product.find({ business: business._id });
+
+      if (!products.length) {
+        return res.json({ reply: "❌ No products available" });
+      }
+
+      let reply = `🛒 Available Products – ${business.name}\n\n`;
+
+      products.forEach((p, i) => {
+        reply += `${i + 1}. ${p.name} – KES ${p.price}\n`;
+      });
+
+      reply += `\nReply:\nbuy <product> <qty>\nExample: buy sugar 2`;
+
+      return res.json({ reply });
+    }
+
+    /* 💳 PAY */
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
-
       if (!orderId) {
         return res.json({ reply: "❌ No pending order" });
       }
@@ -79,12 +82,8 @@ router.post("/message", async (req, res) => {
       });
     }
 
-    /**
-     * 🛒 BUY COMMAND
-     * Format: buy <product> <qty>
-     */
+    /* 🛒 BUY */
     const parts = message.split(/\s+/);
-
     if (parts[0] !== "buy") {
       return res.json({ reply: "❌ Use: buy <product> <qty>" });
     }
@@ -107,9 +106,6 @@ router.post("/message", async (req, res) => {
 
     const total = product.price * qty;
 
-    /**
-     * 🧾 CREATE ORDER (UNPAID)
-     */
     const order = await Order.create({
       business: business._id,
       businessWalletId: wallet._id,
