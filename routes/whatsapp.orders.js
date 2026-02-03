@@ -68,7 +68,7 @@ router.post("/message", async (req, res) => {
     }
 
     /* ===============================
-       💳 PAY (MARK ORDER AS PAID + RECEIPT)
+       💳 PAY → MARK PAID + RECEIPT
        =============================== */
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
@@ -77,7 +77,7 @@ router.post("/message", async (req, res) => {
         return res.json({ reply: "❌ No pending order" });
       }
 
-      const order = await Order.findById(orderId);
+      const order = await Order.findById(orderId).populate("items.product");
 
       if (!order) {
         return res.json({ reply: "❌ Order not found" });
@@ -93,15 +93,15 @@ router.post("/message", async (req, res) => {
 
       delete lastOrderBySender[sender];
 
-      /* 🧾 BUILD RECEIPT (ADDED ONLY) */
+      /* 🧾 RECEIPT (FIXED QTY) */
       let receipt = `🧾 RECEIPT\n\n`;
       receipt += `${business.name}\n`;
       receipt += `----------------------\n`;
 
-      for (const item of order.items) {
-        const p = await Product.findById(item.product);
-        receipt += `${p.name} × ${item.quantity}\n`;
-      }
+      order.items.forEach(item => {
+        const qty = item.quantity || item.qty || 1;
+        receipt += `${item.product.name} × ${qty}\n`;
+      });
 
       receipt += `\nTotal: KES ${order.total}\n`;
       receipt += `Status: PAID\n`;
