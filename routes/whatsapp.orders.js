@@ -87,20 +87,28 @@ router.post("/message", async (req, res) => {
         return res.json({ reply: "✅ Order already paid" });
       }
 
-      /* 🔽 REDUCE STOCK (ADDED) */
+      /* 🔽 REDUCE STOCK (ADDED — SAFE) */
       for (const item of order.items) {
         const product = item.product;
         const qty = item.quantity || item.qty || 1;
 
         if (!product) continue;
 
-        if (product.quantity !== undefined) {
+        // Support either stock or quantity field
+        if (product.stock !== undefined) {
+          if (product.stock < qty) {
+            return res.json({
+              reply: `❌ Not enough stock for ${product.name}`
+            });
+          }
+          product.stock -= qty;
+          await product.save();
+        } else if (product.quantity !== undefined) {
           if (product.quantity < qty) {
             return res.json({
               reply: `❌ Not enough stock for ${product.name}`
             });
           }
-
           product.quantity -= qty;
           await product.save();
         }
@@ -113,7 +121,7 @@ router.post("/message", async (req, res) => {
 
       delete lastOrderBySender[sender];
 
-      /* 🧾 RECEIPT (UNCHANGED) */
+      /* 🧾 RECEIPT */
       let receipt = `🧾 RECEIPT\n\n`;
       receipt += `${business.name}\n`;
       receipt += `----------------------\n`;
