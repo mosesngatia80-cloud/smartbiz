@@ -5,11 +5,21 @@ const Business = require("../models/Business");
 const auth = require("../middleware/auth");
 
 /*
-  PUBLIC: Get all products
+  🔐 PROTECTED: Get products for logged-in business ONLY
 */
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
+    const userId = req.user.user;
+
+    const business = await Business.findOne({ owner: userId });
+    if (!business) {
+      return res.status(400).json({ message: "User has no business" });
+    }
+
+    const products = await Product.find({
+      business: business._id
+    }).sort({ createdAt: -1 });
+
     res.json(products);
   } catch (err) {
     console.error("Load products error:", err.message);
@@ -59,7 +69,11 @@ router.put("/:id", auth, async (req, res) => {
     const { name, price, stock } = req.body;
     const userId = req.user.user;
 
-    const product = await Product.findOne({ _id: req.params.id, owner: userId });
+    const product = await Product.findOne({
+      _id: req.params.id,
+      owner: userId
+    });
+
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
@@ -77,14 +91,18 @@ router.put("/:id", auth, async (req, res) => {
 });
 
 /*
-  🔐 PROTECTED: Reduce stock after sale (ACTION)
+  🔐 PROTECTED: Reduce stock after sale
 */
 router.post("/:id/sell", auth, async (req, res) => {
   try {
     const { quantity = 1 } = req.body;
     const userId = req.user.user;
 
-    const product = await Product.findOne({ _id: req.params.id, owner: userId });
+    const product = await Product.findOne({
+      _id: req.params.id,
+      owner: userId
+    });
+
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
