@@ -68,7 +68,7 @@ router.post("/message", async (req, res) => {
     }
 
     /* ===============================
-       💳 PAY → MARK PAID + RECEIPT
+       💳 PAY → MARK PAID + STOCK + RECEIPT
        =============================== */
     if (message === "pay") {
       const orderId = lastOrderBySender[sender];
@@ -87,13 +87,33 @@ router.post("/message", async (req, res) => {
         return res.json({ reply: "✅ Order already paid" });
       }
 
+      /* 🔽 REDUCE STOCK (ADDED) */
+      for (const item of order.items) {
+        const product = item.product;
+        const qty = item.quantity || item.qty || 1;
+
+        if (!product) continue;
+
+        if (product.quantity !== undefined) {
+          if (product.quantity < qty) {
+            return res.json({
+              reply: `❌ Not enough stock for ${product.name}`
+            });
+          }
+
+          product.quantity -= qty;
+          await product.save();
+        }
+      }
+
+      /* ✅ MARK ORDER PAID */
       order.status = "PAID";
       order.paidAt = new Date();
       await order.save();
 
       delete lastOrderBySender[sender];
 
-      /* 🧾 RECEIPT (FIXED QTY) */
+      /* 🧾 RECEIPT (UNCHANGED) */
       let receipt = `🧾 RECEIPT\n\n`;
       receipt += `${business.name}\n`;
       receipt += `----------------------\n`;
