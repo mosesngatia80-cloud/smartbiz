@@ -8,17 +8,54 @@
 </head>
 <body>
 
-<!-- AUTH SCREEN -->
-<div id="authScreen">
-  <h2>SmartBiz Login</h2>
+<!-- AUTH -->
+<div id="authScreen" class="center-screen">
+  <div class="auth-card">
+    <h2>SmartBiz Login</h2>
 
-  <input id="email" placeholder="Email" />
-  <input id="password" type="password" placeholder="Password" />
+    <input id="email" placeholder="Email" />
 
-  <button onclick="login()">Login</button>
-  <button onclick="register()">Register</button>
+    <div class="password-box">
+      <input id="password" type="password" placeholder="Password" />
+      <span onclick="togglePassword()">👁</span>
+    </div>
 
-  <p id="authMsg"></p>
+    <button onclick="login()">Login</button>
+
+    <!-- ✅ NEW -->
+    <button class="secondary" onclick="showRegister()">Register</button>
+
+    <p class="link" onclick="forgotPassword()">Forgot password?</p>
+    <p id="authMsg"></p>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div id="registerScreen" class="center-screen" style="display:none">
+  <div class="auth-card">
+    <h2>Create Account</h2>
+
+    <input id="regEmail" placeholder="Email" />
+    <input id="regPassword" type="password" placeholder="Password" />
+
+    <button onclick="register()">Create Account</button>
+    <button class="secondary" onclick="backToLogin()">Back to Login</button>
+
+    <p id="registerMsg"></p>
+  </div>
+</div>
+
+<!-- BUSINESS SETUP -->
+<div id="businessSetup" class="center-screen" style="display:none">
+  <div class="auth-card">
+    <h2>Create Your Business</h2>
+    <input id="bizName" placeholder="Business Name" />
+    <input id="bizCategory" placeholder="Category" />
+    <input id="bizPhone" placeholder="Business Phone" />
+    <input id="bizWhatsapp" placeholder="WhatsApp Number" />
+    <button onclick="createBusiness()">Create Business</button>
+    <p id="bizMsg"></p>
+  </div>
 </div>
 
 <!-- APP -->
@@ -27,37 +64,26 @@
     <aside class="sidebar">
       <h2>SmartBiz</h2>
       <nav>
-        <button onclick="showView('dashboard')" class="active">Dashboard</button>
+        <button onclick="showView('dashboard')">Dashboard</button>
         <button onclick="showView('sales')">Sales</button>
         <button onclick="showView('products')">Products</button>
-        <button onclick="showView('customers')">Customers</button>
         <button onclick="showView('orders')">Orders</button>
+        <button onclick="showView('customers')">Customers</button>
         <button onclick="showView('ai')">AI Assistant</button>
+        <button onclick="showView('profile')">Business Profile</button>
+        <button class="logout" onclick="logout()">Logout</button>
       </nav>
     </aside>
 
     <main class="content">
+
       <!-- DASHBOARD -->
       <section id="dashboard" class="view">
         <h1>Dashboard</h1>
-
         <div class="cards">
-
-          <div class="card">
-            <h3>Total Sales</h3>
-            <p class="big">KES <span id="totalSales">0</span></p>
-          </div>
-
-          <div class="card">
-            <h3>Wallet Balance</h3>
-            <p class="big">KES <span id="walletBalance">0</span></p>
-          </div>
-
-          <div class="card">
-            <h3>Total Orders</h3>
-            <p class="big"><span id="orderCount">0</span></p>
-          </div>
-
+          <div class="card">Total Sales<br>KES <span id="totalSales">0</span></div>
+          <div class="card">Wallet<br>KES <span id="walletBalance">0</span></div>
+          <div class="card">Orders<br><span id="orderCount">0</span></div>
         </div>
       </section>
 
@@ -83,12 +109,6 @@
         <ul id="productsList"></ul>
       </section>
 
-      <!-- CUSTOMERS -->
-      <section id="customers" class="view hidden">
-        <h1>Customers</h1>
-        <ul id="customersList"></ul>
-      </section>
-
       <!-- ORDERS -->
       <section id="orders" class="view hidden">
         <h1>Orders</h1>
@@ -106,6 +126,22 @@
         </table>
       </section>
 
+      <!-- CUSTOMERS -->
+      <section id="customers" class="view hidden">
+        <h1>Customers</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>Phone</th>
+              <th>Orders</th>
+              <th>Total Spent</th>
+              <th>Last Order</th>
+            </tr>
+          </thead>
+          <tbody id="customersTable"></tbody>
+        </table>
+      </section>
+
       <!-- AI -->
       <section id="ai" class="view hidden">
         <h1>AI Assistant</h1>
@@ -114,10 +150,52 @@
         <pre id="aiOutput"></pre>
       </section>
 
+      <!-- PROFILE -->
+      <section id="profile" class="view hidden">
+        <h1>Business Profile</h1>
+        <input id="editBizName" />
+        <input id="editBizPhone" />
+        <input id="editBizWhatsapp" />
+        <button onclick="saveBusiness()">Save Changes</button>
+        <p id="profileMsg"></p>
+      </section>
+
     </main>
   </div>
 </div>
 
 <script src="app.js"></script>
+
+<script>
+/* ✅ REGISTER FLOW (FRONTEND ONLY) */
+function showRegister() {
+  authScreen.style.display = "none";
+  registerScreen.style.display = "flex";
+}
+function backToLogin() {
+  registerScreen.style.display = "none";
+  authScreen.style.display = "flex";
+}
+async function register() {
+  registerMsg.innerText = "Creating account...";
+  const res = await fetch(API_BASE + "/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: regEmail.value,
+      password: regPassword.value
+    })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    registerMsg.innerText = data.message;
+    return;
+  }
+  localStorage.setItem("token", data.token);
+  registerScreen.style.display = "none";
+  ensureBusiness();
+}
+</script>
+
 </body>
 </html>

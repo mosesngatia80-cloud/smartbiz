@@ -1,208 +1,289 @@
 const API_BASE = "https://navu-smart-biz-sbdh.onrender.com/api";
 
-/* ================= AUTH ================= */
-
-async function showApp() {
-  document.getElementById("authScreen").style.display = "none";
-  document.getElementById("app").style.display = "block";
-
-  await ensureBusiness();
-  loadDashboard();
-  loadProducts();
-  loadWalletBalance();
+/* UTIL */
+function togglePassword() {
+  password.type = password.type === "password" ? "text" : "password";
+}
+function forgotPassword() {
+  alert("Contact support: navusystems@gmail.com");
+}
+function logout() {
+  localStorage.removeItem("token");
+  location.reload();
+}
+function authHeader() {
+  return { Authorization: "Bearer " + localStorage.getItem("token") };
 }
 
-async function ensureBusiness() {
-  const token = localStorage.getItem("token");
-  if (!token) return;
-
-  const res = await fetch(API_BASE + "/business/me", {
-    headers: { Authorization: "Bearer " + token }
-  });
-
-  if (res.ok) return;
-
-  await fetch(API_BASE + "/business", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    },
-    body: JSON.stringify({
-      name: "My SmartBiz Business",
-      category: "Retail",
-      phone: "0700000000"
-    })
-  });
-}
-
+/* AUTH */
 async function login() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
   const res = await fetch(API_BASE + "/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ email: email.value, password: password.value })
   });
-
   const data = await res.json();
-  if (!res.ok) {
-    document.getElementById("authMsg").innerText = data.message || "Login failed";
-    return;
-  }
-
+  if (!res.ok) return authMsg.innerText = data.message;
   localStorage.setItem("token", data.token);
-  await showApp();
+  ensureBusiness();
 }
 
-/* ================= CORE ================= */
-
-function showView(view) {
-  document.querySelectorAll(".view").forEach(v => v.classList.add("hidden"));
-  document.getElementById(view).classList.remove("hidden");
-
-  if (view === "products") loadProducts();
-  if (view === "orders") loadOrders();
-  if (view === "sales") loadSales();
-  if (view === "customers") loadCustomers();
-}
-
-async function authFetch(url, options = {}) {
-  const token = localStorage.getItem("token");
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    }
+/* REGISTER */
+async function register() {
+  const res = await fetch(API_BASE + "/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: email.value,
+      password: password.value
+    })
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message);
-  return data;
+  if (!res.ok) return authMsg.innerText = data.message;
+  localStorage.setItem("token", data.token);
+  ensureBusiness();
 }
 
-/* ================= DASHBOARD ================= */
+/* BUSINESS FLOW */
+async function ensureBusiness() {
+  const res = await fetch(API_BASE + "/business/me", { headers: authHeader() });
+  if (res.ok) return showApp();
+  authScreen.style.display = "none";
+  businessSetup.style.display = "flex";
+}
 
+async function createBusiness() {
+  await fetch(API_BASE + "/business", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({
+      name: bizName.value,
+      category: bizCategory.value,
+      phone: bizPhone.value,
+      whatsappNumber: bizWhatsapp.value
+    })
+  });
+  showApp();
+}
+
+/* APP */
+async function showApp() {
+  authScreen.style.display = "none";
+  businessSetup.style.display = "none";
+  app.style.display = "block";
+  loadDashboard();
+  loadCustomers();
+  loadProfile();
+}
+
+function showView(id) {
+  document.querySelectorAll(".view").forEach(v => v.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+}
+
+/* DASHBOARD */
 async function loadDashboard() {
-  const orders = await authFetch(API_BASE + "/orders");
+  const orders = await fetch(API_BASE + "/orders", {
+    headers: authHeader()
+  }).then(r => r.json());
 
-  document.getElementById("totalSales").innerText =
-    orders.reduce((s, o) => s + Number(o.total || 0), 0);
+  totalSales.innerText = orders.reduce((s, o) => s + (o.total || 0), 0);
+  orderCount.innerText = orders.length;
 
-  document.getElementById("orderCount").innerText = orders.length;
+  const wallet = await fetch(API_BASE + "/wallet/balance", {
+    headers: authHeader()
+  }).then(r => r.json());
+
+  walletBalance.innerText = wallet.balance;
 }
 
-/* ================= WALLET ================= */
+/* CUSTOMERS */
+async function loadCustomers() {
+  const orders = await fetch(API_BASE + "/orders", {
+    headers: authHeader()
+  }).then(r => r.json());
 
-async function loadWalletBalance() {
-  try {
-    const wallet = await authFetch(API_BASE + "/wallet/balance");
-    document.getElementById("walletBalance").innerText = wallet.balance;
-  } catch (err) {
-    console.error("Wallet error:", err.message);
-  }
-}
-
-/* ================= PRODUCTS ================= */
-
-async function loadProducts() {
-  const products = await authFetch(API_BASE + "/products");
-  const list = document.getElementById("productsList");
-  list.innerHTML = "";
-
-  products.forEach(p => {
-    const li = document.createElement("li");
-    li.textContent = `${p.name} – KES ${p.price}`;
-    list.appendChild(li);
-  });
-}
-
-/* ================= ORDERS (WITH PRODUCTS + QTY) ================= */
-
-async function loadOrders() {
-  const orders = await authFetch(API_BASE + "/orders");
-  const table = document.getElementById("ordersTable");
-  table.innerHTML = "";
-
+  const map = {};
   orders.forEach(o => {
-    const products = o.items.map(i => i.name).join(", ");
-    const qty = o.items.reduce((s, i) => s + Number(i.qty || 0), 0);
+    const phone = o.customerPhone || "POS-WALKIN";
+    if (!map[phone]) map[phone] = { count: 0, total: 0, last: o.createdAt };
+    map[phone].count++;
+    map[phone].total += o.total || 0;
+    map[phone].last = o.createdAt;
+  });
 
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${new Date(o.createdAt).toLocaleString()}</td>
-      <td>${products}</td>
-      <td>${qty}</td>
-      <td>KES ${o.total}</td>
-      <td>${o.status}</td>
-    `;
-    table.appendChild(tr);
+  customersTable.innerHTML = "";
+  Object.entries(map).forEach(([p, c]) => {
+    customersTable.innerHTML += `
+      <tr>
+        <td>${p}</td>
+        <td>${c.count}</td>
+        <td>KES ${c.total}</td>
+        <td>${new Date(c.last).toLocaleString()}</td>
+      </tr>`;
   });
 }
 
-/* ================= SALES (WITH PRODUCTS + QTY) ================= */
+/* PROFILE */
+async function loadProfile() {
+  const biz = await fetch(API_BASE + "/business/me", {
+    headers: authHeader()
+  }).then(r => r.json());
 
+  editBizName.value = biz.name;
+  editBizPhone.value = biz.phone;
+  editBizWhatsapp.value = biz.whatsappNumber;
+}
+
+async function saveBusiness() {
+  await fetch(API_BASE + "/business", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({
+      name: editBizName.value,
+      phone: editBizPhone.value,
+      whatsappNumber: editBizWhatsapp.value
+    })
+  });
+  profileMsg.innerText = "Saved successfully";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (localStorage.getItem("token")) ensureBusiness();
+});
+
+/* SALES */
 async function loadSales() {
-  const orders = await authFetch(API_BASE + "/orders");
+  const orders = await fetch(API_BASE + "/orders", {
+    headers: authHeader()
+  }).then(r => r.json());
+
   const table = document.getElementById("salesTable");
+  if (!table) return;
+
   table.innerHTML = "";
 
-  orders
-    .filter(o => o.status === "PAID")
-    .forEach(o => {
-      const products = o.items.map(i => i.name).join(", ");
-      const qty = o.items.reduce((s, i) => s + Number(i.qty || 0), 0);
+  orders.filter(o => o.status === "PAID").forEach(o => {
+    const products = o.items.map(i => i.name || "Item").join(", ");
+    const qty = o.items.reduce((s, i) => s + Number(i.quantity || i.qty || 0), 0);
 
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
+    table.innerHTML += `
+      <tr>
         <td>${new Date(o.createdAt).toLocaleString()}</td>
         <td>${products}</td>
         <td>${qty}</td>
         <td>KES ${o.total}</td>
-      `;
-      table.appendChild(tr);
-    });
+      </tr>`;
+  });
 }
 
-/* ================= CUSTOMERS ================= */
+/* PRODUCTS */
+async function loadProducts() {
+  const biz = await fetch(API_BASE + "/business/me", {
+    headers: authHeader()
+  }).then(r => r.json());
 
-async function loadCustomers() {
-  const customers = await authFetch(API_BASE + "/customers");
-  const list = document.getElementById("customersList");
+  const products = await fetch(API_BASE + "/products", {
+    headers: authHeader()
+  }).then(r => r.json());
+
+  const list = document.getElementById("productsList");
+  if (!list) return;
+
   list.innerHTML = "";
-
-  customers.forEach(c => {
-    const li = document.createElement("li");
-    li.textContent = `${c.name} (${c.phone})`;
-    list.appendChild(li);
+  products.filter(p => p.business === biz._id).forEach(p => {
+    list.innerHTML += `<li>${p.name} – KES ${p.price}</li>`;
   });
 }
 
-/* ================= AI ================= */
+/* ORDERS */
+async function loadOrders() {
+  const table = document.getElementById("ordersTable");
+  if (!table) return;
 
+  table.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
+
+  try {
+    const orders = await fetch(API_BASE + "/orders", {
+      headers: authHeader()
+    }).then(r => r.json());
+
+    table.innerHTML = "";
+
+    if (!orders.length) {
+      table.innerHTML = "<tr><td colspan='5'>No orders yet</td></tr>";
+      return;
+    }
+
+    orders.forEach(o => {
+      const products = o.items.map(i => i.name || "Item").join(", ");
+      const qty = o.items.reduce((s, i) => s + Number(i.quantity || i.qty || 0), 0);
+
+      table.innerHTML += `
+        <tr>
+          <td>${new Date(o.createdAt).toLocaleString()}</td>
+          <td>${products}</td>
+          <td>${qty}</td>
+          <td>KES ${o.total}</td>
+          <td>${o.status}</td>
+        </tr>`;
+    });
+  } catch {
+    table.innerHTML = "<tr><td colspan='5'>Failed to load orders</td></tr>";
+  }
+}
+
+/* ================= AI (DELETE PRODUCT ADDED) ================= */
 async function sendAI() {
-  const input = document.getElementById("aiInput");
-  const output = document.getElementById("aiOutput");
+  const text = aiInput.value.toLowerCase().trim();
+  aiOutput.textContent = "Processing...";
 
-  output.textContent = "Processing...";
+  if (text.startsWith("delete") || text.startsWith("remove")) {
+    const name = text.replace("delete", "").replace("remove", "").replace("product", "").trim();
 
-  const res = await authFetch(API_BASE + "/ai", {
+    const biz = await fetch(API_BASE + "/business/me", {
+      headers: authHeader()
+    }).then(r => r.json());
+
+    const products = await fetch(API_BASE + "/products", {
+      headers: authHeader()
+    }).then(r => r.json());
+
+    const product = products.find(
+      p => p.business === biz._id && p.name.toLowerCase().includes(name)
+    );
+
+    if (!product) {
+      aiOutput.textContent = "❌ Product not found";
+      return;
+    }
+
+    await fetch(API_BASE + "/products/" + product._id, {
+      method: "DELETE",
+      headers: authHeader()
+    });
+
+    aiOutput.textContent = `✅ Product "${product.name}" deleted`;
+    loadProducts();
+    loadDashboard();
+    return;
+  }
+
+  const res = await fetch(API_BASE + "/ai", {
     method: "POST",
-    body: JSON.stringify({ message: input.value })
-  });
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ message: aiInput.value })
+  }).then(r => r.json());
 
-  output.textContent = JSON.stringify(res, null, 2);
-  input.value = "";
-
-  loadOrders();
-  loadSales();
-  loadDashboard();
-  loadWalletBalance();
+  aiOutput.textContent = JSON.stringify(res, null, 2);
+  aiInput.value = "";
 }
 
-/* ================= INIT ================= */
-
-document.addEventListener("DOMContentLoaded", async () => {
-  if (localStorage.getItem("token")) await showApp();
-});
+/* VIEW HOOK */
+const __showView = showView;
+showView = function (v) {
+  __showView(v);
+  if (v === "sales") loadSales();
+  if (v === "products") loadProducts();
+  if (v === "orders") loadOrders();
+};

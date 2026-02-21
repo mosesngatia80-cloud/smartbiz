@@ -149,3 +149,91 @@ router.delete("/:id", auth, async (req, res) => {
 });
 
 module.exports = router;
+
+/*
+  🔐 PROTECTED: Soft Delete product (Enterprise Safe)
+*/
+router.patch("/:id/soft-delete", auth, async (req, res) => {
+  try {
+    const userId = req.user.user;
+
+    const product = await Product.findOne({
+      _id: req.params.id,
+      owner: userId
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    product.isActive = false;
+    product.deletedAt = new Date();
+
+    await product.save();
+
+    res.json({
+      message: "Product soft deleted",
+      productId: product._id
+    });
+  } catch (err) {
+    console.error("Soft delete error:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/*
+  🔐 PROTECTED: Restore soft deleted product
+*/
+router.patch("/:id/restore", auth, async (req, res) => {
+  try {
+    const userId = req.user.user;
+
+    const product = await Product.findOne({
+      _id: req.params.id,
+      owner: userId
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    product.isActive = true;
+    product.deletedAt = null;
+
+    await product.save();
+
+    res.json({
+      message: "Product restored",
+      productId: product._id
+    });
+  } catch (err) {
+    console.error("Restore product error:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+/*
+  🔐 PROTECTED: Get only ACTIVE products
+*/
+router.get("/active/list", auth, async (req, res) => {
+  try {
+    const userId = req.user.user;
+
+    const business = await Business.findOne({ owner: userId });
+    if (!business) {
+      return res.status(400).json({ message: "User has no business" });
+    }
+
+    const products = await Product.find({
+      business: business._id,
+      isActive: true
+    }).sort({ createdAt: -1 });
+
+    res.json(products);
+  } catch (err) {
+    console.error("Load active products error:", err.message);
+    res.status(500).json({ message: "Failed to load active products" });
+  }
+});
+
