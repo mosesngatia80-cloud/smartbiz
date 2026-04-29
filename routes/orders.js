@@ -518,3 +518,52 @@ router.get("/stats/summary-debug-final", auth, async (req, res) => {
   });
 });
 
+
+// ================= FINAL SMART SUMMARY =================
+router.get("/stats/summary-final-v2", auth, async (req, res) => {
+  try {
+    const userId = req.user.user;
+    const business = await Business.findOne({ owner: userId });
+
+    const orders = await Order.find({
+      business: business._id,
+      status: "PAID"
+    });
+
+    let total = 0;
+    let cash = 0;
+    let wallet = 0;
+    let mpesa = 0;
+
+    orders.forEach(o => {
+      total += o.total;
+
+      // 🔥 SMART LOGIC
+      if (o.paymentMethod) {
+        const method = o.paymentMethod.trim().toUpperCase();
+
+        if (method === "CASH") cash += o.total;
+        else if (method === "WALLET") wallet += o.total;
+        else mpesa += o.total;
+
+      } else {
+        // 🔥 OLD DATA → treat as CASH (based on your system history)
+        cash += o.total;
+      }
+    });
+
+    res.json({
+      total,
+      breakdown: {
+        CASH: cash,
+        WALLET: wallet,
+        MPESA: mpesa
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ Final v2 error:", err);
+    res.status(500).json({ message: "Summary failed" });
+  }
+});
+
