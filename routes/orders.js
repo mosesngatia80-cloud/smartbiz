@@ -456,3 +456,46 @@ router.get("/stats/summary-v2", auth, async (req, res) => {
   }
 });
 
+
+// ================= FIX CASE SENSITIVE SUMMARY =================
+router.get("/stats/summary-final", auth, async (req, res) => {
+  try {
+    const userId = req.user.user;
+
+    const business = await Business.findOne({ owner: userId });
+
+    const orders = await Order.find({
+      business: business._id,
+      status: "PAID"
+    });
+
+    let total = 0;
+    let cash = 0;
+    let wallet = 0;
+    let mpesa = 0;
+
+    orders.forEach(o => {
+      total += o.total;
+
+      const method = (o.paymentMethod || "MPESA").toUpperCase();
+
+      if (method === "CASH") cash += o.total;
+      else if (method === "WALLET") wallet += o.total;
+      else mpesa += o.total;
+    });
+
+    res.json({
+      total,
+      breakdown: {
+        CASH: cash,
+        WALLET: wallet,
+        MPESA: mpesa
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ Final summary error:", err);
+    res.status(500).json({ message: "Summary failed" });
+  }
+});
+
