@@ -409,3 +409,50 @@ router.get("/stats/summary", auth, async (req, res) => {
   }
 });
 
+
+// ================= PATCH SUMMARY LOGIC =================
+router.get("/stats/summary-v2", auth, async (req, res) => {
+  try {
+    const userId = req.user.user;
+
+    const business = await Business.findOne({ owner: userId });
+    if (!business) {
+      return res.status(400).json({ message: "User has no business" });
+    }
+
+    const orders = await Order.find({
+      business: business._id,
+      status: "PAID"
+    });
+
+    let total = 0;
+    let cash = 0;
+    let wallet = 0;
+    let mpesa = 0;
+
+    orders.forEach(o => {
+      total += o.total;
+
+      // 🔥 fallback logic
+      const method = o.paymentMethod || "MPESA";
+
+      if (method === "CASH") cash += o.total;
+      if (method === "WALLET") wallet += o.total;
+      if (method === "MPESA") mpesa += o.total;
+    });
+
+    res.json({
+      total,
+      breakdown: {
+        CASH: cash,
+        WALLET: wallet,
+        MPESA: mpesa
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ Summary v2 error:", err);
+    res.status(500).json({ message: "Summary failed" });
+  }
+});
+
