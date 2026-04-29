@@ -365,3 +365,47 @@ router.get("/__summary_fix", auth, async (req, res) => {
   }
 });
 
+
+// ================= SAFE SUMMARY ROUTE =================
+router.get("/stats/summary", auth, async (req, res) => {
+  try {
+    const userId = req.user.user;
+
+    const business = await Business.findOne({ owner: userId });
+    if (!business) {
+      return res.status(400).json({ message: "User has no business" });
+    }
+
+    const orders = await Order.find({
+      business: business._id,
+      status: "PAID"
+    });
+
+    let total = 0;
+    let cash = 0;
+    let wallet = 0;
+    let mpesa = 0;
+
+    orders.forEach(o => {
+      total += o.total;
+
+      if (o.paymentMethod === "CASH") cash += o.total;
+      if (o.paymentMethod === "WALLET") wallet += o.total;
+      if (o.paymentMethod === "MPESA") mpesa += o.total;
+    });
+
+    res.json({
+      total,
+      breakdown: {
+        CASH: cash,
+        WALLET: wallet,
+        MPESA: mpesa
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ Summary error:", err);
+    res.status(500).json({ message: "Summary failed" });
+  }
+});
+
