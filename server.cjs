@@ -21,6 +21,9 @@ app.use("/api/auth", require("./routes/auth.password")); // PASSWORD RESET
 app.use("/api/business", require("./routes/business"));
 app.use("/api/products", require("./routes/products"));
 
+/* ✅ NEW: MPESA INCOME (READ ONLY) */
+app.use("/api/income", require("./routes/income"));
+
 /* ✅ DASHBOARD ORDERS (USER JWT) */
 app.use("/api/orders", require("./routes/orders"));
 
@@ -119,3 +122,33 @@ mongoose
     console.error(err.message || err);
     process.exit(1);
   });
+
+/* ================= SMARTBIZ QUICK ROUTES ================= */
+
+// simple in-memory (temporary)
+let sb_sales = 0;
+let sb_expenses = 0;
+
+// add cash
+app.post("/api/sb/cash", (req, res) => {
+  const { amount } = req.body;
+  sb_sales += Number(amount || 0);
+  res.json({ message: "Cash saved", sales: sb_sales });
+});
+
+// add expense
+app.post("/api/sb/expense", (req, res) => {
+  const { amount } = req.body;
+  sb_expenses += Number(amount || 0);
+  res.json({ message: "Expense saved", expenses: sb_expenses });
+});
+
+// summary
+app.get("/api/sb/summary", (req, res) => {
+  res.json({
+    sales: sb_sales,
+    expenses: sb_expenses,
+    profit: sb_sales - sb_expenses
+  });
+});
+
