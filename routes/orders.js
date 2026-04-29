@@ -499,3 +499,22 @@ router.get("/stats/summary-final", auth, async (req, res) => {
   }
 });
 
+
+// ================= HARD DEBUG SUMMARY =================
+router.get("/stats/summary-debug-final", auth, async (req, res) => {
+  const userId = req.user.user;
+  const business = await Business.findOne({ owner: userId });
+
+  const orders = await Order.find({ business: business._id });
+
+  const result = orders.map(o => ({
+    total: o.total,
+    paymentMethod: o.paymentMethod,
+    status: o.status
+  }));
+
+  res.json({
+    raw: result
+  });
+});
+
