@@ -220,3 +220,102 @@ router.post("/:orderId/mark-paid", async (req, res) => {
 });
 
 module.exports = router;
+
+/**
+ * 💵 CREATE MANUAL SALE (CASH / WALLET)
+ * No WhatsApp, no products required
+ */
+router.post("/manual", auth, async (req, res) => {
+  try {
+    const userId = req.user.user;
+
+    const business = await Business.findOne({ owner: userId });
+    if (!business || !business.walletId) {
+      return res.status(400).json({ message: "User has no business" });
+    }
+
+    const { amount, paymentMethod } = req.body;
+
+    if (!amount) {
+      return res.status(400).json({ message: "Amount is required" });
+    }
+
+    const order = await Order.create({
+      business: business._id,
+      businessWalletId: business.walletId,
+      customerPhone: "MANUAL",
+      customerUserId: userId,
+      items: [],
+      total: Number(amount),
+      status: paymentMethod === "CASH" ? "PAID" : "UNPAID",
+      paymentMethod: paymentMethod || "CASH",
+      source: "MANUAL"
+    });
+
+    // 💳 WALLET → use existing mark-paid flow
+    if (paymentMethod === "WALLET") {
+      req.params.orderId = order._id;
+      req.body.paymentRef = "WALLET-MANUAL";
+
+      return router.handle(req, res, () => {});
+    }
+
+    // 💵 CASH → already paid, just log
+    if (paymentMethod === "CASH") {
+      console.log("💵 Manual cash sale:", amount);
+    }
+
+    res.status(201).json(order);
+
+  } catch (err) {
+    console.error("❌ Manual sale error:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+/**
+ * 📊 SALES SUMMARY (DASHBOARD)
+ */
+router.get("/summary", auth, async (req, res) => {
+  try {
+    const userId = req.user.user;
+
+    const business = await Business.findOne({ owner: userId });
+    if (!business) {
+      return res.status(400).json({ message: "User has no business" });
+    }
+
+    const orders = await Order.find({
+      business: business._id,
+      status: "PAID"
+    });
+
+    let total = 0;
+    let cash = 0;
+    let wallet = 0;
+    let mpesa = 0;
+
+    orders.forEach(o => {
+      total += o.total;
+
+      if (o.paymentMethod === "CASH") cash += o.total;
+      if (o.paymentMethod === "WALLET") wallet += o.total;
+      if (o.paymentMethod === "MPESA") mpesa += o.total;
+    });
+
+    res.json({
+      total,
+      breakdown: {
+        CASH: cash,
+        WALLET: wallet,
+        MPESA: mpesa
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ Summary error:", err);
+    res.status(500).json({ message: "Failed to load summary" });
+  }
+});
+

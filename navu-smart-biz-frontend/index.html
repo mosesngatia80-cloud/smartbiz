@@ -270,3 +270,73 @@ showView = function(view) {
 
 </body>
 </html>
+
+<!-- ================= SMARTBIZ QUICK ACTIONS ================= -->
+<script>
+const SB_API = "https://navu-smart-biz-sbdh.onrender.com/api/sb";
+
+/* Load SmartBiz summary into dashboard */
+async function loadSmartBizSummary() {
+  try {
+    const res = await fetch(SB_API + "/summary");
+    const data = await res.json();
+
+    // reuse existing dashboard fields
+    document.getElementById("totalSales").innerText = data.sales;
+    document.getElementById("walletBalance").innerText = data.profit;
+    document.getElementById("orderCount").innerText = data.expenses;
+  } catch (err) {
+    console.log("SmartBiz summary error:", err);
+  }
+}
+
+/* Add cash */
+async function sbAddCash() {
+  let amount = prompt("Enter cash received:");
+  if (!amount) return;
+
+  await fetch(SB_API + "/cash", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount })
+  });
+
+  loadSmartBizSummary();
+}
+
+/* Add expense */
+async function sbAddExpense() {
+  let amount = prompt("Enter expense:");
+  if (!amount) return;
+
+  await fetch(SB_API + "/expense", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount })
+  });
+
+  loadSmartBizSummary();
+}
+
+/* Inject buttons into dashboard WITHOUT touching HTML */
+document.addEventListener("DOMContentLoaded", () => {
+  const dashboard = document.getElementById("dashboard");
+
+  if (dashboard) {
+    const box = document.createElement("div");
+    box.style.marginTop = "20px";
+
+    box.innerHTML = `
+      <h3>Quick Actions</h3>
+      <button onclick="sbAddCash()">+ Cash</button>
+      <button onclick="sbAddExpense()">- Expense</button>
+    `;
+
+    dashboard.appendChild(box);
+
+    // load initial data
+    loadSmartBizSummary();
+  }
+});
+</script>
+

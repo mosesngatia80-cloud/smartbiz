@@ -150,3 +150,83 @@ exports.getOrderById = async (req, res) => {
   const order = await Order.findById(req.params.id);
   res.json(order);
 };
+
+// ================= SMARTBIZ EXTENSIONS =================
+
+/**
+ * 💵 CREATE MANUAL SALE (CASH / WALLET)
+ * Uses existing Order model safely
+ */
+exports.createManualSale = async (req, res) => {
+  try {
+    const { business, totalAmount, paymentMethod } = req.body;
+
+    if (!business || !totalAmount) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const order = await Order.create({
+      business,
+      items: [],
+      subtotal: totalAmount,
+      tax: 0,
+      totalAmount,
+      paymentMethod: paymentMethod || "CASH",
+      paymentStatus: paymentMethod === "CASH" ? "PAID" : "PENDING",
+      status: paymentMethod === "CASH" ? "COMPLETED" : "OPEN",
+      source: "MANUAL"
+    });
+
+    // 💳 If WALLET → trigger payment automatically
+    if (paymentMethod === "WALLET") {
+      req.params.id = order._id;
+      return exports.markOrderPaid(req, res);
+    }
+
+    // 💵 CASH → already paid
+    if (paymentMethod === "CASH") {
+      console.log("💵 Manual cash sale recorded:", totalAmount);
+    }
+
+    res.status(201).json(order);
+  } catch (err) {
+    console.error("Manual sale error:", err);
+    res.status(500).json({ message: "Manual sale failed" });
+  }
+};
+
+
+/**
+ * 📊 GET SALES SUMMARY (SMARTBIZ DASHBOARD)
+ */
+exports.getSalesSummary = async (req, res) => {
+  try {
+    const orders = await Order.find({ paymentStatus: "PAID" });
+
+    let total = 0;
+    let cash = 0;
+    let wallet = 0;
+    let mpesa = 0;
+
+    orders.forEach(o => {
+      total += o.totalAmount;
+
+      if (o.paymentMethod === "CASH") cash += o.totalAmount;
+      if (o.paymentMethod === "WALLET") wallet += o.totalAmount;
+      if (o.paymentMethod === "MPESA") mpesa += o.totalAmount;
+    });
+
+    res.json({
+      total,
+      breakdown: {
+        CASH: cash,
+        WALLET: wallet,
+        MPESA: mpesa
+      }
+    });
+  } catch (err) {
+    console.error("Summary error:", err);
+    res.status(500).json({ message: "Failed to load summary" });
+  }
+};
+

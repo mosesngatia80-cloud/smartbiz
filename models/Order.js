@@ -59,3 +59,24 @@ const OrderSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Order", OrderSchema);
+
+// ================= SMARTBIZ EXTENSIONS =================
+
+// Payment method (Cash / Wallet / MPESA)
+OrderSchema.add({
+  paymentMethod: {
+    type: String,
+    enum: ["CASH", "WALLET", "MPESA"],
+    default: "CASH"
+  }
+});
+
+// Source of order (WhatsApp or Manual)
+OrderSchema.add({
+  source: {
+    type: String,
+    enum: ["WHATSAPP", "MANUAL"],
+    default: "WHATSAPP"
+  }
+});
+
