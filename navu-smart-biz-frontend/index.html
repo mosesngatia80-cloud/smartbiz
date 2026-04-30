@@ -340,3 +340,211 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
+
+<!-- ================= SMARTBIZ REAL SUMMARY (FINAL) ================= -->
+<script>
+async function loadRealSummary() {
+  try {
+    const res = await fetch("https://navu-smart-biz-sbdh.onrender.com/api/orders/stats/summary-final-v2", {
+      headers: {
+        Authorization: "Bearer " + localStorage.getItem("token")
+      }
+    });
+
+    const data = await res.json();
+
+    // 🔥 REAL DATA FROM BACKEND
+    document.getElementById("totalSales").innerText = data.total;
+
+    console.log("REAL SUMMARY:", data);
+
+  } catch (err) {
+    console.log("Real summary error:", err);
+  }
+}
+
+// hook into dashboard safely
+document.addEventListener("DOMContentLoaded", () => {
+  const oldShowViewFinal = window.showView;
+
+  window.showView = function(view) {
+    if (oldShowViewFinal) oldShowViewFinal(view);
+
+    if (view === "dashboard") {
+      loadRealSummary();
+    }
+  };
+});
+</script>
+
+
+<!-- ================= DISABLE OLD SB SYSTEM ================= -->
+<script>
+function loadSmartBizSummary() {
+  console.log("OLD SB SYSTEM DISABLED");
+}
+</script>
+
+
+<!-- ================= FIX CASH BUTTON ================= -->
+<script>
+async function sbAddCash() {
+  let amount = prompt("Enter cash received:");
+  if (!amount) return;
+
+  await fetch("https://navu-smart-biz-sbdh.onrender.com/api/orders/manual", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + localStorage.getItem("token")
+    },
+    body: JSON.stringify({
+      amount: Number(amount),
+      paymentMethod: "CASH"
+    })
+  });
+
+  alert("Cash sale recorded");
+}
+</script>
+
+
+<script>
+// 🔥 DISABLE OLD SB SYSTEM COMPLETELY
+function loadSmartBizSummary() {}
+function sbAddCash() {}
+function sbAddExpense() {}
+
+console.log("Old SB system disabled");
+</script>
+
+
+<script>
+async function loadDashboardReal() {
+  try {
+    const res = await fetch("https://navu-smart-biz-sbdh.onrender.com/api/orders/stats/summary-final-v2", {
+      headers: {
+        Authorization: "Bearer " + localStorage.getItem("token")
+      }
+    });
+
+    const data = await res.json();
+
+    document.getElementById("totalSales").innerText = data.total;
+
+    console.log("Dashboard loaded:", data);
+  } catch (err) {
+    console.log("Dashboard error:", err);
+  }
+}
+</script>
+
+
+<script>
+async function sbAddCash() {
+  let amount = prompt("Enter cash received:");
+  if (!amount) return;
+
+  await fetch("https://navu-smart-biz-sbdh.onrender.com/api/orders/manual", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + localStorage.getItem("token")
+    },
+    body: JSON.stringify({
+      amount: Number(amount),
+      paymentMethod: "CASH"
+    })
+  });
+
+  alert("Cash recorded");
+
+  loadDashboardReal();
+}
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const oldShowViewFinal = window.showView;
+
+  window.showView = function(view) {
+    if (oldShowViewFinal) oldShowViewFinal(view);
+
+    if (view === "dashboard") {
+      loadDashboardReal();
+    }
+  };
+});
+</script>
+
+
+<!-- ================= FINAL FRONTEND FIX ================= -->
+<script>
+
+/* ================= DISABLE OLD SYSTEM ================= */
+function loadSmartBizSummary() {}
+function sbAddExpense() {}
+
+console.log("Old system disabled");
+
+/* ================= REAL DASHBOARD ================= */
+async function loadDashboardReal() {
+  try {
+    const res = await fetch("https://navu-smart-biz-sbdh.onrender.com/api/orders/stats/summary-final-v2", {
+      headers: {
+        Authorization: "Bearer " + localStorage.getItem("token")
+      }
+    });
+
+    const data = await res.json();
+
+    document.getElementById("totalSales").innerText = data.total;
+    console.log("REAL DASHBOARD:", data);
+
+  } catch (err) {
+    console.log("Dashboard error:", err);
+  }
+}
+
+/* ================= REAL CASH BUTTON ================= */
+async function sbAddCash() {
+  let amount = prompt("Enter cash received:");
+  if (!amount) return;
+
+  await fetch("https://navu-smart-biz-sbdh.onrender.com/api/orders/manual", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + localStorage.getItem("token")
+    },
+    body: JSON.stringify({
+      amount: Number(amount),
+      paymentMethod: "CASH"
+    })
+  });
+
+  alert("Cash recorded");
+  loadDashboardReal();
+}
+
+/* ================= FORCE DASHBOARD LOAD ================= */
+document.addEventListener("DOMContentLoaded", () => {
+  const oldShowViewFinal = window.showView;
+
+  window.showView = function(view) {
+    if (oldShowViewFinal) oldShowViewFinal(view);
+
+    if (view === "dashboard") {
+      loadDashboardReal();
+    }
+  };
+
+  // also load immediately
+  setTimeout(() => {
+    loadDashboardReal();
+  }, 500);
+});
+
+</script>
+

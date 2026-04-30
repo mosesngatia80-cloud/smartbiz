@@ -39,3 +39,12 @@ const ProductSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Product", ProductSchema);
+
+// ================= INVENTORY =================
+ProductSchema.add({
+  stock: {
+    type: Number,
+    default: 0
+  }
+});
+
