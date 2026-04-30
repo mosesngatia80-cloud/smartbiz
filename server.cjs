@@ -151,4 +151,3 @@ app.get("/api/sb/summary", (req, res) => {
     profit: sb_sales - sb_expenses
   });
 });
-
