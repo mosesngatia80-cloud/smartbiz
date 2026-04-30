@@ -1,0 +1,12 @@
+MOVE THIS LINE ABOVE:
+
+app.use("/api/internal/orders", require("./routes/orders.routes"));
+
+BELOW THIS LINE:
+
+app.use("/api/internal", require("./routes/internal.orders"));
+
+FINAL ORDER SHOULD BE:
+
+app.use("/api/internal", require("./routes/internal.orders"));
+app.use("/api/internal/orders", require("./routes/orders.routes"));
