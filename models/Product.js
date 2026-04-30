@@ -13,6 +13,12 @@ const ProductSchema = new mongoose.Schema(
       min: 0
     },
 
+    // 📦 INVENTORY (FIXED POSITION)
+    stock: {
+      type: Number,
+      default: 0
+    },
+
     // 🔐 Ownership
     business: {
       type: mongoose.Schema.Types.ObjectId,
@@ -39,12 +45,3 @@ const ProductSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Product", ProductSchema);
-
-// ================= INVENTORY =================
-ProductSchema.add({
-  stock: {
-    type: Number,
-    default: 0
-  }
-});
-
