@@ -647,3 +647,51 @@ if (originalOrderHandler) {
   }, originalOrderHandler);
 }
 
+
+// ================= FINAL INVENTORY FIX =================
+const originalCreate = router.stack.find(
+  r => r.route && r.route.path === "/" && r.route.methods.post
+)?.route.stack[0].handle;
+
+if (originalCreate) {
+  router.post("/", async (req, res) => {
+    try {
+      const Product = require("../models/Product");
+      const Business = require("../models/Business");
+
+      const userId = req.user.user;
+      const business = await Business.findOne({ owner: userId });
+
+      const { items } = req.body;
+
+      // 🔥 STEP 1: Validate + reduce stock
+      for (const item of items) {
+        const product = await Product.findOne({
+          _id: item.productId,
+          business: business._id
+        });
+
+        if (!product) {
+          return res.status(404).json({ message: "Product not found" });
+        }
+
+        if (product.stock < item.qty) {
+          return res.status(400).json({
+            message: `${product.name} is out of stock`
+          });
+        }
+
+        product.stock -= item.qty;
+        await product.save();
+      }
+
+      // 🔥 STEP 2: Continue original logic
+      return originalCreate(req, res);
+
+    } catch (err) {
+      console.error("Inventory fix error:", err);
+      res.status(500).json({ message: err.message });
+    }
+  });
+}
+
