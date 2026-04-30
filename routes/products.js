@@ -237,3 +237,33 @@ router.get("/active/list", auth, async (req, res) => {
   }
 });
 
+
+/*
+ 🔍 PUBLIC: Find product by name (for WhatsApp)
+*/
+router.get("/search/by-name", async (req, res) => {
+  try {
+    const { name, businessId } = req.query;
+
+    if (!name || !businessId) {
+      return res.status(400).json({ message: "Missing name or businessId" });
+    }
+
+    const product = await Product.findOne({
+      business: businessId,
+      name: { $regex: name, $options: "i" },
+      isActive: true
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json(product);
+
+  } catch (err) {
+    console.error("Search product error:", err);
+    res.status(500).json({ message: "Search failed" });
+  }
+});
+
