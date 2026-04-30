@@ -567,3 +567,43 @@ router.get("/stats/summary-final-v2", auth, async (req, res) => {
   }
 });
 
+
+// ================= INVENTORY ENFORCEMENT =================
+async function enforceInventory(items) {
+  const Product = require("../models/Product");
+
+  for (const item of items) {
+    const product = await Product.findById(item.product);
+
+    if (!product) {
+      throw new Error("Product not found");
+    }
+
+    if (product.stock < item.qty) {
+      throw new Error(`${product.name} out of stock`);
+    }
+
+    product.stock -= item.qty;
+    await product.save();
+  }
+}
+
+
+// ================= APPLY INVENTORY BEFORE ORDER =================
+const originalPostRoute = router.stack.find(
+  r => r.route && r.route.path === "/" && r.route.methods.post
+)?.route.stack[0].handle;
+
+if (originalPostRoute) {
+  router.post("/", async (req, res, next) => {
+    try {
+      if (req.body.items && req.body.items.length > 0) {
+        await enforceInventory(req.body.items);
+      }
+      next();
+    } catch (err) {
+      return res.status(400).json({ message: err.message });
+    }
+  }, originalPostRoute);
+}
+
