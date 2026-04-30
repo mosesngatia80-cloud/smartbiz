@@ -607,3 +607,43 @@ if (originalPostRoute) {
   }, originalPostRoute);
 }
 
+
+// ================= INVENTORY: APPLY ON ORDER =================
+async function applyInventory(items) {
+  const Product = require("../models/Product");
+
+  for (const item of items) {
+    const product = await Product.findById(item.product);
+
+    if (!product) {
+      throw new Error("Product not found");
+    }
+
+    if (product.stock < item.qty) {
+      throw new Error(`${product.name} is out of stock`);
+    }
+
+    product.stock -= item.qty;
+    await product.save();
+  }
+}
+
+
+// ================= HOOK INVENTORY INTO ORDER CREATION =================
+const originalOrderHandler = router.stack.find(
+  r => r.route && r.route.path === "/" && r.route.methods.post
+)?.route.stack[0].handle;
+
+if (originalOrderHandler) {
+  router.post("/", async (req, res, next) => {
+    try {
+      if (req.body.items && req.body.items.length > 0) {
+        await applyInventory(req.body.items);
+      }
+      next();
+    } catch (err) {
+      return res.status(400).json({ message: err.message });
+    }
+  }, originalOrderHandler);
+}
+
