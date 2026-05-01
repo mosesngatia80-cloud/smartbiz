@@ -548,3 +548,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </script>
 
+
+<!-- ================= FORCE NO LOGIN (FINAL) ================= -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("🚀 Bypassing login...");
+
+  // hide auth screens
+  const auth = document.getElementById("authScreen");
+  const register = document.getElementById("registerScreen");
+  const biz = document.getElementById("businessSetup");
+  const app = document.getElementById("app");
+
+  if (auth) auth.style.display = "none";
+  if (register) register.style.display = "none";
+  if (biz) biz.style.display = "none";
+
+  // show app directly
+  if (app) app.style.display = "block";
+
+  // fake token so backend calls don't crash
+  localStorage.setItem("token", "demo");
+
+  // load dashboard automatically
+  if (typeof showView === "function") {
+    showView("dashboard");
+  }
+});
+</script>
+

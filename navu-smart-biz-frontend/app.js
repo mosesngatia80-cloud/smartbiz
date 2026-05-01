@@ -177,23 +177,53 @@ async function loadSales() {
   });
 }
 
-/* PRODUCTS */
+/* ================= PRODUCTS (FIXED MVP MODE) ================= */
 async function loadProducts() {
-  const biz = await fetch(API_BASE + "/business/me", {
-    headers: authHeader()
-  }).then(r => r.json());
-
-  const products = await fetch(API_BASE + "/products", {
-    headers: authHeader()
-  }).then(r => r.json());
-
   const list = document.getElementById("productsList");
   if (!list) return;
 
-  list.innerHTML = "";
-  products.filter(p => p.business === biz._id).forEach(p => {
-    list.innerHTML += `<li>${p.name} – KES ${p.price}</li>`;
-  });
+  try {
+    const products = await fetch(API_BASE + "/products/public/all").then(r => r.json());
+
+    list.innerHTML = "";
+    products.forEach(p => {
+      list.innerHTML += `<li>${p.name} – KES ${p.price}</li>`;
+    });
+
+  } catch {
+    list.innerHTML = "<li>Failed to load products</li>";
+  }
+}
+
+async function addProduct() {
+  productMsg.innerText = "Adding...";
+
+  try {
+    const res = await fetch(API_BASE + "/products/public/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: newProductName.value,
+        price: Number(newProductPrice.value)
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      productMsg.innerText = data.message || "Failed";
+      return;
+    }
+
+    newProductName.value = "";
+    newProductPrice.value = "";
+    productMsg.innerText = "Product added";
+
+    loadProducts();
+
+  } catch {
+    productMsg.innerText = "Error adding product";
+  }
 }
 
 /* ORDERS */
@@ -233,52 +263,6 @@ async function loadOrders() {
   }
 }
 
-/* ================= AI (DELETE PRODUCT ADDED) ================= */
-async function sendAI() {
-  const text = aiInput.value.toLowerCase().trim();
-  aiOutput.textContent = "Processing...";
-
-  if (text.startsWith("delete") || text.startsWith("remove")) {
-    const name = text.replace("delete", "").replace("remove", "").replace("product", "").trim();
-
-    const biz = await fetch(API_BASE + "/business/me", {
-      headers: authHeader()
-    }).then(r => r.json());
-
-    const products = await fetch(API_BASE + "/products", {
-      headers: authHeader()
-    }).then(r => r.json());
-
-    const product = products.find(
-      p => p.business === biz._id && p.name.toLowerCase().includes(name)
-    );
-
-    if (!product) {
-      aiOutput.textContent = "❌ Product not found";
-      return;
-    }
-
-    await fetch(API_BASE + "/products/" + product._id, {
-      method: "DELETE",
-      headers: authHeader()
-    });
-
-    aiOutput.textContent = `✅ Product "${product.name}" deleted`;
-    loadProducts();
-    loadDashboard();
-    return;
-  }
-
-  const res = await fetch(API_BASE + "/ai", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify({ message: aiInput.value })
-  }).then(r => r.json());
-
-  aiOutput.textContent = JSON.stringify(res, null, 2);
-  aiInput.value = "";
-}
-
 /* VIEW HOOK */
 const __showView = showView;
 showView = function (v) {
@@ -287,3 +271,81 @@ showView = function (v) {
   if (v === "products") loadProducts();
   if (v === "orders") loadOrders();
 };
+
+/* ================= PRODUCTS (FINAL FIX) ================= */
+
+async function loadProducts() {
+  const list = document.getElementById("productsList");
+  if (!list) return;
+
+  try {
+    const products = await fetch(API_BASE + "/products/public/all")
+      .then(r => r.json());
+
+    list.innerHTML = "";
+
+    products.forEach(p => {
+      list.innerHTML += `<li>${p.name} – KES ${p.price}</li>`;
+    });
+
+  } catch (err) {
+    console.log(err);
+    list.innerHTML = "<li>Failed to load products</li>";
+  }
+}
+
+async function addProduct() {
+  productMsg.innerText = "Adding...";
+
+  try {
+    const res = await fetch(API_BASE + "/products/public/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: newProductName.value,
+        price: Number(newProductPrice.value)
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      productMsg.innerText = data.message || "Error";
+      return;
+    }
+
+    productMsg.innerText = "Product added";
+
+    newProductName.value = "";
+    newProductPrice.value = "";
+
+    loadProducts();
+
+  } catch (err) {
+    console.log(err);
+    productMsg.innerText = "Failed";
+  }
+}
+
+
+/* ================= SAFE MVP APP LOAD ================= */
+async function showApp() {
+  authScreen.style.display = "none";
+  businessSetup.style.display = "none";
+  app.style.display = "block";
+
+  // ❌ DISABLED (require token)
+  // loadDashboard();
+  // loadCustomers();
+  // loadProfile();
+
+  console.log("MVP mode: dashboard auth disabled");
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("MVP mode loaded (no auth)");
+});
+

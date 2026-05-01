@@ -101,3 +101,19 @@ router.get("/me", auth, async (req, res) => {
 });
 
 module.exports = router;
+
+/*
+ 🔓 PUBLIC: Get all businesses (MVP TEST)
+*/
+router.get("/public/all", async (req, res) => {
+  try {
+    const Business = require("../models/Business");
+    const businesses = await Business.find().sort({ createdAt: -1 });
+
+    res.json(businesses);
+  } catch (err) {
+    console.error("Public business error:", err.message);
+    res.status(500).json({ message: "Failed to load businesses" });
+  }
+});
+

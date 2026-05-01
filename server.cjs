@@ -1,158 +1,235 @@
-require("dotenv").config(); // MUST BE FIRST
+require("dotenv").config();
 
 const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
+const fetch = global.fetch;
 
 const app = express();
-
-/* ================= ROOT ================= */
-app.get("/", (req, res) => {
-  res.send("SMART BIZ ROOT IS ALIVE");
-});
-
-/* ================= MIDDLEWARE ================= */
-app.use(cors());
 app.use(express.json());
+app.use(express.text({ type: "*/*" }));
 
-/* ================= ROUTES ================= */
-app.use("/api/auth", require("./routes/auth"));
-app.use("/api/auth", require("./routes/auth.password")); // PASSWORD RESET
-app.use("/api/business", require("./routes/business"));
-app.use("/api/products", require("./routes/products"));
+/* =========================
+   DEBUG LOGGER
+========================= */
+app.use((req, res, next) => {
+  console.log("🔥 INCOMING:", req.method, req.url);
+  next();
+});
 
-/* ✅ NEW: MPESA INCOME (READ ONLY) */
-app.use("/api/income", require("./routes/income"));
+/* =========================
+   ENV
+========================= */
+const WHATSAPP_API_URL = "https://graph.facebook.com/v18.0";
+const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
+const SMART_BIZ_BASE = process.env.SMARTPAY_BASE_URL;
+const INTERNAL_KEY = process.env.CT_INTERNAL_KEY;
 
-/* ✅ DASHBOARD ORDERS (USER JWT) */
-app.use("/api/orders", require("./routes/orders"));
+/* =========================
+   SESSION (TEMP IN-MEMORY)
+========================= */
+const sessions = {};
 
-/* ✅ INTERNAL ORDERS (SMART CONNECT / WHATSAPP) */
-app.use("/api/internal/orders", require("./routes/orders.routes"));
+/* =========================
+   HELPERS
+========================= */
+async function sendWhatsAppMessage(to, text) {
+  const url = `${WHATSAPP_API_URL}/${PHONE_NUMBER_ID}/messages`;
 
-/* ✅ WALLET ROUTES */
-app.use("/api/wallet", require("./routes/wallet"));
+  const payload = {
+    messaging_product: "whatsapp",
+    to,
+    type: "text",
+    text: { body: text }
+  };
 
-app.use("/api/stats", require("./routes/stats"));
-app.use("/api/payments", require("./routes/payments.wallet.routes"));
-app.use("/api/receipts", require("./routes/receipt.routes"));
-
-/* 🤖 AI ACTION ROUTES */
-app.use("/api/ai", require("./routes/ai"));
-
-/* 📲 WHATSAPP CUSTOMER ORDERS */
-app.use("/api/whatsapp", require("./routes/whatsapp.orders"));
-
-/* 🔐 ADMIN ROUTES */
-app.use("/api/admin", require("./routes/admin.wallet"));
-
-/* 🔒 INTERNAL ROUTES */
-app.use("/api/internal", require("./routes/internal.wallet"));
-app.use("/api/internal", require("./routes/internal.register"));
-app.use("/api/internal", require("./routes/internal.business.link"));
-
-/* ✅ FIXED: INTERNAL ORDERS */
-app.use("/api/internal-secure", require("./routes/internal.orders"));
-
-/* ✅ NEW: INTERNAL WALLET TOPUP (ADDED) */
-app.use("/api/internal-secure", require("./routes/internal.wallet.topup"));
-
-/* 🧪 INTERNAL ENV DEBUG */
-app.get("/api/internal/__debug_env", (req, res) => {
-  res.json({
-    has_SMARTCONNECT_SECRET: !!process.env.SMARTCONNECT_SECRET,
-    len_SMARTCONNECT_SECRET: process.env.SMARTCONNECT_SECRET
-      ? process.env.SMARTCONNECT_SECRET.length
-      : 0,
-
-    has_SMARTCONNECT_INTERNAL_KEY: !!process.env.SMARTCONNECT_INTERNAL_KEY,
-    len_SMARTCONNECT_INTERNAL_KEY: process.env.SMARTCONNECT_INTERNAL_KEY
-      ? process.env.SMARTCONNECT_INTERNAL_KEY.length
-      : 0,
-
-    has_CT_INTERNAL_KEY: !!process.env.CT_INTERNAL_KEY,
-    len_CT_INTERNAL_KEY: process.env.CT_INTERNAL_KEY
-      ? process.env.CT_INTERNAL_KEY.length
-      : 0
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
   });
+
+  const data = await resp.json();
+  console.log("📤 WhatsApp response:", data);
+}
+
+function parseOrder(text) {
+  const parts = text.split(" ");
+  if (parts[0] === "buy" && parts.length >= 3) {
+    const qty = parseInt(parts[parts.length - 1]);
+    const productName = parts.slice(1, -1).join(" ");
+    if (!isNaN(qty)) {
+      return { productName, qty };
+    }
+  }
+  return null;
+}
+
+/* =========================
+   ROOT
+========================= */
+app.get("/", (req, res) => {
+  res.send("Smart Connect running");
 });
 
-/* 🔔 SMART PAY WEBHOOK */
-app.use("/api/smartpay", require("./routes/smartpay.webhook"));
+/* =========================
+   WEBHOOK VERIFY
+========================= */
+app.get("/webhook", (req, res) => {
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
 
-/* ================= HEALTH ================= */
-app.get("/api/health", (req, res) => {
-  res.json({ status: "SMART_BIZ_OK" });
+  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    console.log("✅ Webhook verified");
+    return res.status(200).send(challenge);
+  }
+  return res.sendStatus(403);
 });
 
-/* ================= START SERVER AFTER DB ================= */
+/* =========================
+   MAIN WEBHOOK
+========================= */
+app.post("/webhook", async (req, res) => {
+  try {
+    const message = req.body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+    if (!message?.text?.body) return res.sendStatus(200);
+
+    const from = message.from;
+    const text = message.text.body.trim().toLowerCase();
+
+    if (!sessions[from]) {
+      sessions[from] = { mode: null, businessId: null };
+    }
+
+    /* =========================
+       STEP 1: MODE SELECT
+    ========================= */
+    if (!sessions[from].mode) {
+      if (text === "business") {
+        sessions[from].mode = "BUSINESS";
+        await sendWhatsAppMessage(from, "🏪 Business mode activated");
+        return res.sendStatus(200);
+      }
+
+      if (text === "customer") {
+        sessions[from].mode = "CUSTOMER";
+        await sendWhatsAppMessage(from, "🛒 Customer mode activated\nType shop name");
+        return res.sendStatus(200);
+      }
+
+      await sendWhatsAppMessage(
+        from,
+        "👋 Welcome!\n\nReply:\n• BUSINESS\n• CUSTOMER"
+      );
+      return res.sendStatus(200);
+    }
+
+    /* =========================
+       CUSTOMER FLOW
+    ========================= */
+    if (sessions[from].mode === "CUSTOMER") {
+
+      // select business
+      if (!sessions[from].businessId) {
+        const bizResp = await fetch(
+          `${SMART_BIZ_BASE}/api/business/search?name=${text}`
+        );
+        const biz = await bizResp.json();
+
+        if (!biz || !biz._id) {
+          await sendWhatsAppMessage(from, "❌ Business not found");
+          return res.sendStatus(200);
+        }
+
+        sessions[from].businessId = biz._id;
+
+        await sendWhatsAppMessage(
+          from,
+          `🏪 Selected: ${biz.name}\n\nNow type: buy sugar 1`
+        );
+
+        return res.sendStatus(200);
+      }
+
+      // handle order
+      const parsed = parseOrder(text);
+      if (!parsed) {
+        await sendWhatsAppMessage(from, "❓ Use: buy sugar 1");
+        return res.sendStatus(200);
+      }
+
+      const businessId = sessions[from].businessId;
+
+      const productResp = await fetch(
+        `${SMART_BIZ_BASE}/api/products/search/by-name?name=${parsed.productName}&businessId=${businessId}`
+      );
+      const product = await productResp.json();
+
+      if (!product || !product._id) {
+        await sendWhatsAppMessage(from, "❌ Product not found");
+        return res.sendStatus(200);
+      }
+
+      const orderResp = await fetch(
+        `${SMART_BIZ_BASE}/api/internal-secure/orders`,
+        {
+          method: "POST",
+          headers: {
+            "x-internal-key": INTERNAL_KEY,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            business: product.business,
+            items: [{ productId: product._id, qty: parsed.qty }]
+          })
+        }
+      );
+
+      const orderData = await orderResp.json();
+
+      if (orderData.payment?.status === "PAID") {
+        await sendWhatsAppMessage(
+          from,
+          `✅ Payment Successful\n\n🛒 ${product.name} x${parsed.qty}\n💰 KES ${orderData.order.total}\n💼 Balance: ${orderData.payment.remainingBalance}`
+        );
+      } else {
+        await sendWhatsAppMessage(
+          from,
+          `⚠️ Payment failed: ${orderData.payment?.reason || "Unknown"}`
+        );
+      }
+
+      return res.sendStatus(200);
+    }
+
+    /* =========================
+       BUSINESS FLOW
+    ========================= */
+    if (sessions[from].mode === "BUSINESS") {
+      await sendWhatsAppMessage(
+        from,
+        "📊 Business tools coming next (add products, view sales)"
+      );
+      return res.sendStatus(200);
+    }
+
+    return res.sendStatus(200);
+
+  } catch (err) {
+    console.error("❌ Webhook error:", err);
+    return res.sendStatus(200);
+  }
+});
+
+/* =========================
+   START
+========================= */
 const PORT = process.env.PORT || 3000;
 
-console.log("🟡 Connecting to MongoDB...");
-
-mongoose
-  .connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 10000,
-    family: 4
-  })
-  .then(async () => {
-    console.log("🟢 Smart Biz MongoDB connected");
-
-    /* 🔍 TEMP DEBUG: LIST BUSINESS WALLETS */
-    const Wallet = require("./models/Wallet");
-
-    app.get("/api/internal/__debug_wallets", async (req, res) => {
-      try {
-        const wallets = await Wallet.find({ ownerType: "BUSINESS" });
-        res.json(
-          wallets.map(w => ({
-            walletId: w._id,
-            ownerType: w.ownerType,
-            balance: w.balance
-          }))
-        );
-      } catch (err) {
-        res.status(500).json({ error: err.message });
-      }
-    });
-
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`🚀 Smart Biz server running on port ${PORT}`);
-    });
-
-    require("./workers/reconcilePayments");
-  })
-  .catch((err) => {
-    console.error("🔴 MongoDB connection failed:");
-    console.error(err.message || err);
-    process.exit(1);
-  });
-
-/* ================= SMARTBIZ QUICK ROUTES ================= */
-
-// simple in-memory (temporary)
-let sb_sales = 0;
-let sb_expenses = 0;
-
-// add cash
-app.post("/api/sb/cash", (req, res) => {
-  const { amount } = req.body;
-  sb_sales += Number(amount || 0);
-  res.json({ message: "Cash saved", sales: sb_sales });
-});
-
-// add expense
-app.post("/api/sb/expense", (req, res) => {
-  const { amount } = req.body;
-  sb_expenses += Number(amount || 0);
-  res.json({ message: "Expense saved", expenses: sb_expenses });
-});
-
-// summary
-app.get("/api/sb/summary", (req, res) => {
-  res.json({
-    sales: sb_sales,
-    expenses: sb_expenses,
-    profit: sb_sales - sb_expenses
-  });
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Smart Connect running on port ${PORT}`);
 });
