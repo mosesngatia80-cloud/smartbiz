@@ -65,7 +65,7 @@ router.post("/orders/mark-paid", internalAuth, async (req, res) => {
 });
 
 /**
- * 🛒 CREATE ORDER (NEW - THIS IS WHAT WAS MISSING)
+ * 🛒 CREATE ORDER (FIXED)
  */
 router.post("/orders", internalAuth, async (req, res) => {
   try {
@@ -99,7 +99,9 @@ router.post("/orders", internalAuth, async (req, res) => {
       business,
       items,
       total,
-      status: "PENDING"
+      status: "PENDING",
+      owner: business,
+      createdAt: new Date()
     });
 
     await order.save();
@@ -144,4 +146,3 @@ router.post("/orders-debug", internalAuth, async (req, res) => {
     res.json({ error: err.message, stack: err.stack });
   }
 });
-
