@@ -18,11 +18,15 @@ function internalAuth(req, res, next) {
 }
 
 /**
- * 🛒 CREATE ORDER (DEBUG VERSION)
+ * 🛒 CREATE ORDER (FINAL FIXED VERSION)
  */
 router.post("/orders", internalAuth, async (req, res) => {
   try {
     const { business, items } = req.body;
+
+    if (!business || !items || !items.length) {
+      return res.status(400).json({ message: "Invalid order data" });
+    }
 
     let total = 0;
     const Product = require("../models/Product");
@@ -46,10 +50,20 @@ router.post("/orders", internalAuth, async (req, res) => {
 
     const order = new Order({
       business,
-      items,
       total,
-      status: "PENDING",
-      owner: business,
+
+      status: "UNPAID",
+
+      customerPhone: "254700000001",
+      customerUserId: "SYSTEM",
+
+      businessWalletId: business,
+
+      items: items.map(item => ({
+        product: item.productId,
+        qty: item.qty
+      })),
+
       createdAt: new Date()
     });
 
@@ -58,11 +72,9 @@ router.post("/orders", internalAuth, async (req, res) => {
     return res.json({ success: true, order });
 
   } catch (err) {
-    // 🔥 FULL ERROR RETURN
     return res.json({
       error: err.message,
-      details: err.errors || null,
-      stack: err.stack
+      details: err.errors || null
     });
   }
 });
