@@ -55,7 +55,79 @@ router.post("/orders/mark-paid", internalAuth, async (req, res) => {
     order.paidAt = new Date();
     await order.save();
 
-    console.log("✅ ORDER AUTO-MARKED PAID:", order._id.toString());
+    const payment = await handleWalletPayment(order);
+
+    if (!payment.paid) {
+      return res.json({
+        success: true,
+        order,
+        payment: {
+          status: "FAILED",
+          reason: payment.reason
+        }
+      });
+    }
+
+    console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+    return res.json({
+      success: true,
+      order,
+      payment: {
+        status: "PAID",
+        remainingBalance: payment.balance
+      }
+    });
+    await order.save();
+
+    const payment = await handleWalletPayment(order);
+
+    if (!payment.paid) {
+      return res.json({
+        success: true,
+        order,
+        payment: {
+          status: "FAILED",
+          reason: payment.reason
+        }
+      });
+    }
+
+    console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+    return res.json({
+      success: true,
+      order,
+      payment: {
+        status: "PAID",
+        remainingBalance: payment.balance
+      }
+    });
+    await order.save();
+
+    const payment = await handleWalletPayment(order);
+
+    if (!payment.paid) {
+      return res.json({
+        success: true,
+        order,
+        payment: {
+          status: "FAILED",
+          reason: payment.reason
+        }
+      });
+    }
+
+    console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+    return res.json({
+      success: true,
+      order,
+      payment: {
+        status: "PAID",
+        remainingBalance: payment.balance
+      }
+    });
 
     res.json({ success: true });
   } catch (err) {
@@ -117,7 +189,79 @@ router.post("/orders", internalAuth, async (req, res) => {
 
     await order.save();
 
-    console.log("🛒 INTERNAL ORDER CREATED:", order._id.toString());
+    const payment = await handleWalletPayment(order);
+
+    if (!payment.paid) {
+      return res.json({
+        success: true,
+        order,
+        payment: {
+          status: "FAILED",
+          reason: payment.reason
+        }
+      });
+    }
+
+    console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+    return res.json({
+      success: true,
+      order,
+      payment: {
+        status: "PAID",
+        remainingBalance: payment.balance
+      }
+    });
+    await order.save();
+
+    const payment = await handleWalletPayment(order);
+
+    if (!payment.paid) {
+      return res.json({
+        success: true,
+        order,
+        payment: {
+          status: "FAILED",
+          reason: payment.reason
+        }
+      });
+    }
+
+    console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+    return res.json({
+      success: true,
+      order,
+      payment: {
+        status: "PAID",
+        remainingBalance: payment.balance
+      }
+    });
+    await order.save();
+
+    const payment = await handleWalletPayment(order);
+
+    if (!payment.paid) {
+      return res.json({
+        success: true,
+        order,
+        payment: {
+          status: "FAILED",
+          reason: payment.reason
+        }
+      });
+    }
+
+    console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+    return res.json({
+      success: true,
+      order,
+      payment: {
+        status: "PAID",
+        remainingBalance: payment.balance
+      }
+    });
 
     return res.json({
       success: true,
@@ -133,3 +277,236 @@ router.post("/orders", internalAuth, async (req, res) => {
 });
 
 module.exports = router;
+
+/**
+ * 💰 WALLET DEDUCTION + AUTO PAY
+ */
+async function handleWalletPayment(order) {
+  const Wallet = require("../models/Wallet");
+
+  // find business wallet
+  const wallet = await Wallet.findOne({
+    owner: order.business,
+    ownerType: "BUSINESS"
+  });
+
+  if (!wallet) {
+    throw new Error("Business wallet not found");
+  }
+
+  if (wallet.balance < order.total) {
+    return {
+      paid: false,
+      reason: "INSUFFICIENT_FUNDS"
+    };
+  }
+
+  // deduct
+  wallet.balance -= order.total;
+  await wallet.save();
+
+  // mark paid
+  order.status = "PAID";
+  order.paidAt = new Date();
+  order.paymentMethod = "WALLET";
+
+    await order.save();
+
+    const payment = await handleWalletPayment(order);
+
+    if (!payment.paid) {
+      return res.json({
+        success: true,
+        order,
+        payment: {
+          status: "FAILED",
+          reason: payment.reason
+        }
+      });
+    }
+
+    console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+    return res.json({
+      success: true,
+      order,
+      payment: {
+        status: "PAID",
+        remainingBalance: payment.balance
+      }
+    });
+    await order.save();
+
+    const payment = await handleWalletPayment(order);
+
+    if (!payment.paid) {
+      return res.json({
+        success: true,
+        order,
+        payment: {
+          status: "FAILED",
+          reason: payment.reason
+        }
+      });
+    }
+
+    console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+    return res.json({
+      success: true,
+      order,
+      payment: {
+        status: "PAID",
+        remainingBalance: payment.balance
+      }
+    });
+    await order.save();
+
+    const payment = await handleWalletPayment(order);
+
+    if (!payment.paid) {
+      return res.json({
+        success: true,
+        order,
+        payment: {
+          status: "FAILED",
+          reason: payment.reason
+        }
+      });
+    }
+
+    console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+    return res.json({
+      success: true,
+      order,
+      payment: {
+        status: "PAID",
+        remainingBalance: payment.balance
+      }
+    });
+    await order.save();
+
+    const payment = await handleWalletPayment(order);
+
+    if (!payment.paid) {
+      return res.json({
+        success: true,
+        order,
+        payment: {
+          status: "FAILED",
+          reason: payment.reason
+        }
+      });
+    }
+
+    console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+    return res.json({
+      success: true,
+      order,
+      payment: {
+        status: "PAID",
+        remainingBalance: payment.balance
+      }
+    });
+    await order.save();
+
+    const payment = await handleWalletPayment(order);
+
+    if (!payment.paid) {
+      return res.json({
+        success: true,
+        order,
+        payment: {
+          status: "FAILED",
+          reason: payment.reason
+        }
+      });
+    }
+
+    console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+    return res.json({
+      success: true,
+      order,
+      payment: {
+        status: "PAID",
+        remainingBalance: payment.balance
+      }
+    });
+    await order.save();
+
+    const payment = await handleWalletPayment(order);
+
+    if (!payment.paid) {
+      return res.json({
+        success: true,
+        order,
+        payment: {
+          status: "FAILED",
+          reason: payment.reason
+        }
+      });
+    }
+
+    console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+    return res.json({
+      success: true,
+      order,
+      payment: {
+        status: "PAID",
+        remainingBalance: payment.balance
+      }
+    });
+    await order.save();
+
+    const payment = await handleWalletPayment(order);
+
+    if (!payment.paid) {
+      return res.json({
+        success: true,
+        order,
+        payment: {
+          status: "FAILED",
+          reason: payment.reason
+        }
+      });
+    }
+
+    console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+    return res.json({
+      success: true,
+      order,
+      payment: {
+        status: "PAID",
+        remainingBalance: payment.balance
+      }
+    });
+    await order.save();
+
+    const payment = await handleWalletPayment(order);
+
+    if (!payment.paid) {
+      return res.json({
+        success: true,
+        order,
+        payment: {
+          status: "FAILED",
+          reason: payment.reason
+        }
+      });
+    }
+
+    console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+    return res.json({
+      success: true,
+      order,
+      payment: {
+        status: "PAID",
+        remainingBalance: payment.balance
+      }
+    });
