@@ -115,3 +115,33 @@ router.post("/orders", internalAuth, async (req, res) => {
 });
 
 module.exports = router;
+
+// 🔥 TEMP DEBUG (DO NOT KEEP IN PRODUCTION)
+router.post("/orders-debug", internalAuth, async (req, res) => {
+  try {
+    const { business, items } = req.body;
+
+    const Product = require("../models/Product");
+
+    const debug = [];
+
+    for (const item of items) {
+      const product = await Product.findById(item.productId);
+      debug.push({ product });
+
+      if (!product) {
+        return res.json({ error: "Product not found", debug });
+      }
+
+      if (product.stock < item.qty) {
+        return res.json({ error: "Insufficient stock", debug });
+      }
+    }
+
+    res.json({ status: "passed", debug });
+
+  } catch (err) {
+    res.json({ error: err.message, stack: err.stack });
+  }
+});
+
