@@ -1,0 +1,27 @@
+// AFTER THIS LINE:
+await order.save();
+
+// KEEP ONLY ONE OF THESE:
+const payment = await handleWalletPayment(order);
+
+if (!payment.paid) {
+  return res.json({
+    success: true,
+    order,
+    payment: {
+      status: "FAILED",
+      reason: payment.reason
+    }
+  });
+}
+
+console.log("🛒 ORDER + PAYMENT SUCCESS:", order._id.toString());
+
+return res.json({
+  success: true,
+  order,
+  payment: {
+    status: "PAID",
+    remainingBalance: payment.balance
+  }
+});
