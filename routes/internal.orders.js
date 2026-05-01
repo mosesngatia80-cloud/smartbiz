@@ -8,7 +8,6 @@ const Order = require("../models/Order");
 
 /**
  * 🧪 DEBUG ROUTE — CONFIRM ROUTE IS MOUNTED
- * TEMPORARY (REMOVE AFTER CONFIRMATION)
  */
 router.get("/orders/__ping", (req, res) => {
   res.json({
@@ -19,8 +18,7 @@ router.get("/orders/__ping", (req, res) => {
 });
 
 /**
- * 🔐 INTERNAL AUTH (SMART PAY → SMART BIZ)
- * Uses CT_INTERNAL_KEY (server-to-server)
+ * 🔐 INTERNAL AUTH (SMART CONNECT → SMART BIZ)
  */
 function internalAuth(req, res, next) {
   const key = req.headers["x-internal-key"];
@@ -31,8 +29,7 @@ function internalAuth(req, res, next) {
 }
 
 /**
- * ✅ MARK ORDER AS PAID (INTERNAL)
- * Called ONLY by Smart Pay
+ * ✅ MARK ORDER AS PAID (EXISTING)
  */
 router.post("/orders/mark-paid", internalAuth, async (req, res) => {
   try {
@@ -67,10 +64,8 @@ router.post("/orders/mark-paid", internalAuth, async (req, res) => {
   }
 });
 
-module.exports = router;
-
 /**
- * 🛒 CREATE ORDER (INTERNAL - SMART CONNECT)
+ * 🛒 CREATE ORDER (NEW - THIS IS WHAT WAS MISSING)
  */
 router.post("/orders", internalAuth, async (req, res) => {
   try {
@@ -119,3 +114,4 @@ router.post("/orders", internalAuth, async (req, res) => {
   }
 });
 
+module.exports = router;

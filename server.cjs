@@ -50,7 +50,9 @@ app.use("/api/admin", require("./routes/admin.wallet"));
 app.use("/api/internal", require("./routes/internal.wallet"));
 app.use("/api/internal", require("./routes/internal.register"));
 app.use("/api/internal", require("./routes/internal.business.link"));
-app.use("/api/internal", require("./routes/internal.orders"));
+
+/* ✅ FIXED: INTERNAL ORDERS (NO CONFLICT) */
+app.use("/api/internal-secure", require("./routes/internal.orders"));
 
 /* 🧪 INTERNAL ENV DEBUG */
 app.get("/api/internal/__debug_env", (req, res) => {
