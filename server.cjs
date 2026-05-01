@@ -51,8 +51,11 @@ app.use("/api/internal", require("./routes/internal.wallet"));
 app.use("/api/internal", require("./routes/internal.register"));
 app.use("/api/internal", require("./routes/internal.business.link"));
 
-/* ✅ FIXED: INTERNAL ORDERS (NO CONFLICT) */
+/* ✅ FIXED: INTERNAL ORDERS */
 app.use("/api/internal-secure", require("./routes/internal.orders"));
+
+/* ✅ NEW: INTERNAL WALLET TOPUP (ADDED) */
+app.use("/api/internal-secure", require("./routes/internal.wallet.topup"));
 
 /* 🧪 INTERNAL ENV DEBUG */
 app.get("/api/internal/__debug_env", (req, res) => {
