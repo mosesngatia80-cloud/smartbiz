@@ -40,3 +40,6 @@ mongoose.connect(process.env.MONGO_URI)
 .catch(err => {
   console.error("❌ DB ERROR:", err.message);
 });
+
+app.use("/api/auth", require("./routes/auth.whatsapp"));
+

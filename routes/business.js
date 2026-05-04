@@ -22,13 +22,11 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    const userId = req.user.user; // MUST be ObjectId string
+    const userId = req.user.user;
 
-    // 1️⃣ Find existing business
     let business = await Business.findOne({ owner: userId });
 
     if (!business) {
-      // CREATE BUSINESS
       business = await Business.create({
         name,
         category,
@@ -37,14 +35,12 @@ router.post("/", auth, async (req, res) => {
         owner: userId
       });
     } else {
-      // UPDATE WHATSAPP NUMBER IF PROVIDED
       if (whatsappNumber && business.whatsappNumber !== whatsappNumber) {
         business.whatsappNumber = whatsappNumber;
         await business.save();
       }
     }
 
-    // 2️⃣ Find or create wallet
     let wallet = await Wallet.findOne({
       owner: business._id,
       ownerType: "BUSINESS"
@@ -59,7 +55,6 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
-    // 3️⃣ Link wallet to business (once)
     if (!business.walletId) {
       business.walletId = wallet._id;
       await business.save();
@@ -100,16 +95,12 @@ router.get("/me", auth, async (req, res) => {
   }
 });
 
-module.exports = router;
-
 /*
  🔓 PUBLIC: Get all businesses (MVP TEST)
 */
 router.get("/public/all", async (req, res) => {
   try {
-    const Business = require("../models/Business");
     const businesses = await Business.find().sort({ createdAt: -1 });
-
     res.json(businesses);
   } catch (err) {
     console.error("Public business error:", err.message);
@@ -117,3 +108,26 @@ router.get("/public/all", async (req, res) => {
   }
 });
 
+/*
+ 🔍 PUBLIC: Find business by WhatsApp number
+*/
+router.get("/by-whatsapp", async (req, res) => {
+  try {
+    const { number } = req.query;
+
+    const business = await Business.findOne({
+      whatsappNumber: number
+    });
+
+    if (!business) {
+      return res.status(404).json({ message: "Business not found" });
+    }
+
+    res.json(business);
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+module.exports = router;

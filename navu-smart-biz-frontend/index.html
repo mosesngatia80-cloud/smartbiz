@@ -791,3 +791,89 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
+
+<!-- ================= FINAL PRODUCT FIX (CLEAN OVERRIDE) ================= -->
+<script>
+console.log("✅ CLEAN PRODUCT FIX ACTIVE");
+
+/* LOAD PRODUCTS (PUBLIC) */
+async function loadProducts() {
+  try {
+    const res = await fetch("https://navu-smart-biz-sbdh.onrender.com/api/products/public/all");
+    const products = await res.json();
+
+    const list = document.getElementById("productsList");
+    if (!list) return;
+
+    list.innerHTML = "";
+
+    products.forEach(p => {
+      list.innerHTML += `
+        <li id="p-${p._id}">
+          <strong>${p.name}</strong> – KES ${p.price}
+        </li>
+      `;
+    });
+
+  } catch (err) {
+    console.log("LOAD ERROR:", err);
+  }
+}
+
+/* ADD PRODUCT (PUBLIC — NO TOKEN) */
+async function addProduct() {
+  const name = document.getElementById("newProductName").value;
+  const price = document.getElementById("newProductPrice").value;
+  const msg = document.getElementById("productMsg");
+
+  if (!name || !price) {
+    alert("Enter product name and price");
+    return;
+  }
+
+  msg.innerText = "Adding...";
+
+  try {
+    const res = await fetch("https://navu-smart-biz-sbdh.onrender.com/api/products/public/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ name, price: Number(price) })
+    });
+
+    const data = await res.json();
+    console.log("CREATE:", data);
+
+    if (!res.ok) {
+      msg.innerText = data.message || "Error ❌";
+      return;
+    }
+
+    msg.innerText = "Product added ✅";
+
+    document.getElementById("newProductName").value = "";
+    document.getElementById("newProductPrice").value = "";
+
+    loadProducts();
+
+  } catch (err) {
+    console.log("CREATE ERROR:", err);
+    msg.innerText = "Failed ❌";
+  }
+}
+
+/* FORCE LOAD WHEN TAB OPENS */
+document.addEventListener("DOMContentLoaded", () => {
+  const oldShow = window.showView;
+
+  window.showView = function(view) {
+    if (oldShow) oldShow(view);
+
+    if (view === "products") {
+      loadProducts();
+    }
+  };
+});
+</script>
+
