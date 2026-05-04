@@ -577,3 +577,217 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
+
+<!-- ================= FINAL PRODUCTS OVERRIDE (DO NOT REMOVE ANYTHING ABOVE) ================= -->
+<script>
+console.log("🔥 FINAL PRODUCTS OVERRIDE ACTIVE");
+
+/* FORCE correct product loading */
+async function loadProducts() {
+  try {
+    const res = await fetch("https://navu-smart-biz-sbdh.onrender.com/api/products/public/all");
+    const products = await res.json();
+
+    const list = document.getElementById("productsList");
+    if (!list) return;
+
+    list.innerHTML = "";
+
+    products.forEach(p => {
+      list.innerHTML += `<li>${p.name} – KES ${p.price}</li>`;
+    });
+
+  } catch (err) {
+    console.log("LOAD ERROR:", err);
+  }
+}
+
+/* FORCE correct product creation */
+async function addProduct() {
+  alert("🔥 NEW FUNCTION RUNNING");
+
+  const msg = document.getElementById("productMsg");
+  if (!msg) {
+    alert("❌ productMsg not found");
+    return;
+  }
+
+  msg.innerText = "Adding...";
+
+  try {
+    const res = await fetch("https://navu-smart-biz-sbdh.onrender.com/api/products/public/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: document.getElementById("newProductName").value,
+        price: Number(document.getElementById("newProductPrice").value)
+      })
+    });
+
+    const data = await res.json();
+    console.log("CREATE RESPONSE:", data);
+
+    if (!res.ok) {
+      msg.innerText = data.message || "Error ❌";
+      return;
+    }
+
+    msg.innerText = "Product added ✅";
+
+    document.getElementById("newProductName").value = "";
+    document.getElementById("newProductPrice").value = "";
+
+    loadProducts();
+
+  } catch (err) {
+    console.log("CREATE ERROR:", err);
+    msg.innerText = "Failed ❌";
+  }
+}
+</script>
+
+
+<!-- ================= PRODUCT FIX OVERRIDE ================= -->
+<script>
+async function addProduct() {
+  const msg = document.getElementById("productMsg");
+  msg.innerText = "Adding...";
+
+  try {
+    const res = await fetch("https://navu-smart-biz-sbdh.onrender.com/api/products/public/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: document.getElementById("newProductName").value,
+        price: Number(document.getElementById("newProductPrice").value)
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      msg.innerText = data.message || "Error ❌";
+      return;
+    }
+
+    msg.innerText = "Product added ✅";
+
+    document.getElementById("newProductName").value = "";
+    document.getElementById("newProductPrice").value = "";
+
+    // reload list using public endpoint
+    const list = document.getElementById("productsList");
+    const products = await fetch("https://navu-smart-biz-sbdh.onrender.com/api/products/public/all")
+      .then(r => r.json());
+
+    list.innerHTML = "";
+    products.forEach(p => {
+      list.innerHTML += `<li>${p.name} – KES ${p.price}</li>`;
+    });
+
+  } catch (err) {
+    console.log(err);
+    msg.innerText = "Failed ❌";
+  }
+}
+</script>
+
+
+<!-- ================= FINAL PRODUCTS WITH DELETE FIX ================= -->
+<script>
+console.log("🔥 PRODUCTS + DELETE FINAL FIX ACTIVE");
+
+/* LOAD PRODUCTS WITH DELETE BUTTON */
+async function loadProducts() {
+  try {
+    const res = await fetch("https://navu-smart-biz-sbdh.onrender.com/api/products/public/all");
+    const products = await res.json();
+
+    const list = document.getElementById("productsList");
+    if (!list) return;
+
+    list.innerHTML = "";
+
+    products.forEach(p => {
+      list.innerHTML += `
+        <li id="p-${p._id}">
+          <strong>${p.name}</strong> – KES ${p.price}
+          <button onclick="deleteProduct('${p._id}')">❌ Delete</button>
+        </li>
+      `;
+    });
+
+  } catch (err) {
+    console.log("LOAD ERROR:", err);
+  }
+}
+
+/* ADD PRODUCT (WORKING VERSION) */
+async function addProduct() {
+  const name = document.getElementById("newProductName").value;
+  const price = document.getElementById("newProductPrice").value;
+
+  if (!name || !price) {
+    alert("Enter product name and price");
+    return;
+  }
+
+  await fetch("https://navu-smart-biz-sbdh.onrender.com/api/products", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + localStorage.getItem("token")
+    },
+    body: JSON.stringify({ name, price })
+  });
+
+  alert("✅ Product added");
+
+  document.getElementById("newProductName").value = "";
+  document.getElementById("newProductPrice").value = "";
+
+  loadProducts();
+}
+
+/* DELETE PRODUCT */
+async function deleteProduct(id) {
+  const confirmDelete = confirm("Delete this product?");
+  if (!confirmDelete) return;
+
+  try {
+    await fetch("https://navu-smart-biz-sbdh.onrender.com/api/products/" + id, {
+      method: "DELETE",
+      headers: {
+        Authorization: "Bearer " + localStorage.getItem("token")
+      }
+    });
+
+    // remove instantly (no reload)
+    const el = document.getElementById("p-" + id);
+    if (el) el.remove();
+
+    alert("🗑 Product deleted");
+
+  } catch (err) {
+    console.log("DELETE ERROR:", err);
+  }
+}
+
+/* AUTO LOAD WHEN PRODUCTS TAB OPENS */
+document.addEventListener("DOMContentLoaded", () => {
+  const oldShowViewProducts = window.showView;
+
+  window.showView = function(view) {
+    if (oldShowViewProducts) oldShowViewProducts(view);
+
+    if (view === "products") {
+      loadProducts();
+    }
+  };
+});
+</script>
+

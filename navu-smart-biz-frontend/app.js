@@ -28,7 +28,6 @@ async function login() {
   ensureBusiness();
 }
 
-/* REGISTER */
 async function register() {
   const res = await fetch(API_BASE + "/auth/register", {
     method: "POST",
@@ -71,216 +70,25 @@ async function showApp() {
   authScreen.style.display = "none";
   businessSetup.style.display = "none";
   app.style.display = "block";
-  loadDashboard();
-  loadCustomers();
-  loadProfile();
+  console.log("MVP mode running");
 }
 
 function showView(id) {
   document.querySelectorAll(".view").forEach(v => v.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
+
+  if (id === "products") loadProducts();
 }
 
-/* DASHBOARD */
-async function loadDashboard() {
-  const orders = await fetch(API_BASE + "/orders", {
-    headers: authHeader()
-  }).then(r => r.json());
-
-  totalSales.innerText = orders.reduce((s, o) => s + (o.total || 0), 0);
-  orderCount.innerText = orders.length;
-
-  const wallet = await fetch(API_BASE + "/wallet/balance", {
-    headers: authHeader()
-  }).then(r => r.json());
-
-  walletBalance.innerText = wallet.balance;
-}
-
-/* CUSTOMERS */
-async function loadCustomers() {
-  const orders = await fetch(API_BASE + "/orders", {
-    headers: authHeader()
-  }).then(r => r.json());
-
-  const map = {};
-  orders.forEach(o => {
-    const phone = o.customerPhone || "POS-WALKIN";
-    if (!map[phone]) map[phone] = { count: 0, total: 0, last: o.createdAt };
-    map[phone].count++;
-    map[phone].total += o.total || 0;
-    map[phone].last = o.createdAt;
-  });
-
-  customersTable.innerHTML = "";
-  Object.entries(map).forEach(([p, c]) => {
-    customersTable.innerHTML += `
-      <tr>
-        <td>${p}</td>
-        <td>${c.count}</td>
-        <td>KES ${c.total}</td>
-        <td>${new Date(c.last).toLocaleString()}</td>
-      </tr>`;
-  });
-}
-
-/* PROFILE */
-async function loadProfile() {
-  const biz = await fetch(API_BASE + "/business/me", {
-    headers: authHeader()
-  }).then(r => r.json());
-
-  editBizName.value = biz.name;
-  editBizPhone.value = biz.phone;
-  editBizWhatsapp.value = biz.whatsappNumber;
-}
-
-async function saveBusiness() {
-  await fetch(API_BASE + "/business", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify({
-      name: editBizName.value,
-      phone: editBizPhone.value,
-      whatsappNumber: editBizWhatsapp.value
-    })
-  });
-  profileMsg.innerText = "Saved successfully";
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  if (localStorage.getItem("token")) ensureBusiness();
-});
-
-/* SALES */
-async function loadSales() {
-  const orders = await fetch(API_BASE + "/orders", {
-    headers: authHeader()
-  }).then(r => r.json());
-
-  const table = document.getElementById("salesTable");
-  if (!table) return;
-
-  table.innerHTML = "";
-
-  orders.filter(o => o.status === "PAID").forEach(o => {
-    const products = o.items.map(i => i.name || "Item").join(", ");
-    const qty = o.items.reduce((s, i) => s + Number(i.quantity || i.qty || 0), 0);
-
-    table.innerHTML += `
-      <tr>
-        <td>${new Date(o.createdAt).toLocaleString()}</td>
-        <td>${products}</td>
-        <td>${qty}</td>
-        <td>KES ${o.total}</td>
-      </tr>`;
-  });
-}
-
-/* ================= PRODUCTS (FIXED MVP MODE) ================= */
-async function loadProducts() {
-  const list = document.getElementById("productsList");
-  if (!list) return;
-
-  try {
-    const products = await fetch(API_BASE + "/products/public/all").then(r => r.json());
-
-    list.innerHTML = "";
-    products.forEach(p => {
-      list.innerHTML += `<li>${p.name} – KES ${p.price}</li>`;
-    });
-
-  } catch {
-    list.innerHTML = "<li>Failed to load products</li>";
-  }
-}
-
-async function addProduct() {
-  productMsg.innerText = "Adding...";
-
-  try {
-    const res = await fetch(API_BASE + "/products/public/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: newProductName.value,
-        price: Number(newProductPrice.value)
-      })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      productMsg.innerText = data.message || "Failed";
-      return;
-    }
-
-    newProductName.value = "";
-    newProductPrice.value = "";
-    productMsg.innerText = "Product added";
-
-    loadProducts();
-
-  } catch {
-    productMsg.innerText = "Error adding product";
-  }
-}
-
-/* ORDERS */
-async function loadOrders() {
-  const table = document.getElementById("ordersTable");
-  if (!table) return;
-
-  table.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
-
-  try {
-    const orders = await fetch(API_BASE + "/orders", {
-      headers: authHeader()
-    }).then(r => r.json());
-
-    table.innerHTML = "";
-
-    if (!orders.length) {
-      table.innerHTML = "<tr><td colspan='5'>No orders yet</td></tr>";
-      return;
-    }
-
-    orders.forEach(o => {
-      const products = o.items.map(i => i.name || "Item").join(", ");
-      const qty = o.items.reduce((s, i) => s + Number(i.quantity || i.qty || 0), 0);
-
-      table.innerHTML += `
-        <tr>
-          <td>${new Date(o.createdAt).toLocaleString()}</td>
-          <td>${products}</td>
-          <td>${qty}</td>
-          <td>KES ${o.total}</td>
-          <td>${o.status}</td>
-        </tr>`;
-    });
-  } catch {
-    table.innerHTML = "<tr><td colspan='5'>Failed to load orders</td></tr>";
-  }
-}
-
-/* VIEW HOOK */
-const __showView = showView;
-showView = function (v) {
-  __showView(v);
-  if (v === "sales") loadSales();
-  if (v === "products") loadProducts();
-  if (v === "orders") loadOrders();
-};
-
-/* ================= PRODUCTS (FINAL FIX) ================= */
+/* ================= PRODUCTS ================= */
 
 async function loadProducts() {
   const list = document.getElementById("productsList");
   if (!list) return;
 
   try {
-    const products = await fetch(API_BASE + "/products/public/all")
-      .then(r => r.json());
+    const res = await fetch(API_BASE + "/products/public/all");
+    const products = await res.json();
 
     list.innerHTML = "";
 
@@ -295,7 +103,8 @@ async function loadProducts() {
 }
 
 async function addProduct() {
-  productMsg.innerText = "Adding...";
+  const msg = document.getElementById("productMsg");
+  msg.innerText = "Adding...";
 
   try {
     const res = await fetch(API_BASE + "/products/public/create", {
@@ -304,48 +113,99 @@ async function addProduct() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        name: newProductName.value,
-        price: Number(newProductPrice.value)
+        name: document.getElementById("newProductName").value,
+        price: Number(document.getElementById("newProductPrice").value)
+      })
+    });
+
+    const data = await res.json();
+    console.log("ADD RESPONSE:", data);
+
+    if (!res.ok) {
+      msg.innerText = data.message || "Error ❌";
+      return;
+    }
+
+    msg.innerText = "Product added ✅";
+
+    document.getElementById("newProductName").value = "";
+    document.getElementById("newProductPrice").value = "";
+
+    await loadProducts();
+
+  } catch (err) {
+    console.log(err);
+    msg.innerText = "Failed ❌";
+  }
+}
+
+/* INIT */
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("App loaded");
+});
+
+async function addProduct() {
+  alert("CLICK WORKING");   // 👈 MUST SHOW
+
+  const msg = document.getElementById("productMsg");
+  msg.innerText = "Adding...";
+
+  try {
+    const res = await fetch(API_BASE + "/products/public/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: document.getElementById("newProductName").value,
+        price: Number(document.getElementById("newProductPrice").value)
+      })
+    });
+
+    alert("REQUEST SENT");   // 👈 MUST SHOW
+
+    const data = await res.json();
+    alert("RESPONSE RECEIVED"); // 👈 MUST SHOW
+
+    msg.innerText = "DONE ✅";
+
+  } catch (err) {
+    alert("ERROR");
+    console.log(err);
+    msg.innerText = "FAILED ❌";
+  }
+}
+
+
+async function addProduct() {
+  const msg = document.getElementById("productMsg");
+
+  if (!msg) {
+    alert("productMsg element missing ❌");
+    return;
+  }
+
+  msg.innerText = "Adding...";
+
+  try {
+    const res = await fetch(API_BASE + "/products/public/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: document.getElementById("newProductName").value,
+        price: Number(document.getElementById("newProductPrice").value)
       })
     });
 
     const data = await res.json();
 
-    if (!res.ok) {
-      productMsg.innerText = data.message || "Error";
-      return;
-    }
+    msg.innerText = "Product added ✅";
 
-    productMsg.innerText = "Product added";
-
-    newProductName.value = "";
-    newProductPrice.value = "";
-
-    loadProducts();
+    await loadProducts();
 
   } catch (err) {
     console.log(err);
-    productMsg.innerText = "Failed";
+    msg.innerText = "Failed ❌";
   }
 }
-
-
-/* ================= SAFE MVP APP LOAD ================= */
-async function showApp() {
-  authScreen.style.display = "none";
-  businessSetup.style.display = "none";
-  app.style.display = "block";
-
-  // ❌ DISABLED (require token)
-  // loadDashboard();
-  // loadCustomers();
-  // loadProfile();
-
-  console.log("MVP mode: dashboard auth disabled");
-}
-
-
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("MVP mode loaded (no auth)");
-});
 
