@@ -1,211 +1,168 @@
 const API_BASE = "https://navu-smart-biz-sbdh.onrender.com/api";
 
-/* UTIL */
-function togglePassword() {
-  password.type = password.type === "password" ? "text" : "password";
-}
-function forgotPassword() {
-  alert("Contact support: navusystems@gmail.com");
-}
+/* ================= UTIL ================= */
+
 function logout() {
   localStorage.removeItem("token");
   location.reload();
 }
-function authHeader() {
-  return { Authorization: "Bearer " + localStorage.getItem("token") };
-}
 
-/* AUTH */
-async function login() {
-  const res = await fetch(API_BASE + "/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: email.value, password: password.value })
-  });
-  const data = await res.json();
-  if (!res.ok) return authMsg.innerText = data.message;
-  localStorage.setItem("token", data.token);
-  ensureBusiness();
-}
-
-async function register() {
-  const res = await fetch(API_BASE + "/auth/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: email.value,
-      password: password.value
-    })
-  });
-  const data = await res.json();
-  if (!res.ok) return authMsg.innerText = data.message;
-  localStorage.setItem("token", data.token);
-  ensureBusiness();
-}
-
-/* BUSINESS FLOW */
-async function ensureBusiness() {
-  const res = await fetch(API_BASE + "/business/me", { headers: authHeader() });
-  if (res.ok) return showApp();
-  authScreen.style.display = "none";
-  businessSetup.style.display = "flex";
-}
-
-async function createBusiness() {
-  await fetch(API_BASE + "/business", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify({
-      name: bizName.value,
-      category: bizCategory.value,
-      phone: bizPhone.value,
-      whatsappNumber: bizWhatsapp.value
-    })
-  });
-  showApp();
-}
-
-/* APP */
-async function showApp() {
-  authScreen.style.display = "none";
-  businessSetup.style.display = "none";
-  app.style.display = "block";
-  console.log("MVP mode running");
-}
+/* ================= APP ================= */
 
 function showView(id) {
   document.querySelectorAll(".view").forEach(v => v.classList.add("hidden"));
-  document.getElementById(id).classList.remove("hidden");
 
-  if (id === "products") loadProducts();
+  const el = document.getElementById(id);
+
+  if (el) {
+    el.classList.remove("hidden");
+  }
+
+  if (id === "products") {
+    loadProducts();
+  }
+}
+
+/* ================= LOGIN ================= */
+
+async function login() {
+
+  const whatsappEl = document.getElementById("whatsapp");
+  const businessEl = document.getElementById("businessName");
+
+  if (!whatsappEl || !businessEl) {
+    alert("Login inputs missing ❌");
+    return;
+  }
+
+  const whatsapp = whatsappEl.value.trim();
+  const businessName = businessEl.value.trim();
+
+  if (!whatsapp || !businessName) {
+    alert("Enter WhatsApp and Business Name ⚠️");
+    return;
+  }
+
+  /* SIMPLE DIRECT LOGIN */
+  localStorage.setItem("token", "smartbiz-user");
+
+  document.getElementById("authScreen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+
+  showView("dashboard");
 }
 
 /* ================= PRODUCTS ================= */
 
 async function loadProducts() {
+
   const list = document.getElementById("productsList");
+
   if (!list) return;
 
   try {
+
     const res = await fetch(API_BASE + "/products/public/all");
+
     const products = await res.json();
 
     list.innerHTML = "";
 
     products.forEach(p => {
-      list.innerHTML += `<li>${p.name} – KES ${p.price}</li>`;
+
+      list.innerHTML += `
+        <li>${p.name} – KES ${p.price}</li>
+      `;
     });
 
   } catch (err) {
+
     console.log(err);
+
     list.innerHTML = "<li>Failed to load products</li>";
   }
 }
 
-async function addProduct() {
-  const msg = document.getElementById("productMsg");
-  msg.innerText = "Adding...";
-
-  try {
-    const res = await fetch(API_BASE + "/products/public/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name: document.getElementById("newProductName").value,
-        price: Number(document.getElementById("newProductPrice").value)
-      })
-    });
-
-    const data = await res.json();
-    console.log("ADD RESPONSE:", data);
-
-    if (!res.ok) {
-      msg.innerText = data.message || "Error ❌";
-      return;
-    }
-
-    msg.innerText = "Product added ✅";
-
-    document.getElementById("newProductName").value = "";
-    document.getElementById("newProductPrice").value = "";
-
-    await loadProducts();
-
-  } catch (err) {
-    console.log(err);
-    msg.innerText = "Failed ❌";
-  }
-}
-
-/* INIT */
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("App loaded");
-});
+/* ================= ADD PRODUCT ================= */
 
 async function addProduct() {
-  alert("CLICK WORKING");   // 👈 MUST SHOW
 
   const msg = document.getElementById("productMsg");
-  msg.innerText = "Adding...";
 
-  try {
-    const res = await fetch(API_BASE + "/products/public/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: document.getElementById("newProductName").value,
-        price: Number(document.getElementById("newProductPrice").value)
-      })
-    });
+  const name = document.getElementById("newProductName").value;
 
-    alert("REQUEST SENT");   // 👈 MUST SHOW
+  const price = Number(
+    document.getElementById("newProductPrice").value
+  );
 
-    const data = await res.json();
-    alert("RESPONSE RECEIVED"); // 👈 MUST SHOW
+  if (!name || !price) {
 
-    msg.innerText = "DONE ✅";
+    msg.innerText = "Enter name and price ⚠️";
 
-  } catch (err) {
-    alert("ERROR");
-    console.log(err);
-    msg.innerText = "FAILED ❌";
-  }
-}
-
-
-async function addProduct() {
-  const msg = document.getElementById("productMsg");
-
-  if (!msg) {
-    alert("productMsg element missing ❌");
     return;
   }
 
   msg.innerText = "Adding...";
 
   try {
-    const res = await fetch(API_BASE + "/products/public/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name: document.getElementById("newProductName").value,
-        price: Number(document.getElementById("newProductPrice").value)
-      })
-    });
+
+    const res = await fetch(
+      API_BASE + "/products/public/create",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name,
+          price
+        })
+      }
+    );
 
     const data = await res.json();
 
+    if (!res.ok) {
+
+      msg.innerText = data.message || "Failed ❌";
+
+      return;
+    }
+
     msg.innerText = "Product added ✅";
 
-    await loadProducts();
+    document.getElementById("newProductName").value = "";
+
+    document.getElementById("newProductPrice").value = "";
+
+    loadProducts();
 
   } catch (err) {
-    console.log(err);
-    msg.innerText = "Failed ❌";
+
+    console.error(err);
+
+    msg.innerText = "Server error ❌";
   }
 }
 
+/* ================= INIT ================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  const token = localStorage.getItem("token");
+
+  if (token) {
+
+    document.getElementById("authScreen").style.display = "none";
+
+    document.getElementById("app").style.display = "block";
+
+    showView("dashboard");
+
+  } else {
+
+    document.getElementById("authScreen").style.display = "flex";
+
+    document.getElementById("app").style.display = "none";
+  }
+});

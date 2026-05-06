@@ -1,6 +1,5 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
 
 const User = require("../models/User");
 const Business = require("../models/Business");
@@ -9,36 +8,47 @@ const Wallet = require("../models/Wallet");
 const router = express.Router();
 
 /* =========================
-   REGISTER
+   REGISTER / AUTO CREATE
 ========================= */
 router.post("/register", async (req, res) => {
   try {
-    const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password required" });
+    const { whatsapp, businessName } = req.body;
+
+    if (!whatsapp || !businessName) {
+      return res.status(400).json({
+        message: "WhatsApp and Business Name required"
+      });
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+    let user = await User.findOne({
+      whatsapp,
+      businessName
+    });
+
+    /* AUTO CREATE USER */
+    if (!user) {
+
+      user = await User.create({
+        whatsapp,
+        businessName
+      });
+
+      /* CREATE BUSINESS */
+      await Business.create({
+        name: businessName,
+        whatsapp,
+        owner: user._id
+      });
+
+      /* CREATE WALLET */
+      await Wallet.create({
+        owner: user._id,
+        ownerType: "USER",
+        balance: 0,
+        currency: "KES",
+      });
     }
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const user = await User.create({
-      email,
-      password: hashedPassword,
-    });
-
-    // Auto-create user wallet
-    await Wallet.create({
-      owner: user._id,
-      ownerType: "USER",
-      balance: 0,
-      currency: "KES",
-    });
 
     if (!process.env.JWT_SECRET) {
       throw new Error("JWT_SECRET not set");
@@ -46,46 +56,70 @@ router.post("/register", async (req, res) => {
 
     const payload = {
       user: user._id,
-      business: null,
+      business: businessName,
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign(
+      payload,
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
 
     res.status(201).json({ token });
+
   } catch (err) {
+
     console.error("Register error:", err);
-    res.status(500).json({ message: "Server error" });
+
+    res.status(500).json({
+      message: "Server error"
+    });
   }
 });
 
 /* =========================
-   LOGIN (NORMAL – uses Mongo)
+   LOGIN
 ========================= */
 router.post("/login", async (req, res) => {
+
   try {
-    const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password required" });
+    const { whatsapp, businessName } = req.body;
+
+    if (!whatsapp || !businessName) {
+
+      return res.status(400).json({
+        message: "WhatsApp and Business Name required"
+      });
     }
 
-    const user = await User.findOne({ email });
-    if (!user || !user.password) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    let user = await User.findOne({
+      whatsapp,
+      businessName
+    });
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    /* AUTO CREATE IF NOT FOUND */
+    if (!user) {
 
-    let business = null;
-    try {
-      business = await Business.findOne({ owner: user._id });
-    } catch (e) {
-      console.error("Business lookup failed:", e);
+      user = await User.create({
+        whatsapp,
+        businessName
+      });
+
+      await Business.create({
+        name: businessName,
+        whatsapp,
+        owner: user._id
+      });
+
+      await Wallet.create({
+        owner: user._id,
+        ownerType: "USER",
+        balance: 0,
+        currency: "KES",
+      });
     }
 
     if (!process.env.JWT_SECRET) {
@@ -94,49 +128,26 @@ router.post("/login", async (req, res) => {
 
     const payload = {
       user: user._id,
-      business: business ? business._id : null,
+      business: businessName,
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign(
+      payload,
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
 
     res.json({ token });
+
   } catch (err) {
+
     console.error("Login error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
 
-/* =========================
-   LOGIN (NO DB – SAFE STUB)
-========================= */
-router.post("/login-no-db", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password required" });
-    }
-
-    if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET not set");
-    }
-
-    const payload = {
-      user: "stub-user",
-      business: null,
-      mode: "NO_DB",
-    };
-
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "1d",
+    res.status(500).json({
+      message: "Server error"
     });
-
-    res.json({ token });
-  } catch (err) {
-    console.error("Login-no-db error:", err);
-    res.status(500).json({ message: "Server error" });
   }
 });
 
