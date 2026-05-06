@@ -7,41 +7,47 @@ const ProductSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+
     price: {
       type: Number,
       required: true,
       min: 0
     },
 
-    // 📦 INVENTORY (FIXED POSITION)
+    // 📦 INVENTORY
     stock: {
       type: Number,
       default: 0
     },
 
-    // 🔐 Ownership
+    // 🔐 BUSINESS OWNER
     business: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Business",
       required: true
     },
+
+    // ✅ TEMP WHATSAPP OWNER
     owner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true
+      type: String,
+      required: false
     },
 
-    // 🗑️ Soft delete support (ADDED)
+    // 🗑️ SOFT DELETE
     isActive: {
       type: Boolean,
       default: true
     },
+
     deletedAt: {
       type: Date,
       default: null
     }
   },
+
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Product", ProductSchema);
+module.exports =
+  mongoose.models.Product ||
+  mongoose.model("Product", ProductSchema);
