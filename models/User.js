@@ -2,14 +2,26 @@ const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema(
   {
+    /* NORMAL AUTH */
     email: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true,
     },
+
     password: {
       type: String,
-      required: true,
+    },
+
+    /* SMARTBIZ AUTH */
+    whatsapp: {
+      type: String,
+      sparse: true,
+    },
+
+    businessName: {
+      type: String,
+      sparse: true,
     },
   },
   { timestamps: true }
