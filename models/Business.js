@@ -7,23 +7,23 @@ const BusinessSchema = new mongoose.Schema(
       required: true
     },
 
+    /* ✅ MAIN PHONE */
     phone: {
       type: String,
-      required: true,
-      index: true
+      default: ""
     },
 
-    // ✅ ADD THIS (DO NOT REMOVE ANYTHING ELSE)
+    /* ✅ WHATSAPP LOGIN */
     whatsappNumber: {
       type: String,
       trim: true,
       index: true
     },
 
+    /* ✅ TEMP FLEXIBLE OWNER */
     owner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true
+      type: String,
+      default: ""
     },
 
     walletId: {
@@ -31,7 +31,6 @@ const BusinessSchema = new mongoose.Schema(
       ref: "Wallet"
     },
 
-    // 🔒 KEEP EXISTING FIELD (DO NOT DELETE)
     whatsappLink: {
       type: String,
       default: ""
@@ -40,7 +39,6 @@ const BusinessSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// 🔒 Prevent model overwrite / cache issues
 module.exports =
   mongoose.models.Business ||
   mongoose.model("Business", BusinessSchema);
