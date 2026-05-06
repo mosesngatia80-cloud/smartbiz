@@ -88,13 +88,13 @@ async function login() {
       return;
     }
 
-    /* ✅ REAL TOKEN */
+    /* SAVE TOKEN */
     localStorage.setItem(
       "token",
       data.token
     );
 
-    /* ✅ SAVE BUSINESS */
+    /* SAVE BUSINESS */
     localStorage.setItem(
       "business",
       JSON.stringify(data.business)
@@ -129,8 +129,28 @@ async function loadProducts() {
 
   try {
 
+    const business =
+      JSON.parse(
+        localStorage.getItem("business")
+      );
+
+    if (!business) {
+
+      list.innerHTML =
+        "<li>No business session</li>";
+
+      return;
+    }
+
     const res = await fetch(
-      API_BASE + "/products/public/all"
+
+      API_BASE +
+
+      "/products/my-products?whatsappNumber=" +
+
+      encodeURIComponent(
+        business.whatsappNumber
+      )
     );
 
     const products = await res.json();
@@ -173,6 +193,19 @@ async function addProduct() {
     ).value
   );
 
+  const business =
+    JSON.parse(
+      localStorage.getItem("business")
+    );
+
+  if (!business) {
+
+    msg.innerText =
+      "No business session ❌";
+
+    return;
+  }
+
   if (!name || !price) {
 
     msg.innerText =
@@ -186,7 +219,9 @@ async function addProduct() {
   try {
 
     const res = await fetch(
-      API_BASE + "/products/public/create",
+
+      API_BASE + "/products/create",
+
       {
         method: "POST",
 
@@ -195,8 +230,12 @@ async function addProduct() {
         },
 
         body: JSON.stringify({
+
           name,
-          price
+          price,
+
+          whatsappNumber:
+            business.whatsappNumber
         })
       }
     );
