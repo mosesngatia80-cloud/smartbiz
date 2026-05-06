@@ -34,34 +34,89 @@
         <button onclick="showView('dashboard')">Dashboard</button>
         <button onclick="showView('sales')">Sales</button>
         <button onclick="showView('income')">Income</button>
+
+        <!-- ✅ CASH BUTTON -->
+        <button onclick="showView('cash')">Cash</button>
+
         <button onclick="showView('products')">Products</button>
         <button onclick="showView('orders')">Orders</button>
         <button onclick="showView('customers')">Customers</button>
-        <button onclick="showView('ai')">AI Assistant</button>
+
+        <!-- ❌ AI REMOVED -->
+
         <button onclick="showView('profile')">Business Profile</button>
-        <button class="logout" onclick="logout()">Logout</button>
+
+        <button class="logout" onclick="logout()">
+          Logout
+        </button>
       </nav>
     </aside>
 
     <main class="content">
 
+      <!-- DASHBOARD -->
       <section id="dashboard" class="view">
         <h1>Dashboard</h1>
       </section>
 
+      <!-- CASH POS -->
+      <section id="cash" class="view hidden">
+
+        <h1>Cash POS</h1>
+
+        <div class="product-form">
+
+          <!-- PRODUCT -->
+          <input
+            id="cashProduct"
+            placeholder="Product Name"
+          />
+
+          <!-- AMOUNT -->
+          <input
+            id="cashAmount"
+            type="number"
+            placeholder="Amount (KES)"
+          />
+
+          <button onclick="sellCashProduct()">
+            Record Cash Sale
+          </button>
+
+          <p id="cashMsg"></p>
+
+        </div>
+
+      </section>
+
+      <!-- PRODUCTS -->
       <section id="products" class="view hidden">
+
         <h1>Products</h1>
 
         <div class="product-form">
-          <input id="newProductName" placeholder="Product name" />
-          <input id="newProductPrice" type="number" placeholder="Price (KES)" />
 
-          <button onclick="addProduct()">Add Product</button>
+          <input
+            id="newProductName"
+            placeholder="Product name"
+          />
+
+          <input
+            id="newProductPrice"
+            type="number"
+            placeholder="Price (KES)"
+          />
+
+          <button onclick="addProduct()">
+            Add Product
+          </button>
 
           <p id="productMsg"></p>
+
         </div>
 
         <ul id="productsList"></ul>
+
       </section>
 
     </main>
@@ -76,10 +131,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const token = localStorage.getItem("token");
 
   const auth = document.getElementById("authScreen");
+
   const app = document.getElementById("app");
 
   if (token) {
+
     auth.style.display = "none";
+
     app.style.display = "block";
 
     if (typeof showView === "function") {
@@ -87,7 +145,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
   } else {
+
     auth.style.display = "flex";
+
     app.style.display = "none";
   }
 });

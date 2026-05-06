@@ -4,13 +4,17 @@ const API_BASE = "https://navu-smart-biz-sbdh.onrender.com/api";
 
 function logout() {
   localStorage.removeItem("token");
+  localStorage.removeItem("business");
   location.reload();
 }
 
 /* ================= APP ================= */
 
 function showView(id) {
-  document.querySelectorAll(".view").forEach(v => v.classList.add("hidden"));
+
+  document
+    .querySelectorAll(".view")
+    .forEach(v => v.classList.add("hidden"));
 
   const el = document.getElementById(id);
 
@@ -27,42 +31,107 @@ function showView(id) {
 
 async function login() {
 
-  const whatsappEl = document.getElementById("whatsapp");
-  const businessEl = document.getElementById("businessName");
+  const whatsappEl =
+    document.getElementById("whatsapp");
+
+  const businessEl =
+    document.getElementById("businessName");
 
   if (!whatsappEl || !businessEl) {
+
     alert("Login inputs missing ❌");
+
     return;
   }
 
-  const whatsapp = whatsappEl.value.trim();
-  const businessName = businessEl.value.trim();
+  const whatsapp =
+    whatsappEl.value.trim();
+
+  const businessName =
+    businessEl.value.trim();
 
   if (!whatsapp || !businessName) {
-    alert("Enter WhatsApp and Business Name ⚠️");
+
+    alert(
+      "Enter WhatsApp and Business Name ⚠️"
+    );
+
     return;
   }
 
-  /* SIMPLE DIRECT LOGIN */
-  localStorage.setItem("token", "smartbiz-user");
+  try {
 
-  document.getElementById("authScreen").style.display = "none";
-  document.getElementById("app").style.display = "block";
+    const res = await fetch(
+      API_BASE + "/auth/login-whatsapp",
+      {
+        method: "POST",
 
-  showView("dashboard");
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          whatsappNumber: whatsapp,
+          name: businessName
+        })
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+
+      alert(
+        data.message || "Login failed ❌"
+      );
+
+      return;
+    }
+
+    /* ✅ REAL TOKEN */
+    localStorage.setItem(
+      "token",
+      data.token
+    );
+
+    /* ✅ SAVE BUSINESS */
+    localStorage.setItem(
+      "business",
+      JSON.stringify(data.business)
+    );
+
+    document.getElementById(
+      "authScreen"
+    ).style.display = "none";
+
+    document.getElementById(
+      "app"
+    ).style.display = "block";
+
+    showView("dashboard");
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert("Server error ❌");
+  }
 }
 
 /* ================= PRODUCTS ================= */
 
 async function loadProducts() {
 
-  const list = document.getElementById("productsList");
+  const list =
+    document.getElementById("productsList");
 
   if (!list) return;
 
   try {
 
-    const res = await fetch(API_BASE + "/products/public/all");
+    const res = await fetch(
+      API_BASE + "/products/public/all"
+    );
 
     const products = await res.json();
 
@@ -71,7 +140,9 @@ async function loadProducts() {
     products.forEach(p => {
 
       list.innerHTML += `
-        <li>${p.name} – KES ${p.price}</li>
+        <li>
+          ${p.name} – KES ${p.price}
+        </li>
       `;
     });
 
@@ -79,7 +150,8 @@ async function loadProducts() {
 
     console.log(err);
 
-    list.innerHTML = "<li>Failed to load products</li>";
+    list.innerHTML =
+      "<li>Failed to load products</li>";
   }
 }
 
@@ -87,17 +159,24 @@ async function loadProducts() {
 
 async function addProduct() {
 
-  const msg = document.getElementById("productMsg");
+  const msg =
+    document.getElementById("productMsg");
 
-  const name = document.getElementById("newProductName").value;
+  const name =
+    document.getElementById(
+      "newProductName"
+    ).value;
 
   const price = Number(
-    document.getElementById("newProductPrice").value
+    document.getElementById(
+      "newProductPrice"
+    ).value
   );
 
   if (!name || !price) {
 
-    msg.innerText = "Enter name and price ⚠️";
+    msg.innerText =
+      "Enter name and price ⚠️";
 
     return;
   }
@@ -110,9 +189,11 @@ async function addProduct() {
       API_BASE + "/products/public/create",
       {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json"
         },
+
         body: JSON.stringify({
           name,
           price
@@ -124,16 +205,22 @@ async function addProduct() {
 
     if (!res.ok) {
 
-      msg.innerText = data.message || "Failed ❌";
+      msg.innerText =
+        data.message || "Failed ❌";
 
       return;
     }
 
-    msg.innerText = "Product added ✅";
+    msg.innerText =
+      "Product added ✅";
 
-    document.getElementById("newProductName").value = "";
+    document.getElementById(
+      "newProductName"
+    ).value = "";
 
-    document.getElementById("newProductPrice").value = "";
+    document.getElementById(
+      "newProductPrice"
+    ).value = "";
 
     loadProducts();
 
@@ -141,28 +228,109 @@ async function addProduct() {
 
     console.error(err);
 
-    msg.innerText = "Server error ❌";
+    msg.innerText =
+      "Server error ❌";
+  }
+}
+
+/* ================= CASH POS ================= */
+
+async function sellCashProduct() {
+
+  const product =
+    document
+      .getElementById("cashProduct")
+      .value
+      .trim();
+
+  const amount = Number(
+    document.getElementById(
+      "cashAmount"
+    ).value
+  );
+
+  const msg =
+    document.getElementById("cashMsg");
+
+  if (!product || !amount) {
+
+    msg.innerText =
+      "Enter product and amount ⚠️";
+
+    return;
+  }
+
+  msg.innerText =
+    "Recording sale...";
+
+  try {
+
+    const sales =
+      JSON.parse(
+        localStorage.getItem("cashSales")
+      ) || [];
+
+    sales.push({
+      product,
+      amount,
+      date: new Date().toISOString()
+    });
+
+    localStorage.setItem(
+      "cashSales",
+      JSON.stringify(sales)
+    );
+
+    msg.innerText =
+      "Cash sale recorded ✅";
+
+    document.getElementById(
+      "cashProduct"
+    ).value = "";
+
+    document.getElementById(
+      "cashAmount"
+    ).value = "";
+
+  } catch (err) {
+
+    console.error(err);
+
+    msg.innerText =
+      "Cash sale failed ❌";
   }
 }
 
 /* ================= INIT ================= */
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
 
-  const token = localStorage.getItem("token");
+    const token =
+      localStorage.getItem("token");
 
-  if (token) {
+    if (token) {
 
-    document.getElementById("authScreen").style.display = "none";
+      document.getElementById(
+        "authScreen"
+      ).style.display = "none";
 
-    document.getElementById("app").style.display = "block";
+      document.getElementById(
+        "app"
+      ).style.display = "block";
 
-    showView("dashboard");
+      showView("dashboard");
 
-  } else {
+    } else {
 
-    document.getElementById("authScreen").style.display = "flex";
+      document.getElementById(
+        "authScreen"
+      ).style.display = "flex";
 
-    document.getElementById("app").style.display = "none";
+      document.getElementById(
+        "app"
+      ).style.display = "none";
+    }
   }
-});
+);

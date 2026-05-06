@@ -16,21 +16,29 @@ app.get("/", (req, res) => {
 });
 
 /* ================= ROUTES ================= */
+
+app.use("/api/auth", require("./routes/auth.whatsapp"));
+
 app.use("/api/products", require("./routes/products"));
+
 app.use("/api/business", require("./routes/business"));
+
 app.use("/api/orders", require("./routes/orders"));
+
 app.use("/api/wallet", require("./routes/wallet"));
-app.use("/api/internal-secure", require("./routes/internal.orders"));
-app.use("/api/internal-secure", require("./routes/internal.wallet.topup"));
 
-/* ================= START SERVER ================= */
-const PORT = process.env.PORT || 3000;
+app.use(
+  "/api/internal-secure",
+  require("./routes/internal.orders")
+);
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server started on port ${PORT}`);
-});
+app.use(
+  "/api/internal-secure",
+  require("./routes/internal.wallet.topup")
+);
 
 /* ================= DB ================= */
+
 console.log("🟡 Connecting to MongoDB...");
 
 mongoose.connect(process.env.MONGO_URI)
@@ -41,5 +49,10 @@ mongoose.connect(process.env.MONGO_URI)
   console.error("❌ DB ERROR:", err.message);
 });
 
-app.use("/api/auth", require("./routes/auth.whatsapp"));
+/* ================= START SERVER ================= */
 
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server started on port ${PORT}`);
+});
