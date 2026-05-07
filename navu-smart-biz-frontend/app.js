@@ -28,8 +28,16 @@ function showView(id) {
     loadDashboard();
   }
 
+  /* ✅ LOAD PRODUCTS */
+
   if (id === "products") {
     loadProducts();
+  }
+
+  /* ✅ LOAD PROFILE */
+
+  if (id === "profile") {
+    loadBusinessProfile();
   }
 }
 
@@ -94,7 +102,7 @@ async function loadDashboard() {
       `KES ${data.profit}`;
 
     document.getElementById(
-      "orders"
+      "ordersCount"
     ).innerText =
       data.totalOrders;
 
@@ -102,6 +110,68 @@ async function loadDashboard() {
 
     console.error(
       "Dashboard error:",
+      err
+    );
+  }
+}
+
+/* ================= PROFILE ================= */
+
+async function loadBusinessProfile() {
+
+  try {
+
+    /* ✅ LOCAL SESSION */
+
+    const localBusiness =
+      JSON.parse(
+        localStorage.getItem("business")
+      );
+
+    if (localBusiness) {
+
+      document.getElementById(
+        "profileBusinessName"
+      ).innerText =
+        localBusiness.name || "-";
+
+      document.getElementById(
+        "profileWhatsapp"
+      ).innerText =
+        localBusiness.whatsappNumber || "-";
+    }
+
+    /* ✅ OPTIONAL BACKEND ENHANCEMENT */
+
+    const res = await fetch(
+      API_BASE + "/business/me"
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      return;
+    }
+
+    const wallet =
+      data.wallet;
+
+    if (
+      document.getElementById(
+        "walletBalance"
+      )
+    ) {
+
+      document.getElementById(
+        "walletBalance"
+      ).innerText =
+        `KES ${wallet?.balance || 0}`;
+    }
+
+  } catch (err) {
+
+    console.error(
+      "Profile load error:",
       err
     );
   }

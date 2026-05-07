@@ -124,4 +124,89 @@ router.get("/my-products", async (req, res) => {
   }
 });
 
+/* =========================
+   CASH SALE (POS)
+========================= */
+router.post("/cash-sale", async (req, res) => {
+
+  try {
+
+    const {
+      productName,
+      whatsappNumber
+    } = req.body;
+
+    if (
+      !productName ||
+      !whatsappNumber
+    ) {
+      return res.status(400).json({
+        message: "Missing fields"
+      });
+    }
+
+    /* 🔍 FIND BUSINESS */
+    const business =
+      await Business.findOne({
+        whatsappNumber
+      });
+
+    if (!business) {
+      return res.status(404).json({
+        message: "Business not found"
+      });
+    }
+
+    /* 🔍 FIND PRODUCT */
+    const product =
+      await Product.findOne({
+
+        business: business._id,
+
+        name: productName,
+
+        isActive: true
+      });
+
+    if (!product) {
+      return res.status(404).json({
+        message: "Product not found"
+      });
+    }
+
+    /* 📦 CHECK STOCK */
+    if (product.stock <= 0) {
+      return res.status(400).json({
+        message: "Out of stock"
+      });
+    }
+
+    /* ✅ REDUCE STOCK */
+    product.stock -= 1;
+
+    await product.save();
+
+    res.json({
+
+      message: "Cash sale recorded",
+
+      remainingStock:
+        product.stock,
+
+      product
+    });
+
+  } catch (err) {
+
+    console.error(
+      "CASH SALE ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      message: err.message
+    });
+  }
+});
+
 module.exports = router;
