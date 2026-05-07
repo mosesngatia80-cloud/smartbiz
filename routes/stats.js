@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
+const Business = require("../models/Business");
 
 /*
   GET /api/stats (PROTECTED)
@@ -21,17 +22,23 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-module.exports = router;
-
 /**
  * 📊 TODAY'S SALES STATS (BUSINESS)
  * GET /api/stats/today
  */
 router.get("/today", auth, async (req, res) => {
   try {
-    const businessId = req.user.business;
-    if (!businessId) {
-      return res.status(400).json({ message: "User has no business" });
+
+    const userId = req.user.user;
+
+    const business = await Business.findOne({
+      owner: userId
+    });
+
+    if (!business) {
+      return res.status(400).json({
+        message: "User has no business"
+      });
     }
 
     const start = new Date();
@@ -41,7 +48,7 @@ router.get("/today", auth, async (req, res) => {
     end.setHours(23, 59, 59, 999);
 
     const paidOrders = await Order.find({
-      business: businessId,
+      business: business._id,
       status: "PAID",
       paidAt: { $gte: start, $lte: end }
     });
@@ -57,9 +64,17 @@ router.get("/today", auth, async (req, res) => {
       totalSales,
       currency: "KES"
     });
+
   } catch (err) {
-    console.error("❌ Today stats error:", err.message);
-    res.status(500).json({ message: "Failed to load today's stats" });
+
+    console.error(
+      "❌ Today stats error:",
+      err.message
+    );
+
+    res.status(500).json({
+      message: "Failed to load today's stats"
+    });
   }
 });
 
@@ -69,15 +84,25 @@ router.get("/today", auth, async (req, res) => {
  */
 router.get("/range", auth, async (req, res) => {
   try {
-    const businessId = req.user.business;
-    if (!businessId) {
-      return res.status(400).json({ message: "User has no business" });
+
+    const userId = req.user.user;
+
+    const business = await Business.findOne({
+      owner: userId
+    });
+
+    if (!business) {
+      return res.status(400).json({
+        message: "User has no business"
+      });
     }
 
     const { from, to } = req.query;
+
     if (!from || !to) {
       return res.status(400).json({
-        message: "from and to dates are required (YYYY-MM-DD)"
+        message:
+          "from and to dates are required (YYYY-MM-DD)"
       });
     }
 
@@ -88,7 +113,7 @@ router.get("/range", auth, async (req, res) => {
     end.setHours(23, 59, 59, 999);
 
     const paidOrders = await Order.find({
-      business: businessId,
+      business: business._id,
       status: "PAID",
       paidAt: { $gte: start, $lte: end }
     });
@@ -105,8 +130,18 @@ router.get("/range", auth, async (req, res) => {
       totalSales,
       currency: "KES"
     });
+
   } catch (err) {
-    console.error("❌ Range stats error:", err.message);
-    res.status(500).json({ message: "Failed to load range stats" });
+
+    console.error(
+      "❌ Range stats error:",
+      err.message
+    );
+
+    res.status(500).json({
+      message: "Failed to load range stats"
+    });
   }
 });
+
+module.exports = router;
