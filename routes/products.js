@@ -131,6 +131,7 @@ router.post("/cash-sale", async (req, res) => {
 
     const {
       productName,
+      amount,
       whatsappNumber
     } = req.body;
 
@@ -144,6 +145,7 @@ router.post("/cash-sale", async (req, res) => {
     }
 
     /* 🔍 FIND BUSINESS */
+
     const business =
       await Business.findOne({
         whatsappNumber
@@ -156,6 +158,7 @@ router.post("/cash-sale", async (req, res) => {
     }
 
     /* 🔍 FIND WALLET */
+
     const wallet =
       await Wallet.findOne({
         owner: business._id,
@@ -169,6 +172,7 @@ router.post("/cash-sale", async (req, res) => {
     }
 
     /* 🔍 FIND PRODUCT WITH STOCK */
+
     const products =
       await Product.find({
 
@@ -187,6 +191,7 @@ router.post("/cash-sale", async (req, res) => {
     }
 
     /* ✅ PICK PRODUCT THAT HAS STOCK */
+
     const product =
       products.find(p => p.stock > 0);
 
@@ -196,7 +201,21 @@ router.post("/cash-sale", async (req, res) => {
       });
     }
 
+    /* 💰 VALIDATE PRICE */
+
+    if (
+      Number(amount) !==
+      Number(product.price)
+    ) {
+
+      return res.status(400).json({
+        message:
+          `Incorrect amount. ${product.name} costs KES ${product.price}`
+      });
+    }
+
     /* ✅ REDUCE STOCK */
+
     product.stock -= 1;
 
     await product.save();
