@@ -78,7 +78,9 @@ router.get("/balance", auth, async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Business wallet balance error:", err.message);
-    res.status(500).json({ message: "Failed to fetch business wallet balance" });
+    res.status(500).json({
+      message: "Failed to fetch business wallet balance"
+    });
   }
 });
 
@@ -95,7 +97,9 @@ router.get("/user/balance", auth, async (req, res) => {
     });
 
     if (!wallet) {
-      return res.status(404).json({ message: "User wallet not found" });
+      return res.status(404).json({
+        message: "User wallet not found"
+      });
     }
 
     res.json({
@@ -103,9 +107,17 @@ router.get("/user/balance", auth, async (req, res) => {
       balance: wallet.balance,
       currency: wallet.currency
     });
+
   } catch (err) {
-    console.error("❌ User wallet balance error:", err.message);
-    res.status(500).json({ message: "Failed to fetch user wallet balance" });
+
+    console.error(
+      "❌ User wallet balance error:",
+      err.message
+    );
+
+    res.status(500).json({
+      message: "Failed to fetch user wallet balance"
+    });
   }
 });
 
@@ -114,28 +126,53 @@ router.get("/user/balance", auth, async (req, res) => {
  */
 router.post("/create", async (req, res) => {
   try {
-    const { owner, ownerType = "USER" } = req.body;
+
+    const {
+      owner,
+      ownerType = "USER"
+    } = req.body;
 
     if (!owner) {
-      return res.status(400).json({ message: "Owner is required" });
+      return res.status(400).json({
+        message: "Owner is required"
+      });
     }
 
-    let wallet = await Wallet.findOne({ owner });
+    let wallet =
+      await Wallet.findOne({ owner });
+
     if (wallet) {
-      return res.json({ message: "Wallet already exists", wallet });
+      return res.json({
+        message: "Wallet already exists",
+        wallet
+      });
     }
 
     wallet = await Wallet.create({
+
       owner,
       ownerType,
+
       balance: 0,
+
       currency: "KES"
     });
 
-    res.json({ message: "Wallet created", wallet });
+    res.json({
+      message: "Wallet created",
+      wallet
+    });
+
   } catch (err) {
-    console.error("❌ Wallet create error:", err.message);
-    res.status(500).json({ message: "Wallet creation failed" });
+
+    console.error(
+      "❌ Wallet create error:",
+      err.message
+    );
+
+    res.status(500).json({
+      message: "Wallet creation failed"
+    });
   }
 });
 
@@ -143,28 +180,129 @@ router.post("/create", async (req, res) => {
  * 💰 TOP UP WALLET (ADMIN / SYSTEM)
  */
 router.post("/topup", async (req, res) => {
-  try {
-    const { owner, amount } = req.body;
 
-    if (!owner || !amount || amount <= 0) {
-      return res.status(400).json({ message: "Owner and valid amount required" });
+  try {
+
+    const {
+      owner,
+      amount
+    } = req.body;
+
+    if (
+      !owner ||
+      !amount ||
+      amount <= 0
+    ) {
+      return res.status(400).json({
+        message:
+          "Owner and valid amount required"
+      });
     }
 
-    const wallet = await Wallet.findOne({ owner });
+    const wallet =
+      await Wallet.findOne({ owner });
+
     if (!wallet) {
-      return res.status(404).json({ message: "Wallet not found" });
+      return res.status(404).json({
+        message: "Wallet not found"
+      });
     }
 
     wallet.balance += Number(amount);
+
     await wallet.save();
 
     res.json({
+
       message: "Wallet topped up",
+
       balance: wallet.balance
     });
+
   } catch (err) {
-    console.error("❌ Wallet topup error:", err.message);
-    res.status(500).json({ message: "Wallet topup failed" });
+
+    console.error(
+      "❌ Wallet topup error:",
+      err.message
+    );
+
+    res.status(500).json({
+      message: "Wallet topup failed"
+    });
+  }
+});
+
+/**
+ * 🔧 AUTO FIX BUSINESS WALLET
+ */
+router.post("/fix-business-wallet", async (req, res) => {
+
+  try {
+
+    const { whatsappNumber } = req.body;
+
+    if (!whatsappNumber) {
+      return res.status(400).json({
+        message: "WhatsApp number required"
+      });
+    }
+
+    const business =
+      await Business.findOne({
+        whatsappNumber
+      });
+
+    if (!business) {
+      return res.status(404).json({
+        message: "Business not found"
+      });
+    }
+
+    let wallet =
+      await Wallet.findOne({
+        owner: business._id,
+        ownerType: "BUSINESS"
+      });
+
+    if (!wallet) {
+
+      wallet =
+        await Wallet.create({
+
+          owner: business._id,
+
+          ownerType: "BUSINESS",
+
+          balance: 0,
+
+          currency: "KES"
+        });
+    }
+
+    business.walletId =
+      wallet._id;
+
+    await business.save();
+
+    res.json({
+
+      message:
+        "Business wallet fixed ✅",
+
+      walletId:
+        wallet._id
+    });
+
+  } catch (err) {
+
+    console.error(
+      "FIX BUSINESS WALLET ERROR:",
+      err.message
+    );
+
+    res.status(500).json({
+      message: err.message
+    });
   }
 });
 
@@ -172,8 +310,18 @@ router.post("/topup", async (req, res) => {
  * GET WALLET BY OWNER (DEBUG ONLY)
  */
 router.get("/:owner", async (req, res) => {
-  const wallet = await Wallet.findOne({ owner: req.params.owner });
-  if (!wallet) return res.status(404).json({ message: "Wallet not found" });
+
+  const wallet =
+    await Wallet.findOne({
+      owner: req.params.owner
+    });
+
+  if (!wallet) {
+    return res.status(404).json({
+      message: "Wallet not found"
+    });
+  }
+
   res.json(wallet);
 });
 

@@ -22,22 +22,22 @@ function showView(id) {
     el.classList.remove("hidden");
   }
 
-  /* ✅ LOAD DASHBOARD */
-
   if (id === "dashboard") {
     loadDashboard();
   }
-
-  /* ✅ LOAD PRODUCTS */
 
   if (id === "products") {
     loadProducts();
   }
 
-  /* ✅ LOAD PROFILE */
-
   if (id === "profile") {
     loadBusinessProfile();
+  }
+
+  /* ✅ LOAD ORDERS */
+
+  if (id === "orders") {
+    loadOrders();
   }
 }
 
@@ -70,9 +70,6 @@ async function loadDashboard() {
     const data = await res.json();
 
     if (!res.ok) {
-
-      console.log(data);
-
       return;
     }
 
@@ -427,6 +424,91 @@ async function addProduct() {
   }
 }
 
+/* ================= ORDERS ================= */
+
+async function loadOrders() {
+
+  const list =
+    document.getElementById("ordersList");
+
+  if (!list) return;
+
+  try {
+
+    const token =
+      localStorage.getItem("token");
+
+    const res = await fetch(
+      API_BASE + "/orders",
+      {
+        headers: {
+          Authorization:
+            "Bearer " + token
+        }
+      }
+    );
+
+    const orders =
+      await res.json();
+
+    if (!res.ok) {
+
+      list.innerHTML =
+        "<li>Failed to load orders</li>";
+
+      return;
+    }
+
+    list.innerHTML = "";
+
+    let paid = 0;
+    let pending = 0;
+
+    orders.forEach(order => {
+
+      if (order.status === "PAID") {
+        paid++;
+      }
+
+      if (order.status === "UNPAID") {
+        pending++;
+      }
+
+      list.innerHTML += `
+        <li>
+          ${order.items?.[0]?.name || "Item"}
+          —
+          KES ${order.total}
+          —
+          ${order.status}
+        </li>
+      `;
+    });
+
+    document.getElementById(
+      "totalOrders"
+    ).innerText =
+      orders.length;
+
+    document.getElementById(
+      "paidOrders"
+    ).innerText =
+      paid;
+
+    document.getElementById(
+      "pendingOrders"
+    ).innerText =
+      pending;
+
+  } catch (err) {
+
+    console.error(err);
+
+    list.innerHTML =
+      "<li>Orders load failed</li>";
+  }
+}
+
 /* ================= CASH POS ================= */
 
 async function sellCashProduct() {
@@ -518,6 +600,7 @@ async function sellCashProduct() {
 
     loadProducts();
     loadDashboard();
+    loadOrders();
 
   } catch (err) {
 
