@@ -3,6 +3,8 @@ const router = express.Router();
 
 const Product = require("../models/Product");
 const Business = require("../models/Business");
+const Order = require("../models/Order");
+const Wallet = require("../models/Wallet");
 
 /* =========================
    CREATE PRODUCT
@@ -28,7 +30,6 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    /* 🔍 FIND BUSINESS */
     const business =
       await Business.findOne({
         whatsappNumber
@@ -40,7 +41,6 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    /* ✅ CREATE PRODUCT */
     const product =
       await Product.create({
 
@@ -89,7 +89,6 @@ router.get("/my-products", async (req, res) => {
       });
     }
 
-    /* 🔍 FIND BUSINESS */
     const business =
       await Business.findOne({
         whatsappNumber
@@ -101,7 +100,6 @@ router.get("/my-products", async (req, res) => {
       });
     }
 
-    /* ✅ ONLY THIS BUSINESS PRODUCTS */
     const products =
       await Product.find({
         business: business._id,
@@ -157,6 +155,19 @@ router.post("/cash-sale", async (req, res) => {
       });
     }
 
+    /* 🔍 FIND WALLET */
+    const wallet =
+      await Wallet.findOne({
+        owner: business._id,
+        ownerType: "BUSINESS"
+      });
+
+    if (!wallet) {
+      return res.status(404).json({
+        message: "Business wallet not found"
+      });
+    }
+
     /* 🔍 FIND PRODUCT WITH STOCK */
     const products =
       await Product.find({
@@ -190,12 +201,51 @@ router.post("/cash-sale", async (req, res) => {
 
     await product.save();
 
+    /* =========================
+       CREATE ORDER
+    ========================= */
+
+    const order =
+      await Order.create({
+
+        business: business._id,
+
+        businessWalletId:
+          wallet._id,
+
+        customerPhone:
+          "WALK_IN_CUSTOMER",
+
+        items: [
+          {
+            product: product._id,
+            name: product.name,
+            price: product.price,
+            qty: 1,
+            lineTotal: product.price
+          }
+        ],
+
+        total: product.price,
+
+        status: "PAID",
+
+        paymentMethod: "CASH",
+
+        source: "MANUAL",
+
+        paidAt: new Date()
+      });
+
     res.json({
 
-      message: "Cash sale recorded",
+      message:
+        "Cash sale recorded",
 
       remainingStock:
         product.stock,
+
+      order,
 
       product
     });

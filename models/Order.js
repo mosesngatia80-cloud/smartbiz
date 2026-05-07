@@ -14,16 +14,16 @@ const OrderSchema = new mongoose.Schema(
       required: true
     },
 
-    // ✅ REQUIRED FOR REFUNDS & AUDIT
+    // ✅ OPTIONAL FOR WALK-IN CUSTOMERS
     customerUserId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: false
     },
 
     customerPhone: {
       type: String,
-      required: true
+      required: false
     },
 
     items: [
@@ -58,11 +58,8 @@ const OrderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Order", OrderSchema);
+/* ================= SMARTBIZ EXTENSIONS ================= */
 
-// ================= SMARTBIZ EXTENSIONS =================
-
-// Payment method (Cash / Wallet / MPESA)
 OrderSchema.add({
   paymentMethod: {
     type: String,
@@ -71,7 +68,6 @@ OrderSchema.add({
   }
 });
 
-// Source of order (WhatsApp or Manual)
 OrderSchema.add({
   source: {
     type: String,
@@ -80,3 +76,4 @@ OrderSchema.add({
   }
 });
 
+module.exports = mongoose.model("Order", OrderSchema);
