@@ -11,44 +11,84 @@
 <!-- AUTH -->
 <div id="authScreen" class="center-screen">
   <div class="auth-card">
+
     <h2>SmartBiz Login</h2>
 
-    <input id="whatsapp" placeholder="WhatsApp Number" />
+    <input
+      id="whatsapp"
+      placeholder="WhatsApp Number"
+    />
 
-    <input id="businessName" placeholder="Business Name" />
+    <input
+      id="businessName"
+      placeholder="Business Name"
+    />
 
-    <button onclick="login()">Enter SmartBiz</button>
+    <button onclick="login()">
+      Enter SmartBiz
+    </button>
 
     <p id="authMsg"></p>
+
   </div>
 </div>
 
 <!-- APP -->
 <div id="app" style="display:none">
+
   <div class="layout">
 
+    <!-- SIDEBAR -->
     <aside class="sidebar">
+
       <h2>SmartBiz</h2>
 
       <nav>
-        <button onclick="showView('dashboard')">Dashboard</button>
-        <button onclick="showView('sales')">Sales</button>
-        <button onclick="showView('income')">Income</button>
 
-        <button onclick="showView('cash')">Cash</button>
+        <button onclick="showView('dashboard')">
+          Dashboard
+        </button>
 
-        <button onclick="showView('products')">Products</button>
-        <button onclick="showView('orders')">Orders</button>
-        <button onclick="showView('customers')">Customers</button>
+        <button onclick="showView('sales')">
+          Sales
+        </button>
 
-        <button onclick="showView('profile')">Business Profile</button>
+        <button onclick="showView('income')">
+          Income
+        </button>
 
-        <button class="logout" onclick="logout()">
+        <button onclick="showView('cash')">
+          Cash
+        </button>
+
+        <button onclick="showView('products')">
+          Products
+        </button>
+
+        <button onclick="showView('orders')">
+          Orders
+        </button>
+
+        <button onclick="showView('customers')">
+          Customers
+        </button>
+
+        <button onclick="showView('profile')">
+          Business Profile
+        </button>
+
+        <button
+          class="logout"
+          onclick="logout()"
+        >
           Logout
         </button>
+
       </nav>
+
     </aside>
 
+    <!-- MAIN CONTENT -->
     <main class="content">
 
       <!-- DASHBOARD -->
@@ -85,14 +125,14 @@
 
           <div class="card">
             <h3>Orders</h3>
-            <p id="orders">0</p>
+            <p id="ordersCount">0</p>
           </div>
 
         </div>
 
       </section>
 
-      <!-- CASH POS -->
+      <!-- CASH -->
       <section id="cash" class="view hidden">
 
         <h1>Cash POS</h1>
@@ -150,43 +190,6 @@
 
       </section>
 
-    </main>
-  </div>
-</div>
-
-<script src="app.js"></script>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-
-  const token = localStorage.getItem("token");
-
-  const auth = document.getElementById("authScreen");
-
-  const app = document.getElementById("app");
-
-  if (token) {
-
-    auth.style.display = "none";
-
-    app.style.display = "block";
-
-    if (typeof showView === "function") {
-      showView("dashboard");
-    }
-
-  } else {
-
-    auth.style.display = "flex";
-
-    app.style.display = "none";
-  }
-});
-</script>
-
-</body>
-</html>
-
       <!-- ORDERS -->
       <section id="orders" class="view hidden">
 
@@ -215,3 +218,114 @@ document.addEventListener("DOMContentLoaded", () => {
 
       </section>
 
+      <!-- CUSTOMERS -->
+      <section id="customers" class="view hidden">
+
+        <h1>Customers</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Total Customers</h3>
+            <p id="totalCustomers">0</p>
+          </div>
+
+        </div>
+
+        <ul id="customersList"></ul>
+
+      </section>
+
+      <!-- SALES -->
+      <section id="sales" class="view hidden">
+
+        <h1>Sales</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Today's Sales</h3>
+            <p id="todaySales">KES 0</p>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- INCOME -->
+      <section id="income" class="view hidden">
+
+        <h1>Income</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Total Income</h3>
+            <p id="incomeTotal">KES 0</p>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- PROFILE -->
+      <section id="profile" class="view hidden">
+
+        <h1>Business Profile</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Business Name</h3>
+            <p id="profileBusinessName">-</p>
+          </div>
+
+          <div class="card">
+            <h3>WhatsApp</h3>
+            <p id="profileWhatsapp">-</p>
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  const token = localStorage.getItem("token");
+
+  const auth =
+    document.getElementById("authScreen");
+
+  const app =
+    document.getElementById("app");
+
+  if (token) {
+
+    auth.style.display = "none";
+
+    app.style.display = "block";
+
+    if (typeof showView === "function") {
+      showView("dashboard");
+    }
+
+  } else {
+
+    auth.style.display = "flex";
+
+    app.style.display = "none";
+  }
+});
+</script>
+
+</body>
+</html>
