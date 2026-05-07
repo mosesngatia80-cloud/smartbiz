@@ -50,6 +50,11 @@ app.use(
 );
 
 app.use(
+  "/api/profit",
+  require("./routes/profit")
+);
+
+app.use(
   "/api/whatsapp-orders",
   require("./routes/whatsapp.orders")
 );
