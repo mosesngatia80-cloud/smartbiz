@@ -54,6 +54,20 @@ app.use(
   require("./routes/profit")
 );
 
+/* ✅ DASHBOARD */
+
+app.use(
+  "/api/dashboard",
+  require("./routes/dashboard")
+);
+
+/* ✅ STATS */
+
+app.use(
+  "/api/stats",
+  require("./routes/stats")
+);
+
 app.use(
   "/api/whatsapp-orders",
   require("./routes/whatsapp.orders")

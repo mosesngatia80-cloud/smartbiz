@@ -35,14 +35,11 @@
         <button onclick="showView('sales')">Sales</button>
         <button onclick="showView('income')">Income</button>
 
-        <!-- ✅ CASH BUTTON -->
         <button onclick="showView('cash')">Cash</button>
 
         <button onclick="showView('products')">Products</button>
         <button onclick="showView('orders')">Orders</button>
         <button onclick="showView('customers')">Customers</button>
-
-        <!-- ❌ AI REMOVED -->
 
         <button onclick="showView('profile')">Business Profile</button>
 
@@ -56,7 +53,43 @@
 
       <!-- DASHBOARD -->
       <section id="dashboard" class="view">
+
         <h1>Dashboard</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Total Sales</h3>
+            <p id="totalSales">0</p>
+          </div>
+
+          <div class="card">
+            <h3>Wallet</h3>
+            <p id="walletBalance">KES 0</p>
+          </div>
+
+          <div class="card">
+            <h3>Revenue</h3>
+            <p id="revenue">KES 0</p>
+          </div>
+
+          <div class="card">
+            <h3>Expenses</h3>
+            <p id="expenses">KES 0</p>
+          </div>
+
+          <div class="card">
+            <h3>Profit</h3>
+            <p id="profit">KES 0</p>
+          </div>
+
+          <div class="card">
+            <h3>Orders</h3>
+            <p id="orders">0</p>
+          </div>
+
+        </div>
+
       </section>
 
       <!-- CASH POS -->
@@ -66,13 +99,11 @@
 
         <div class="product-form">
 
-          <!-- PRODUCT -->
           <input
             id="cashProduct"
             placeholder="Product Name"
           />
 
-          <!-- AMOUNT -->
           <input
             id="cashAmount"
             type="number"

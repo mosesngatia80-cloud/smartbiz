@@ -22,8 +22,88 @@ function showView(id) {
     el.classList.remove("hidden");
   }
 
+  /* ✅ LOAD DASHBOARD */
+
+  if (id === "dashboard") {
+    loadDashboard();
+  }
+
   if (id === "products") {
     loadProducts();
+  }
+}
+
+/* ================= DASHBOARD ================= */
+
+async function loadDashboard() {
+
+  try {
+
+    const business =
+      JSON.parse(
+        localStorage.getItem("business")
+      );
+
+    if (!business) {
+      return;
+    }
+
+    const res = await fetch(
+
+      API_BASE +
+
+      "/dashboard/summary?whatsappNumber=" +
+
+      encodeURIComponent(
+        business.whatsappNumber
+      )
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+
+      console.log(data);
+
+      return;
+    }
+
+    document.getElementById(
+      "totalSales"
+    ).innerText =
+      data.totalSales;
+
+    document.getElementById(
+      "walletBalance"
+    ).innerText =
+      `KES ${data.walletBalance}`;
+
+    document.getElementById(
+      "revenue"
+    ).innerText =
+      `KES ${data.revenue}`;
+
+    document.getElementById(
+      "expenses"
+    ).innerText =
+      `KES ${data.expenses}`;
+
+    document.getElementById(
+      "profit"
+    ).innerText =
+      `KES ${data.profit}`;
+
+    document.getElementById(
+      "orders"
+    ).innerText =
+      data.totalOrders;
+
+  } catch (err) {
+
+    console.error(
+      "Dashboard error:",
+      err
+    );
   }
 }
 
@@ -88,13 +168,11 @@ async function login() {
       return;
     }
 
-    /* SAVE TOKEN */
     localStorage.setItem(
       "token",
       data.token
     );
 
-    /* SAVE BUSINESS */
     localStorage.setItem(
       "business",
       JSON.stringify(data.business)
