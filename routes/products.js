@@ -157,25 +157,29 @@ router.post("/cash-sale", async (req, res) => {
       });
     }
 
-    /* 🔍 FIND PRODUCT */
-    const product =
-      await Product.findOne({
+    /* 🔍 FIND PRODUCT WITH STOCK */
+    const products =
+      await Product.find({
 
         business: business._id,
 
         name: productName,
 
         isActive: true
-      });
+      })
+      .sort({ createdAt: -1 });
 
-    if (!product) {
+    if (!products.length) {
       return res.status(404).json({
         message: "Product not found"
       });
     }
 
-    /* 📦 CHECK STOCK */
-    if (product.stock <= 0) {
+    /* ✅ PICK PRODUCT THAT HAS STOCK */
+    const product =
+      products.find(p => p.stock > 0);
+
+    if (!product) {
       return res.status(400).json({
         message: "Out of stock"
       });

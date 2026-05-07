@@ -121,8 +121,6 @@ async function loadBusinessProfile() {
 
   try {
 
-    /* ✅ LOCAL SESSION */
-
     const localBusiness =
       JSON.parse(
         localStorage.getItem("business")
@@ -140,8 +138,6 @@ async function loadBusinessProfile() {
       ).innerText =
         localBusiness.whatsappNumber || "-";
     }
-
-    /* ✅ OPTIONAL BACKEND ENHANCEMENT */
 
     const res = await fetch(
       API_BASE + "/business/me"
@@ -309,7 +305,7 @@ async function loadProducts() {
 
       list.innerHTML += `
         <li>
-          ${p.name} – KES ${p.price}
+          ${p.name} – KES ${p.price} – Stock: ${p.stock}
         </li>
       `;
     });
@@ -338,6 +334,12 @@ async function addProduct() {
   const price = Number(
     document.getElementById(
       "newProductPrice"
+    ).value
+  );
+
+  const stock = Number(
+    document.getElementById(
+      "newProductStock"
     ).value
   );
 
@@ -381,6 +383,7 @@ async function addProduct() {
 
           name,
           price,
+          stock,
 
           whatsappNumber:
             business.whatsappNumber
@@ -407,6 +410,10 @@ async function addProduct() {
 
     document.getElementById(
       "newProductPrice"
+    ).value = "";
+
+    document.getElementById(
+      "newProductStock"
     ).value = "";
 
     loadProducts();
@@ -447,29 +454,59 @@ async function sellCashProduct() {
     return;
   }
 
-  msg.innerText =
-    "Recording sale...";
-
   try {
 
-    const sales =
+    const business =
       JSON.parse(
-        localStorage.getItem("cashSales")
-      ) || [];
+        localStorage.getItem("business")
+      );
 
-    sales.push({
-      product,
-      amount,
-      date: new Date().toISOString()
-    });
+    if (!business) {
 
-    localStorage.setItem(
-      "cashSales",
-      JSON.stringify(sales)
-    );
+      msg.innerText =
+        "No business session ❌";
+
+      return;
+    }
 
     msg.innerText =
-      "Cash sale recorded ✅";
+      "Recording sale...";
+
+    const res = await fetch(
+
+      API_BASE +
+
+      "/products/cash-sale",
+
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+
+          productName: product,
+
+          whatsappNumber:
+            business.whatsappNumber
+        })
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+
+      msg.innerText =
+        data.message || "Sale failed ❌";
+
+      return;
+    }
+
+    msg.innerText =
+      `Sale recorded ✅ Remaining stock: ${data.remainingStock}`;
 
     document.getElementById(
       "cashProduct"
@@ -478,6 +515,9 @@ async function sellCashProduct() {
     document.getElementById(
       "cashAmount"
     ).value = "";
+
+    loadProducts();
+    loadDashboard();
 
   } catch (err) {
 
