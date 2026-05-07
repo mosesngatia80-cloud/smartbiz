@@ -34,6 +34,13 @@ app.use(
   require("./routes/orders")
 );
 
+/* ✅ CUSTOMERS */
+
+app.use(
+  "/api/customers",
+  require("./routes/customers")
+);
+
 app.use(
   "/api/wallet",
   require("./routes/wallet")
