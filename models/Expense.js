@@ -1,31 +1,47 @@
 const mongoose = require("mongoose");
 
-const expenseSchema = new mongoose.Schema({
-  businessId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Business",
-    required: false
-  },
-  title: {
-    type: String,
-    required: true
-  },
-  amount: {
-    type: Number,
-    required: true
-  },
-  category: {
-    type: String,
-    enum: ["Rent", "Salary", "Transport", "Supplies", "Maintenance", "Other"],
-    default: "Other"
-  },
-  date: {
-    type: Date,
-    default: Date.now
-  },
-  notes: {
-    type: String
-  }
-});
+const ExpenseSchema = new mongoose.Schema(
+  {
+    business: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Business",
+      required: true
+    },
 
-module.exports = mongoose.model("Expense", expenseSchema);
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
+
+    title: {
+      type: String,
+      required: true,
+      trim: true
+    },
+
+    amount: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+
+    category: {
+      type: String,
+      default: "GENERAL"
+    },
+
+    note: {
+      type: String,
+      default: ""
+    }
+  },
+  { timestamps: true }
+);
+
+module.exports =
+  mongoose.models.Expense ||
+  mongoose.model(
+    "Expense",
+    ExpenseSchema
+  );
