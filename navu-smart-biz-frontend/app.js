@@ -302,7 +302,13 @@ async function loadProducts() {
 
       list.innerHTML += `
         <li>
-          ${p.name} – KES ${p.price} – Stock: ${p.stock}
+          ${p.name}
+          —
+          KES ${p.price}
+          —
+          Stock: ${p.stock}
+          —
+          Unit: ${p.unitType}
         </li>
       `;
     });
@@ -519,6 +525,12 @@ async function sellCashProduct() {
       .value
       .trim();
 
+  const quantity = Number(
+    document.getElementById(
+      "cashQuantity"
+    ).value || 1
+  );
+
   const amount = Number(
     document.getElementById(
       "cashAmount"
@@ -528,10 +540,14 @@ async function sellCashProduct() {
   const msg =
     document.getElementById("cashMsg");
 
-  if (!product || !amount) {
+  if (
+    !product ||
+    !amount ||
+    !quantity
+  ) {
 
     msg.innerText =
-      "Enter product and amount ⚠️";
+      "Enter product, quantity and amount ⚠️";
 
     return;
   }
@@ -571,6 +587,10 @@ async function sellCashProduct() {
 
           productName: product,
 
+          quantity,
+
+          amount,
+
           whatsappNumber:
             business.whatsappNumber
         })
@@ -592,6 +612,10 @@ async function sellCashProduct() {
 
     document.getElementById(
       "cashProduct"
+    ).value = "";
+
+    document.getElementById(
+      "cashQuantity"
     ).value = "";
 
     document.getElementById(

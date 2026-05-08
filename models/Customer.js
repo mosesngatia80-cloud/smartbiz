@@ -6,14 +6,42 @@ const CustomerSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+
     business: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Business",
     },
-    name: String,
-    phone: String,
+
+    /* 👤 CUSTOMER INFO */
+
+    name: {
+      type: String,
+      default: ""
+    },
+
+    phone: {
+      type: String,
+      default: ""
+    },
+
+    /* 💰 CUSTOMER ANALYTICS */
+
+    totalSpent: {
+      type: Number,
+      default: 0
+    },
+
+    /* 📒 FUTURE CREDIT SYSTEM */
+
+    debtBalance: {
+      type: Number,
+      default: 0
+    }
   },
+
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Customer", CustomerSchema);
+module.exports =
+  mongoose.models.Customer ||
+  mongoose.model("Customer", CustomerSchema);
