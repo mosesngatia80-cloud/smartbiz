@@ -1,20 +1,14 @@
 const express = require("express");
-
 const router = express.Router();
 
-const Expense =
-  require("../models/Expense");
-
-const Business =
-  require("../models/Business");
+const Expense = require("../models/Expense");
+const Business = require("../models/Business");
 
 /* =========================
-   ADD EXPENSE
+   CREATE EXPENSE
 ========================= */
 
-router.post(
-  "/add",
-  async (req, res) => {
+router.post("/create", async (req, res) => {
 
   try {
 
@@ -33,10 +27,11 @@ router.post(
     ) {
 
       return res.status(400).json({
-        message:
-          "Missing required fields"
+        message: "Missing fields"
       });
     }
+
+    /* 🔍 FIND BUSINESS */
 
     const business =
       await Business.findOne({
@@ -46,63 +41,74 @@ router.post(
     if (!business) {
 
       return res.status(404).json({
-        message:
-          "Business not found"
+        message: "Business not found"
       });
     }
+
+    /* ✅ CREATE EXPENSE */
 
     const expense =
       await Expense.create({
 
-      business:
-        business._id,
+        business:
+          business._id,
 
-      owner:
-        business.owner,
+        owner:
+          business.owner,
 
-      title,
+        title,
 
-      amount,
+        amount:
+          Number(amount),
 
-      category:
-        category || "GENERAL",
+        category:
+          category || "GENERAL",
 
-      note:
-        note || ""
-    });
+        note:
+          note || ""
+      });
 
     res.json({
-      success: true,
+
+      message:
+        "Expense created ✅",
+
       expense
     });
 
   } catch (err) {
 
     console.error(
-      "❌ Expense add error:",
+      "CREATE EXPENSE ERROR:",
       err
     );
 
     res.status(500).json({
-      message:
-        "Failed to add expense"
+      message: err.message
     });
   }
 });
 
 /* =========================
-   GET EXPENSES
+   GET BUSINESS EXPENSES
 ========================= */
 
-router.get(
-  "/all",
-  async (req, res) => {
+router.get("/", async (req, res) => {
 
   try {
 
-    const {
-      whatsappNumber
-    } = req.query;
+    const whatsappNumber =
+      req.query.whatsappNumber;
+
+    if (!whatsappNumber) {
+
+      return res.status(400).json({
+        message:
+          "WhatsApp number required"
+      });
+    }
+
+    /* 🔍 FIND BUSINESS */
 
     const business =
       await Business.findOne({
@@ -117,32 +123,37 @@ router.get(
       });
     }
 
+    /* ✅ LOAD EXPENSES */
+
     const expenses =
       await Expense.find({
         business:
           business._id
       })
-
       .sort({
         createdAt: -1
       });
 
+    /* 💰 TOTAL EXPENSES */
+
     const totalExpenses =
       expenses.reduce(
         (sum, e) =>
-          sum + Number(e.amount),
+          sum + e.amount,
         0
       );
 
     res.json({
+
       totalExpenses,
+
       expenses
     });
 
   } catch (err) {
 
     console.error(
-      "❌ Expense fetch error:",
+      "GET EXPENSES ERROR:",
       err
     );
 
