@@ -17,7 +17,10 @@ router.post("/create", async (req, res) => {
       name,
       price,
       stock = 0,
-      whatsappNumber
+      whatsappNumber,
+      unitType = "PIECE",
+      allowFractions = false,
+      pricePerUnit = 0
     } = req.body;
 
     if (
@@ -47,6 +50,10 @@ router.post("/create", async (req, res) => {
         name,
         price,
         stock,
+
+        unitType,
+        allowFractions,
+        pricePerUnit,
 
         owner: business.owner,
 
@@ -132,6 +139,7 @@ router.post("/cash-sale", async (req, res) => {
     const {
       productName,
       amount,
+      quantity = 1,
       whatsappNumber
     } = req.body;
 
@@ -201,22 +209,70 @@ router.post("/cash-sale", async (req, res) => {
       });
     }
 
-    /* 💰 VALIDATE PRICE */
+    /* 📏 QUANTITY */
+
+    const qty =
+      Number(quantity);
+
+    /* ❌ INVALID QUANTITY */
+
+    if (qty <= 0) {
+
+      return res.status(400).json({
+        message: "Invalid quantity"
+      });
+    }
+
+    /* ❌ FRACTIONS NOT ALLOWED */
 
     if (
-      Number(amount) !==
-      Number(product.price)
+      !product.allowFractions &&
+      qty % 1 !== 0
     ) {
 
       return res.status(400).json({
         message:
-          `Incorrect amount. ${product.name} costs KES ${product.price}`
+          `${product.name} does not allow fractional selling`
+      });
+    }
+
+    /* 💰 CALCULATE EXPECTED TOTAL */
+
+    const unitPrice =
+      product.pricePerUnit > 0
+        ? product.pricePerUnit
+        : product.price;
+
+    const expectedTotal =
+      Number(unitPrice) *
+      Number(qty);
+
+    /* ❌ VALIDATE AMOUNT */
+
+    if (
+      Number(amount) !==
+      Number(expectedTotal)
+    ) {
+
+      return res.status(400).json({
+
+        message:
+          `Incorrect amount. ${qty} ${product.unitType} of ${product.name} costs KES ${expectedTotal}`
+      });
+    }
+
+    /* 📦 CHECK STOCK */
+
+    if (product.stock < qty) {
+
+      return res.status(400).json({
+        message: "Insufficient stock"
       });
     }
 
     /* ✅ REDUCE STOCK */
 
-    product.stock -= 1;
+    product.stock -= qty;
 
     await product.save();
 
@@ -239,13 +295,13 @@ router.post("/cash-sale", async (req, res) => {
           {
             product: product._id,
             name: product.name,
-            price: product.price,
-            qty: 1,
-            lineTotal: product.price
+            price: unitPrice,
+            qty: qty,
+            lineTotal: expectedTotal
           }
         ],
 
-        total: product.price,
+        total: expectedTotal,
 
         status: "PAID",
 

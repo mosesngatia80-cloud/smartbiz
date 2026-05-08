@@ -14,6 +14,30 @@ const ProductSchema = new mongoose.Schema(
       min: 0
     },
 
+    /* ✅ UNIT SYSTEM */
+
+    unitType: {
+      type: String,
+      enum: [
+        "PIECE",
+        "KG",
+        "GRAM",
+        "LITRE",
+        "ML"
+      ],
+      default: "PIECE"
+    },
+
+    allowFractions: {
+      type: Boolean,
+      default: false
+    },
+
+    pricePerUnit: {
+      type: Number,
+      default: 0
+    },
+
     // 📦 INVENTORY
     stock: {
       type: Number,
