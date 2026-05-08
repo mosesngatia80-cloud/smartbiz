@@ -8,10 +8,12 @@ const ExpenseSchema = new mongoose.Schema(
       required: true
     },
 
+    /* ✅ WHATSAPP-BASED OWNER */
+
     owner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true
+      type: String,
+      required: false,
+      default: ""
     },
 
     title: {
