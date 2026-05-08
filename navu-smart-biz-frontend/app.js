@@ -480,13 +480,67 @@ async function loadOrders() {
         pending++;
       }
 
+      const itemNames =
+        order.items
+          ?.map(i =>
+            `${i.name} x${i.qty}`
+          )
+          .join(", ");
+
+      const customer =
+        order.customerPhone ||
+        "Walk-in Customer";
+
+      const payment =
+        order.paymentMethod ||
+        "UNKNOWN";
+
+      const source =
+        order.source ||
+        "UNKNOWN";
+
+      const time =
+        new Date(order.createdAt)
+          .toLocaleString();
+
       list.innerHTML += `
-        <li>
-          ${order.items?.[0]?.name || "Item"}
-          —
-          KES ${order.total}
-          —
-          ${order.status}
+        <li class="order-card">
+
+          <div>
+            <strong>Customer:</strong>
+            ${customer}
+          </div>
+
+          <div>
+            <strong>Items:</strong>
+            ${itemNames}
+          </div>
+
+          <div>
+            <strong>Total:</strong>
+            KES ${order.total}
+          </div>
+
+          <div>
+            <strong>Payment:</strong>
+            ${payment}
+          </div>
+
+          <div>
+            <strong>Source:</strong>
+            ${source}
+          </div>
+
+          <div>
+            <strong>Status:</strong>
+            ${order.status}
+          </div>
+
+          <div>
+            <strong>Time:</strong>
+            ${time}
+          </div>
+
         </li>
       `;
     });

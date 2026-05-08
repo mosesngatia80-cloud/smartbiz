@@ -44,7 +44,6 @@ router.post("/", auth, async (req, res) => {
 
       const qty = Number(item.qty);
 
-      // 🔥 INVENTORY LOGIC (FINAL FIX)
       if (product.stock < qty) {
         return res.status(400).json({
           message: `${product.name} is out of stock`
@@ -79,30 +78,67 @@ router.post("/", auth, async (req, res) => {
     });
 
     res.status(201).json(order);
+
   } catch (err) {
-    console.error("❌ Create order error:", err);
-    res.status(500).json({ message: err.message });
+
+    console.error(
+      "❌ Create order error:",
+      err
+    );
+
+    res.status(500).json({
+      message: err.message
+    });
   }
 });
 
 /**
- * GET ALL ORDERS (DASHBOARD)
+ * GET ALL ORDERS (WHATSAPP SAFE VERSION)
  */
-router.get("/", auth, async (req, res) => {
+router.get("/", async (req, res) => {
+
   try {
-    const userId = req.user.user;
-    const business = await Business.findOne({ owner: userId });
-    if (!business) {
-      return res.status(400).json({ message: "User has no business" });
+
+    const whatsappNumber =
+      req.query.whatsappNumber;
+
+    if (!whatsappNumber) {
+
+      return res.status(400).json({
+        message: "WhatsApp number required"
+      });
     }
 
-    const orders = await Order.find({ business: business._id })
+    const business =
+      await Business.findOne({
+        whatsappNumber
+      });
+
+    if (!business) {
+
+      return res.status(404).json({
+        message: "Business not found"
+      });
+    }
+
+    const orders =
+      await Order.find({
+        business: business._id
+      })
       .sort({ createdAt: -1 });
 
     res.json(orders);
+
   } catch (err) {
-    console.error("❌ Get orders error:", err);
-    res.status(500).json({ message: "Failed to fetch orders" });
+
+    console.error(
+      "❌ Get orders error:",
+      err
+    );
+
+    res.status(500).json({
+      message: "Failed to fetch orders"
+    });
   }
 });
 
@@ -110,21 +146,37 @@ router.get("/", auth, async (req, res) => {
  * VERIFY ORDER
  */
 router.get("/:orderId/verify", async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.orderId);
 
-    if (!order || order.status !== "UNPAID") {
-      return res.json({ valid: false });
+  try {
+
+    const order =
+      await Order.findById(
+        req.params.orderId
+      );
+
+    if (
+      !order ||
+      order.status !== "UNPAID"
+    ) {
+
+      return res.json({
+        valid: false
+      });
     }
 
     res.json({
       valid: true,
       amount: order.total,
-      businessWalletId: order.businessWalletId,
+      businessWalletId:
+        order.businessWalletId,
       status: order.status
     });
+
   } catch (err) {
-    res.status(500).json({ valid: false });
+
+    res.status(500).json({
+      valid: false
+    });
   }
 });
 
@@ -132,46 +184,94 @@ router.get("/:orderId/verify", async (req, res) => {
  * MARK ORDER AS PAID
  */
 router.post("/:orderId/mark-paid", async (req, res) => {
+
   try {
-    const { paymentRef } = req.body;
 
-    const order = await Order.findById(req.params.orderId);
-    if (!order) return res.status(404).json({ message: "Order not found" });
+    const { paymentRef } =
+      req.body;
 
-    if (order.status === "PAID") return res.json({ success: true });
+    const order =
+      await Order.findById(
+        req.params.orderId
+      );
 
-    const wallet = await Wallet.findOne({
-      owner: order.business,
-      ownerType: "BUSINESS"
-    });
+    if (!order) {
 
-    if (!wallet) return res.status(500).json({ message: "Wallet not found" });
-
-    if (wallet.balance < order.total) {
-      return res.status(400).json({ message: "Insufficient balance" });
+      return res.status(404).json({
+        message: "Order not found"
+      });
     }
 
-    wallet.balance -= order.total;
+    if (order.status === "PAID") {
+
+      return res.json({
+        success: true
+      });
+    }
+
+    const wallet =
+      await Wallet.findOne({
+        owner: order.business,
+        ownerType: "BUSINESS"
+      });
+
+    if (!wallet) {
+
+      return res.status(500).json({
+        message: "Wallet not found"
+      });
+    }
+
+    if (
+      wallet.balance <
+      order.total
+    ) {
+
+      return res.status(400).json({
+        message:
+          "Insufficient balance"
+      });
+    }
+
+    wallet.balance -=
+      order.total;
+
     await wallet.save();
 
     await Transaction.create({
+
       from: wallet.owner,
+
       to: order.customerUserId,
+
       amount: order.total,
+
       type: "SALE",
+
       reference: paymentRef,
+
       orderId: order._id
     });
 
     order.status = "PAID";
-    order.paymentRef = paymentRef;
-    order.paidAt = new Date();
+
+    order.paymentRef =
+      paymentRef;
+
+    order.paidAt =
+      new Date();
+
     await order.save();
 
-    res.json({ success: true });
+    res.json({
+      success: true
+    });
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+
+    res.status(500).json({
+      message: err.message
+    });
   }
 });
 
