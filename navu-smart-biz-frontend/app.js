@@ -34,10 +34,20 @@ function showView(id) {
     loadBusinessProfile();
   }
 
-  /* ✅ LOAD ORDERS */
-
   if (id === "orders") {
     loadOrders();
+  }
+
+  /* ✅ LOAD EXPENSES */
+
+  if (id === "expenses") {
+    loadExpenses();
+  }
+
+  /* ✅ LOAD DEBTS */
+
+  if (id === "debts") {
+    loadDebts();
   }
 }
 
@@ -87,16 +97,6 @@ async function loadDashboard() {
       "revenue"
     ).innerText =
       `KES ${data.revenue}`;
-
-    document.getElementById(
-      "expenses"
-    ).innerText =
-      `KES ${data.expenses}`;
-
-    document.getElementById(
-      "profit"
-    ).innerText =
-      `KES ${data.profit}`;
 
     document.getElementById(
       "ordersCount"
@@ -430,6 +430,410 @@ async function addProduct() {
   }
 }
 
+/* ================= EXPENSES ================= */
+
+async function loadExpenses() {
+
+  const list =
+    document.getElementById("expensesList");
+
+  if (!list) return;
+
+  try {
+
+    const business =
+      JSON.parse(
+        localStorage.getItem("business")
+      );
+
+    if (!business) {
+
+      list.innerHTML =
+        "<li>No business session</li>";
+
+      return;
+    }
+
+    const res = await fetch(
+
+      API_BASE +
+
+      "/expense?whatsappNumber=" +
+
+      encodeURIComponent(
+        business.whatsappNumber
+      )
+    );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+
+      list.innerHTML =
+        "<li>Failed to load expenses</li>";
+
+      return;
+    }
+
+    document.getElementById(
+      "totalExpenses"
+    ).innerText =
+      `KES ${data.totalExpenses}`;
+
+    list.innerHTML = "";
+
+    data.expenses.forEach(exp => {
+
+      const time =
+        new Date(exp.createdAt)
+          .toLocaleString();
+
+      list.innerHTML += `
+        <li class="order-card">
+
+          <div>
+            <strong>Title:</strong>
+            ${exp.title}
+          </div>
+
+          <div>
+            <strong>Amount:</strong>
+            KES ${exp.amount}
+          </div>
+
+          <div>
+            <strong>Category:</strong>
+            ${exp.category}
+          </div>
+
+          <div>
+            <strong>Note:</strong>
+            ${exp.note}
+          </div>
+
+          <div>
+            <strong>Time:</strong>
+            ${time}
+          </div>
+
+        </li>
+      `;
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    list.innerHTML =
+      "<li>Failed to load expenses</li>";
+  }
+}
+
+async function addExpense() {
+
+  const title =
+    document.getElementById(
+      "expenseTitle"
+    ).value;
+
+  const amount =
+    Number(
+      document.getElementById(
+        "expenseAmount"
+      ).value
+    );
+
+  const category =
+    document.getElementById(
+      "expenseCategory"
+    ).value;
+
+  const note =
+    document.getElementById(
+      "expenseNote"
+    ).value;
+
+  const msg =
+    document.getElementById(
+      "expenseMsg"
+    );
+
+  const business =
+    JSON.parse(
+      localStorage.getItem("business")
+    );
+
+  if (
+    !business ||
+    !title ||
+    !amount
+  ) {
+
+    msg.innerText =
+      "Enter title and amount ⚠️";
+
+    return;
+  }
+
+  try {
+
+    msg.innerText =
+      "Saving expense...";
+
+    const res = await fetch(
+
+      API_BASE +
+      "/expense/create",
+
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body:
+          JSON.stringify({
+
+          whatsappNumber:
+            business.whatsappNumber,
+
+          title,
+          amount,
+          category,
+          note
+        })
+      }
+    );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+
+      msg.innerText =
+        data.message ||
+        "Failed ❌";
+
+      return;
+    }
+
+    msg.innerText =
+      "Expense added ✅";
+
+    document.getElementById(
+      "expenseTitle"
+    ).value = "";
+
+    document.getElementById(
+      "expenseAmount"
+    ).value = "";
+
+    document.getElementById(
+      "expenseCategory"
+    ).value = "";
+
+    document.getElementById(
+      "expenseNote"
+    ).value = "";
+
+    loadExpenses();
+
+  } catch (err) {
+
+    console.error(err);
+
+    msg.innerText =
+      "Expense failed ❌";
+  }
+}
+
+/* ================= DEBTS ================= */
+
+async function addDebt() {
+
+  const customerName =
+    document.getElementById(
+      "debtCustomerName"
+    ).value;
+
+  const customerPhone =
+    document.getElementById(
+      "debtCustomerPhone"
+    ).value;
+
+  const totalAmount =
+    document.getElementById(
+      "debtTotalAmount"
+    ).value;
+
+  const amountPaid =
+    document.getElementById(
+      "debtAmountPaid"
+    ).value || 0;
+
+  const note =
+    document.getElementById(
+      "debtNote"
+    ).value;
+
+  const msg =
+    document.getElementById(
+      "debtMsg"
+    );
+
+  try {
+
+    const business =
+      JSON.parse(
+        localStorage.getItem(
+          "business"
+        )
+      );
+
+    const res = await fetch(
+
+      API_BASE + "/debt/create",
+
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body: JSON.stringify({
+
+          phone:
+            business.phone ||
+
+            business.whatsappNumber,
+
+          customerName,
+          customerPhone,
+          totalAmount,
+          amountPaid,
+          note
+        })
+      }
+    );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+
+      msg.innerText =
+        data.message ||
+        "Failed ❌";
+
+      return;
+    }
+
+    msg.innerText =
+      "Debt added ✅";
+
+    loadDebts();
+
+  } catch (err) {
+
+    console.error(err);
+
+    msg.innerText =
+      "Server error ❌";
+  }
+}
+
+async function loadDebts() {
+
+  const list =
+    document.getElementById(
+      "debtsList"
+    );
+
+  if (!list) return;
+
+  try {
+
+    const business =
+      JSON.parse(
+        localStorage.getItem(
+          "business"
+        )
+      );
+
+    const res = await fetch(
+
+      API_BASE +
+
+      "/debt?phone=" +
+
+      encodeURIComponent(
+
+        business.phone ||
+
+        business.whatsappNumber
+      )
+    );
+
+    const data =
+      await res.json();
+
+    list.innerHTML = "";
+
+    document.getElementById(
+      "totalDebt"
+    ).innerText =
+      `KES ${data.totalDebt}`;
+
+    data.debts.forEach(d => {
+
+      list.innerHTML += `
+        <li class="order-card">
+
+          <div>
+            <strong>Customer:</strong>
+            ${d.customerName}
+          </div>
+
+          <div>
+            <strong>Phone:</strong>
+            ${d.customerPhone}
+          </div>
+
+          <div>
+            <strong>Total:</strong>
+            KES ${d.totalAmount}
+          </div>
+
+          <div>
+            <strong>Paid:</strong>
+            KES ${d.amountPaid}
+          </div>
+
+          <div>
+            <strong>Balance:</strong>
+            KES ${d.balance}
+          </div>
+
+          <div>
+            <strong>Status:</strong>
+            ${d.status}
+          </div>
+
+        </li>
+      `;
+    });
+
+  } catch (err) {
+
+    console.error(err);
+  }
+}
+
 /* ================= ORDERS ================= */
 
 async function loadOrders() {
@@ -603,7 +1007,7 @@ async function sellCashProduct() {
     msg.innerText =
       "Enter product, quantity and amount ⚠️";
 
-    return;
+      return;
   }
 
   try {

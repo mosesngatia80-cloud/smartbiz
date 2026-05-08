@@ -45,7 +45,7 @@ const INTERNAL_KEY =
   process.env.CT_INTERNAL_KEY;
 
 /* =========================
-   SESSION (TEMP IN-MEMORY)
+   SESSION
 ========================= */
 
 const sessions = {};
@@ -190,7 +190,6 @@ app.post(
 
   try {
 
-    /* 🔥 FULL META PAYLOAD DEBUG */
     console.log(
       JSON.stringify(
         req.body,
@@ -222,180 +221,112 @@ app.post(
     if (!sessions[from]) {
 
       sessions[from] = {
-        mode: null,
         businessId: null
       };
     }
 
     /* =========================
-       STEP 1: MODE SELECT
+       DIRECT SHOW PRODUCTS
     ========================= */
 
-    if (!sessions[from].mode) {
+    if (
+      text ===
+      "show products"
+    ) {
+
+      const bizResp =
+        await fetch(
+          `${SMART_BIZ_BASE}/api/business`
+        );
+
+      const businesses =
+        await bizResp.json();
 
       if (
-        text === "business"
+        !businesses.length
       ) {
-
-        sessions[from].mode =
-          "BUSINESS";
 
         await sendWhatsAppMessage(
           from,
-          "🏪 Business mode activated"
+          "❌ No businesses found"
         );
 
         return res.sendStatus(200);
       }
 
-      if (
-        text === "customer"
-      ) {
+      const business =
+        businesses[0];
 
-        sessions[from].mode =
-          "CUSTOMER";
+      sessions[from]
+        .businessId =
+          business._id;
+
+      const resp =
+        await fetch(
+          `${SMART_BIZ_BASE}/api/products/my-products?businessId=${business._id}`
+        );
+
+      const products =
+        await resp.json();
+
+      if (
+        !products.length
+      ) {
 
         await sendWhatsAppMessage(
           from,
-          "🛒 Customer mode activated\nType shop name"
+          "❌ No products available"
         );
 
         return res.sendStatus(200);
       }
+
+      let reply =
+        `🏪 ${business.name}\n\n`;
+
+      reply +=
+        "🛒 Available Products\n\n";
+
+      products.forEach(
+        (p, i) => {
+
+        reply +=
+          `${i + 1}. ${p.name} - KES ${p.price}\n`;
+      });
+
+      reply +=
+        "\nUse:\nbuy product qty";
 
       await sendWhatsAppMessage(
         from,
-        "👋 Welcome!\n\nReply:\n• BUSINESS\n• CUSTOMER"
+        reply
       );
 
       return res.sendStatus(200);
     }
 
     /* =========================
-       CUSTOMER FLOW
+       HANDLE ORDER
     ========================= */
 
-    if (
-      sessions[from].mode ===
-      "CUSTOMER"
-    ) {
+    const parsed =
+      parseOrder(text);
 
-      /* =========================
-         SELECT BUSINESS
-      ========================= */
-
-      if (
-        !sessions[from]
-        .businessId
-      ) {
-
-        const bizResp =
-          await fetch(
-            `${SMART_BIZ_BASE}/api/business/search?name=${text}`
-          );
-
-        const biz =
-          await bizResp.json();
-
-        if (
-          !biz ||
-          !biz._id
-        ) {
-
-          await sendWhatsAppMessage(
-            from,
-            "❌ Business not found"
-          );
-
-          return res.sendStatus(200);
-        }
-
-        sessions[from]
-          .businessId =
-            biz._id;
-
-        await sendWhatsAppMessage(
-          from,
-          `🏪 Selected: ${biz.name}\n\nNow type:\nshow products`
-        );
-
-        return res.sendStatus(200);
-      }
-
-      /* =========================
-         SHOW PRODUCTS
-      ========================= */
-
-      if (
-        text ===
-        "show products"
-      ) {
-
-        const businessId =
-          sessions[from]
-          .businessId;
-
-        const resp =
-          await fetch(
-            `${SMART_BIZ_BASE}/api/products/my-products?businessId=${businessId}`
-          );
-
-        const products =
-          await resp.json();
-
-        if (
-          !products.length
-        ) {
-
-          await sendWhatsAppMessage(
-            from,
-            "❌ No products available"
-          );
-
-          return res.sendStatus(200);
-        }
-
-        let reply =
-          "🛒 Available Products\n\n";
-
-        products.forEach(
-          (p, i) => {
-
-          reply +=
-            `${i + 1}. ${p.name} - KES ${p.price}\n`;
-        });
-
-        reply +=
-          "\nUse:\nbuy product qty";
-
-        await sendWhatsAppMessage(
-          from,
-          reply
-        );
-
-        return res.sendStatus(200);
-      }
-
-      /* =========================
-         HANDLE ORDER
-      ========================= */
-
-      const parsed =
-        parseOrder(text);
-
-      if (!parsed) {
-
-        await sendWhatsAppMessage(
-          from,
-          "❓ Use: buy sugar 1"
-        );
-
-        return res.sendStatus(200);
-      }
+    if (parsed) {
 
       const businessId =
         sessions[from]
         .businessId;
+
+      if (!businessId) {
+
+        await sendWhatsAppMessage(
+          from,
+          "❌ First type:\nshow products"
+        );
+
+        return res.sendStatus(200);
+      }
 
       const productResp =
         await fetch(
@@ -461,7 +392,11 @@ app.post(
 
         await sendWhatsAppMessage(
           from,
-          `✅ Payment Successful\n\n🛒 ${product.name} x${parsed.qty}\n💰 KES ${orderData.order.total}\n💼 Balance: ${orderData.payment.remainingBalance}`
+          `✅ Payment Successful
+
+🛒 ${product.name} x${parsed.qty}
+
+💰 KES ${orderData.order.total}`
         );
 
       } else {
@@ -476,21 +411,13 @@ app.post(
     }
 
     /* =========================
-       BUSINESS FLOW
+       DEFAULT MESSAGE
     ========================= */
 
-    if (
-      sessions[from].mode ===
-      "BUSINESS"
-    ) {
-
-      await sendWhatsAppMessage(
-        from,
-        "📊 Business tools coming next (add products, view sales)"
-      );
-
-      return res.sendStatus(200);
-    }
+    await sendWhatsAppMessage(
+      from,
+      "👋 Welcome to SmartBiz\n\nType:\nshow products"
+    );
 
     return res.sendStatus(200);
 

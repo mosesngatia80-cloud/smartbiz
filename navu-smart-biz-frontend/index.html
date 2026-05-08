@@ -57,6 +57,10 @@
           Income
         </button>
 
+        <button onclick="showView('expenses')">
+          Expenses
+        </button>
+
         <button onclick="showView('cash')">
           Cash
         </button>
@@ -71,6 +75,12 @@
 
         <button onclick="showView('customers')">
           Customers
+        </button>
+
+        <!-- ✅ DEBTS BUTTON -->
+
+        <button onclick="showView('debts')">
+          Debts
         </button>
 
         <button onclick="showView('profile')">
@@ -114,21 +124,60 @@
           </div>
 
           <div class="card">
-            <h3>Expenses</h3>
-            <p id="expenses">KES 0</p>
-          </div>
-
-          <div class="card">
-            <h3>Profit</h3>
-            <p id="profit">KES 0</p>
-          </div>
-
-          <div class="card">
             <h3>Orders</h3>
             <p id="ordersCount">0</p>
           </div>
 
         </div>
+
+      </section>
+
+      <!-- EXPENSES -->
+      <section id="expenses" class="view hidden">
+
+        <h1>Expenses</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Total Expenses</h3>
+            <p id="totalExpenses">KES 0</p>
+          </div>
+
+        </div>
+
+        <div class="product-form">
+
+          <input
+            id="expenseTitle"
+            placeholder="Expense title"
+          />
+
+          <input
+            id="expenseAmount"
+            type="number"
+            placeholder="Amount (KES)"
+          />
+
+          <input
+            id="expenseCategory"
+            placeholder="Category"
+          />
+
+          <input
+            id="expenseNote"
+            placeholder="Note"
+          />
+
+          <button onclick="addExpense()">
+            Add Expense
+          </button>
+
+          <p id="expenseMsg"></p>
+
+        </div>
+
+        <ul id="expensesList"></ul>
 
       </section>
 
@@ -184,8 +233,6 @@
             type="number"
             placeholder="Price (KES)"
           />
-
-          <!-- ✅ NEW STOCK INPUT -->
 
           <input
             id="newProductStock"
@@ -248,6 +295,61 @@
         </div>
 
         <ul id="customersList"></ul>
+
+      </section>
+
+      <!-- ✅ DEBTS -->
+      <section id="debts" class="view hidden">
+
+        <h1>Debts</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Total Debt</h3>
+            <p id="totalDebt">KES 0</p>
+          </div>
+
+        </div>
+
+        <div class="product-form">
+
+          <input
+            id="debtCustomerName"
+            placeholder="Customer Name"
+          />
+
+          <input
+            id="debtCustomerPhone"
+            placeholder="Customer Phone"
+          />
+
+          <input
+            id="debtTotalAmount"
+            type="number"
+            placeholder="Total Amount"
+          />
+
+          <input
+            id="debtAmountPaid"
+            type="number"
+            placeholder="Amount Paid"
+          />
+
+          <input
+            id="debtNote"
+            placeholder="Note"
+          />
+
+          <button onclick="addDebt()">
+            Add Debt
+          </button>
+
+          <p id="debtMsg"></p>
+
+        </div>
+
+        <ul id="debtsList"></ul>
 
       </section>
 

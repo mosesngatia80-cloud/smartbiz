@@ -56,6 +56,13 @@ app.use(
   require("./routes/expense")
 );
 
+/* ✅ DEBT */
+
+app.use(
+  "/api/debt",
+  require("./routes/debt")
+);
+
 app.use(
   "/api/profit",
   require("./routes/profit")
