@@ -3,6 +3,8 @@ const router = express.Router();
 
 const Product = require("../models/Product");
 const Business = require("../models/Business");
+const BusinessWhatsApp =
+  require("../models/BusinessWhatsApp");
 const Order = require("../models/Order");
 const Wallet = require("../models/Wallet");
 
@@ -355,10 +357,21 @@ router.get("/", async (req, res) => {
       });
     }
 
-    const business =
-      await Business.findOne({
+    const linked =
+      await BusinessWhatsApp.findOne({
         whatsappNumber
       });
+
+    if (!linked) {
+      return res.status(404).json({
+        message: "Business not linked"
+      });
+    }
+
+    const business =
+      await Business.findById(
+        linked.business
+      );
 
     if (!business) {
       return res.status(404).json({
@@ -385,4 +398,3 @@ router.get("/", async (req, res) => {
 
 
 module.exports = router;
-
