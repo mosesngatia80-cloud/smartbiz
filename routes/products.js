@@ -339,3 +339,48 @@ router.post("/cash-sale", async (req, res) => {
 });
 
 module.exports = router;
+
+/* =========================
+   GET PRODUCTS BY WHATSAPP
+========================= */
+
+router.get("/", async (req, res) => {
+
+  try {
+
+    const { whatsappNumber } = req.query;
+
+    if (!whatsappNumber) {
+      return res.status(400).json({
+        message: "whatsappNumber required"
+      });
+    }
+
+    const business =
+      await Business.findOne({
+        whatsappNumber
+      });
+
+    if (!business) {
+      return res.status(404).json({
+        message: "Business not found"
+      });
+    }
+
+    const products =
+      await Product.find({
+        business: business._id
+      });
+
+    res.json(products);
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      message: err.message
+    });
+  }
+});
+
