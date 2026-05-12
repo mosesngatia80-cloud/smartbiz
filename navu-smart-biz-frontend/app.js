@@ -1126,3 +1126,165 @@ document.addEventListener(
     }
   }
 );
+
+/* ================= PAY DEBT ================= */
+
+async function payDebt(debtId) {
+
+  const amount =
+    prompt(
+      "Enter payment amount"
+    );
+
+  if (!amount) {
+    return;
+  }
+
+  try {
+
+    const res = await fetch(
+
+      API_BASE +
+
+      "/debt/pay/" +
+
+      debtId,
+
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body:
+          JSON.stringify({
+            amount
+          })
+      }
+    );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+
+      alert(
+        data.message ||
+        "Payment failed ❌"
+      );
+
+      return;
+    }
+
+    alert(
+      "Debt payment recorded ✅"
+    );
+
+    loadDebts();
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      "Server error ❌"
+    );
+  }
+}
+
+/* ================= UPDATED DEBTS UI ================= */
+
+async function loadDebts() {
+
+  const list =
+    document.getElementById(
+      "debtsList"
+    );
+
+  if (!list) return;
+
+  try {
+
+    const business =
+      JSON.parse(
+        localStorage.getItem(
+          "business"
+        )
+      );
+
+    const res = await fetch(
+
+      API_BASE +
+
+      "/debt?phone=" +
+
+      encodeURIComponent(
+
+        business.phone ||
+
+        business.whatsappNumber
+      )
+    );
+
+    const data =
+      await res.json();
+
+    list.innerHTML = "";
+
+    document.getElementById(
+      "totalDebt"
+    ).innerText =
+      `KES ${data.totalDebt}`;
+
+    data.debts.forEach(d => {
+
+      list.innerHTML += `
+        <li class="order-card">
+
+          <div>
+            <strong>Customer:</strong>
+            ${d.customerName}
+          </div>
+
+          <div>
+            <strong>Phone:</strong>
+            ${d.customerPhone}
+          </div>
+
+          <div>
+            <strong>Total:</strong>
+            KES ${d.totalAmount}
+          </div>
+
+          <div>
+            <strong>Paid:</strong>
+            KES ${d.amountPaid}
+          </div>
+
+          <div>
+            <strong>Balance:</strong>
+            KES ${d.balance}
+          </div>
+
+          <div>
+            <strong>Status:</strong>
+            ${d.status}
+          </div>
+
+          <button
+            onclick="payDebt('${d._id}')"
+          >
+            Record Payment
+          </button>
+
+        </li>
+      `;
+    });
+
+  } catch (err) {
+
+    console.error(err);
+  }
+}

@@ -38,15 +38,20 @@ router.post(
       });
     }
 
-    const balance =
-      Number(totalAmount) -
+    const paid =
       Number(amountPaid || 0);
+
+    const total =
+      Number(totalAmount);
+
+    const balance =
+      total - paid;
 
     let status =
       "UNPAID";
 
     if (
-      amountPaid > 0 &&
+      paid > 0 &&
       balance > 0
     ) {
 
@@ -68,10 +73,11 @@ router.post(
 
       customerPhone,
 
-      totalAmount,
+      totalAmount:
+        total,
 
       amountPaid:
-        amountPaid || 0,
+        paid,
 
       balance,
 
@@ -81,8 +87,87 @@ router.post(
     });
 
     res.json({
+
       message:
         "Debt created ✅",
+
+      debt
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      message:
+        err.message
+    });
+  }
+});
+
+/* =========================
+   UPDATE DEBT PAYMENT
+========================= */
+
+router.post(
+  "/pay/:id",
+  async (req, res) => {
+
+  try {
+
+    const {
+      amount
+    } = req.body;
+
+    const debt =
+      await Debt.findById(
+        req.params.id
+      );
+
+    if (!debt) {
+
+      return res.status(404)
+      .json({
+        message:
+          "Debt not found"
+      });
+    }
+
+    debt.amountPaid =
+      Number(
+        debt.amountPaid
+      ) +
+      Number(amount);
+
+    debt.balance =
+      Number(
+        debt.totalAmount
+      ) -
+      Number(
+        debt.amountPaid
+      );
+
+    if (
+      debt.balance <= 0
+    ) {
+
+      debt.balance = 0;
+
+      debt.status =
+        "PAID";
+
+    } else {
+
+      debt.status =
+        "PARTIAL";
+    }
+
+    await debt.save();
+
+    res.json({
+
+      message:
+        "Payment recorded ✅",
 
       debt
     });
@@ -138,8 +223,11 @@ router.get(
 
     const totalDebt =
       debts.reduce(
+
         (sum, d) =>
-          sum + d.balance,
+
+        sum + Number(d.balance),
+
         0
       );
 

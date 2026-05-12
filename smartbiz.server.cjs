@@ -11,121 +11,34 @@ console.log("🚀 Starting Smart Biz...");
 app.use(cors());
 app.use(express.json());
 
-/* ================= ROOT ================= */
-
 app.get("/", (req, res) => {
   res.send("SMART BIZ API RUNNING");
 });
 
 /* ================= ROUTES ================= */
+app.use("/api/products", require("./routes/products"));
+app.use("/api/products", require("./routes/products.public.fix")); // ✅ NEW FIX
+app.use("/api/business", require("./routes/business"));
+app.use("/api/business-whatsapp", require("./routes/business.whatsapp"));
+app.use("/api/orders", require("./routes/orders"));
+app.use("/api/wallet", require("./routes/wallet"));
+app.use("/api/internal-secure", require("./routes/internal.orders"));
+app.use("/api/internal-secure", require("./routes/internal.wallet.topup"));
 
-app.use(
-  "/api/products",
-  require("./routes/products")
-);
-
-app.use(
-  "/api/business",
-  require("./routes/business")
-);
-
-app.use(
-  "/api/orders",
-  require("./routes/orders")
-);
-
-/* ✅ CUSTOMERS */
-
-app.use(
-  "/api/customers",
-  require("./routes/customers")
-);
-
-app.use(
-  "/api/wallet",
-  require("./routes/wallet")
-);
-
-app.use(
-  "/api/auth",
-  require("./routes/auth.whatsapp")
-);
-
-app.use(
-  "/api/expense",
-  require("./routes/expense")
-);
-
-/* ✅ DEBT */
-
-app.use(
-  "/api/debt",
-  require("./routes/debt")
-);
-
-app.use(
-  "/api/profit",
-  require("./routes/profit")
-);
-
-/* ✅ DASHBOARD */
-
-app.use(
-  "/api/dashboard",
-  require("./routes/dashboard")
-);
-
-/* ✅ STATS */
-
-app.use(
-  "/api/stats",
-  require("./routes/stats")
-);
-
-app.use(
-  "/api/whatsapp-orders",
-  require("./routes/whatsapp.orders")
-);
-
-app.use(
-  "/api/internal-secure",
-  require("./routes/internal.orders")
-);
-
-app.use(
-  "/api/internal-secure",
-  require("./routes/internal.wallet.topup")
-);
-
-/* ================= START SERVER ================= */
-
-const PORT =
-  process.env.PORT || 3000;
+/* START SERVER */
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
-
-  console.log(
-    `🚀 Server started on port ${PORT}`
-  );
+  console.log(`🚀 Server started on port ${PORT}`);
 });
 
-/* ================= DB ================= */
-
+/* CONNECT DB */
 console.log("🟡 Connecting to MongoDB...");
 
 mongoose.connect(process.env.MONGO_URI)
-
 .then(() => {
-
-  console.log(
-    "🟢 Smart Biz DB connected"
-  );
+  console.log("🟢 Smart Biz DB connected");
 })
-
 .catch(err => {
-
-  console.error(
-    "❌ DB ERROR:",
-    err.message
-  );
+  console.error("❌ DB ERROR:", err.message);
 });
