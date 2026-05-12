@@ -98,10 +98,21 @@ router.get("/my-products", async (req, res) => {
       });
     }
 
-    const business =
-      await Business.findOne({
+    const linked =
+      await BusinessWhatsApp.findOne({
         whatsappNumber
       });
+
+    if (!linked) {
+      return res.status(404).json({
+        message: "Business not linked"
+      });
+    }
+
+    const business =
+      await Business.findById(
+        linked.business
+      );
 
     if (!business) {
       return res.status(404).json({
