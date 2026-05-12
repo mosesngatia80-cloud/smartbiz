@@ -338,7 +338,6 @@ router.post("/cash-sale", async (req, res) => {
   }
 });
 
-module.exports = router;
 
 /* =========================
    GET PRODUCTS BY WHATSAPP
@@ -383,4 +382,7 @@ router.get("/", async (req, res) => {
     });
   }
 });
+
+
+module.exports = router;
 
