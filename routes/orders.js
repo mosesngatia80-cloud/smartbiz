@@ -14,68 +14,138 @@ const mongoose = require("mongoose");
  * CREATE ORDER (USER / DASHBOARD FLOW)
  */
 router.post("/", auth, async (req, res) => {
-  try {
-    const userId = req.user.user;
 
-    const business = await Business.findOne({ owner: userId });
-    if (!business || !business.walletId) {
-      return res.status(400).json({ message: "User has no business" });
+  try {
+
+    const userId =
+      req.user.user;
+
+    const business =
+      await Business.findOne({
+        owner: userId
+      });
+
+    if (
+      !business ||
+      !business.walletId
+    ) {
+
+      return res.status(400).json({
+        message:
+          "User has no business"
+      });
     }
 
-    const { customerPhone, items } = req.body;
-    if (!customerPhone || !items || !items.length) {
-      return res.status(400).json({ message: "Invalid order data" });
+    const {
+      customerPhone,
+      items
+    } = req.body;
+
+    if (
+      !customerPhone ||
+      !items ||
+      !items.length
+    ) {
+
+      return res.status(400).json({
+        message:
+          "Invalid order data"
+      });
     }
 
     let total = 0;
+
     const orderItems = [];
 
     for (const item of items) {
-      const product = await Product.findOne({
-        _id: item.productId,
-        business: business._id
-      });
+
+      const product =
+        await Product.findOne({
+
+          _id:
+            item.productId,
+
+          business:
+            business._id
+        });
 
       if (!product) {
+
         return res.status(404).json({
-          message: "Product not found for this business"
+
+          message:
+            "Product not found for this business"
         });
       }
 
-      const qty = Number(item.qty);
+      const qty =
+        Number(item.qty);
 
-      if (product.stock < qty) {
+      if (
+        product.stock < qty
+      ) {
+
         return res.status(400).json({
-          message: `${product.name} is out of stock`
+
+          message:
+            `${product.name} is out of stock`
         });
       }
 
       product.stock -= qty;
+
       await product.save();
 
-      const lineTotal = product.price * qty;
+      const lineTotal =
+        product.price * qty;
+
       total += lineTotal;
 
       orderItems.push({
-        product: product._id,
-        name: product.name,
-        price: product.price,
+
+        product:
+          product._id,
+
+        name:
+          product.name,
+
+        price:
+          product.price,
+
         qty,
+
         lineTotal
       });
     }
 
-    const order = await Order.create({
-      business: business._id,
-      businessWalletId: business.walletId,
-      customerPhone,
-      customerUserId: userId,
-      items: orderItems,
-      total,
-      status: "UNPAID",
-      paymentMethod: "CASH",
-      source: "WHATSAPP"
-    });
+    const order =
+      await Order.create({
+
+        business:
+          business._id,
+
+        businessWalletId:
+          business.walletId,
+
+        customerPhone,
+
+        customerUserId:
+          userId,
+
+        items:
+          orderItems,
+
+        total,
+
+        status:
+          "UNPAID",
+
+        paymentMethod:
+          "CASH",
+
+        source:
+          "WHATSAPP"
+      });
 
     res.status(201).json(order);
 
@@ -87,45 +157,44 @@ router.post("/", auth, async (req, res) => {
     );
 
     res.status(500).json({
-      message: err.message
+      message:
+        err.message
     });
   }
 });
 
 /**
- * GET ALL ORDERS (WHATSAPP SAFE VERSION)
+ * GET ALL ORDERS
+ * JWT AUTH VERSION
  */
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
 
   try {
 
-    const whatsappNumber =
-      req.query.whatsappNumber;
-
-    if (!whatsappNumber) {
-
-      return res.status(400).json({
-        message: "WhatsApp number required"
-      });
-    }
+    const userId =
+      req.user.user;
 
     const business =
       await Business.findOne({
-        whatsappNumber
+        owner: userId
       });
 
     if (!business) {
 
       return res.status(404).json({
-        message: "Business not found"
+        message:
+          "Business not found"
       });
     }
 
     const orders =
       await Order.find({
-        business: business._id
+        business:
+          business._id
       })
-      .sort({ createdAt: -1 });
+      .sort({
+        createdAt: -1
+      });
 
     res.json(orders);
 
@@ -137,7 +206,8 @@ router.get("/", async (req, res) => {
     );
 
     res.status(500).json({
-      message: "Failed to fetch orders"
+      message:
+        "Failed to fetch orders"
     });
   }
 });
@@ -165,11 +235,17 @@ router.get("/:orderId/verify", async (req, res) => {
     }
 
     res.json({
+
       valid: true,
-      amount: order.total,
+
+      amount:
+        order.total,
+
       businessWalletId:
         order.businessWalletId,
-      status: order.status
+
+      status:
+        order.status
     });
 
   } catch (err) {
@@ -187,8 +263,9 @@ router.post("/:orderId/mark-paid", async (req, res) => {
 
   try {
 
-    const { paymentRef } =
-      req.body;
+    const {
+      paymentRef
+    } = req.body;
 
     const order =
       await Order.findById(
@@ -198,11 +275,14 @@ router.post("/:orderId/mark-paid", async (req, res) => {
     if (!order) {
 
       return res.status(404).json({
-        message: "Order not found"
+        message:
+          "Order not found"
       });
     }
 
-    if (order.status === "PAID") {
+    if (
+      order.status === "PAID"
+    ) {
 
       return res.json({
         success: true
@@ -211,14 +291,19 @@ router.post("/:orderId/mark-paid", async (req, res) => {
 
     const wallet =
       await Wallet.findOne({
-        owner: order.business,
-        ownerType: "BUSINESS"
+
+        owner:
+          order.business,
+
+        ownerType:
+          "BUSINESS"
       });
 
     if (!wallet) {
 
       return res.status(500).json({
-        message: "Wallet not found"
+        message:
+          "Wallet not found"
       });
     }
 
@@ -228,6 +313,7 @@ router.post("/:orderId/mark-paid", async (req, res) => {
     ) {
 
       return res.status(400).json({
+
         message:
           "Insufficient balance"
       });
@@ -240,20 +326,27 @@ router.post("/:orderId/mark-paid", async (req, res) => {
 
     await Transaction.create({
 
-      from: wallet.owner,
+      from:
+        wallet.owner,
 
-      to: order.customerUserId,
+      to:
+        order.customerUserId,
 
-      amount: order.total,
+      amount:
+        order.total,
 
-      type: "SALE",
+      type:
+        "SALE",
 
-      reference: paymentRef,
+      reference:
+        paymentRef,
 
-      orderId: order._id
+      orderId:
+        order._id
     });
 
-    order.status = "PAID";
+    order.status =
+      "PAID";
 
     order.paymentRef =
       paymentRef;
@@ -270,7 +363,8 @@ router.post("/:orderId/mark-paid", async (req, res) => {
   } catch (err) {
 
     res.status(500).json({
-      message: err.message
+      message:
+        err.message
     });
   }
 });
