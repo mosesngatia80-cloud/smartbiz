@@ -20,6 +20,7 @@ app.use("/api/products", require("./routes/products"));
 app.use("/api/products", require("./routes/products.public.fix")); // ✅ NEW FIX
 app.use("/api/business", require("./routes/business"));
 app.use("/api/business-whatsapp", require("./routes/business.whatsapp"));
+app.use("/api/auth", require("./routes/auth.whatsapp"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/wallet", require("./routes/wallet"));
 app.use("/api/internal-secure", require("./routes/internal.orders"));
