@@ -25,6 +25,7 @@ app.use("/api/orders", require("./routes/orders"));
 app.use("/api/wallet", require("./routes/wallet"));
 app.use("/api/expense", require("./routes/expense"));
 app.use("/api/debt", require("./routes/debt"));
+app.use("/api/dashboard", require("./routes/dashboard"));
 app.use("/api/internal-secure", require("./routes/internal.orders"));
 app.use("/api/internal-secure", require("./routes/internal.wallet.topup"));
 

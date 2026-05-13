@@ -30,6 +30,7 @@ router.post("/create", async (req, res) => {
       price == null ||
       !whatsappNumber
     ) {
+
       return res.status(400).json({
         message: "Missing fields"
       });
@@ -41,6 +42,7 @@ router.post("/create", async (req, res) => {
       });
 
     if (!business) {
+
       return res.status(404).json({
         message: "Business not found"
       });
@@ -57,15 +59,19 @@ router.post("/create", async (req, res) => {
         allowFractions,
         pricePerUnit,
 
-        owner: business.owner,
+        owner:
+          business.owner,
 
-        business: business._id,
+        business:
+          business._id,
 
         isActive: true
       });
 
     res.json({
-      message: "Product created",
+      message:
+        "Product created",
+
       product
     });
 
@@ -77,7 +83,8 @@ router.post("/create", async (req, res) => {
     );
 
     res.status(500).json({
-      message: err.message
+      message:
+        err.message
     });
   }
 });
@@ -93,8 +100,10 @@ router.get("/my-products", async (req, res) => {
       req.query.whatsappNumber;
 
     if (!whatsappNumber) {
+
       return res.status(400).json({
-        message: "WhatsApp required"
+        message:
+          "WhatsApp required"
       });
     }
 
@@ -104,8 +113,10 @@ router.get("/my-products", async (req, res) => {
       });
 
     if (!linked) {
+
       return res.status(404).json({
-        message: "Business not linked"
+        message:
+          "Business not linked"
       });
     }
 
@@ -115,17 +126,24 @@ router.get("/my-products", async (req, res) => {
       );
 
     if (!business) {
+
       return res.status(404).json({
-        message: "Business not found"
+        message:
+          "Business not found"
       });
     }
 
     const products =
       await Product.find({
-        business: business._id,
+
+        business:
+          business._id,
+
         isActive: true
       })
-      .sort({ createdAt: -1 });
+      .sort({
+        createdAt: -1
+      });
 
     res.json(products);
 
@@ -137,7 +155,8 @@ router.get("/my-products", async (req, res) => {
     );
 
     res.status(500).json({
-      message: err.message
+      message:
+        err.message
     });
   }
 });
@@ -160,8 +179,10 @@ router.post("/cash-sale", async (req, res) => {
       !productName ||
       !whatsappNumber
     ) {
+
       return res.status(400).json({
-        message: "Missing fields"
+        message:
+          "Missing fields"
       });
     }
 
@@ -173,8 +194,10 @@ router.post("/cash-sale", async (req, res) => {
       });
 
     if (!business) {
+
       return res.status(404).json({
-        message: "Business not found"
+        message:
+          "Business not found"
       });
     }
 
@@ -182,13 +205,19 @@ router.post("/cash-sale", async (req, res) => {
 
     const wallet =
       await Wallet.findOne({
-        owner: business._id,
-        ownerType: "BUSINESS"
+
+        owner:
+          business._id,
+
+        ownerType:
+          "BUSINESS"
       });
 
     if (!wallet) {
+
       return res.status(404).json({
-        message: "Business wallet not found"
+        message:
+          "Business wallet not found"
       });
     }
 
@@ -197,28 +226,45 @@ router.post("/cash-sale", async (req, res) => {
     const products =
       await Product.find({
 
-        business: business._id,
+        business:
+          business._id,
 
-        name: productName,
+        name: {
+          $regex:
+            new RegExp(
+              "^" +
+              productName +
+              "$",
+              "i"
+            )
+        },
 
         isActive: true
       })
-      .sort({ createdAt: -1 });
+      .sort({
+        createdAt: -1
+      });
 
     if (!products.length) {
+
       return res.status(404).json({
-        message: "Product not found"
+        message:
+          "Product not found"
       });
     }
 
     /* ✅ PICK PRODUCT THAT HAS STOCK */
 
     const product =
-      products.find(p => p.stock > 0);
+      products.find(
+        p => p.stock > 0
+      );
 
     if (!product) {
+
       return res.status(400).json({
-        message: "Out of stock"
+        message:
+          "Out of stock"
       });
     }
 
@@ -232,7 +278,8 @@ router.post("/cash-sale", async (req, res) => {
     if (qty <= 0) {
 
       return res.status(400).json({
-        message: "Invalid quantity"
+        message:
+          "Invalid quantity"
       });
     }
 
@@ -244,6 +291,7 @@ router.post("/cash-sale", async (req, res) => {
     ) {
 
       return res.status(400).json({
+
         message:
           `${product.name} does not allow fractional selling`
       });
@@ -279,7 +327,8 @@ router.post("/cash-sale", async (req, res) => {
     if (product.stock < qty) {
 
       return res.status(400).json({
-        message: "Insufficient stock"
+        message:
+          "Insufficient stock"
       });
     }
 
@@ -296,7 +345,8 @@ router.post("/cash-sale", async (req, res) => {
     const order =
       await Order.create({
 
-        business: business._id,
+        business:
+          business._id,
 
         businessWalletId:
           wallet._id,
@@ -306,23 +356,37 @@ router.post("/cash-sale", async (req, res) => {
 
         items: [
           {
-            product: product._id,
-            name: product.name,
-            price: unitPrice,
-            qty: qty,
-            lineTotal: expectedTotal
+            product:
+              product._id,
+
+            name:
+              product.name,
+
+            price:
+              unitPrice,
+
+            qty:
+              qty,
+
+            lineTotal:
+              expectedTotal
           }
         ],
 
-        total: expectedTotal,
+        total:
+          expectedTotal,
 
-        status: "PAID",
+        status:
+          "PAID",
 
-        paymentMethod: "CASH",
+        paymentMethod:
+          "CASH",
 
-        source: "MANUAL",
+        source:
+          "MANUAL",
 
-        paidAt: new Date()
+        paidAt:
+          new Date()
       });
 
     res.json({
@@ -346,11 +410,11 @@ router.post("/cash-sale", async (req, res) => {
     );
 
     res.status(500).json({
-      message: err.message
+      message:
+        err.message
     });
   }
 });
-
 
 /* =========================
    GET PRODUCTS BY WHATSAPP
@@ -360,11 +424,15 @@ router.get("/", async (req, res) => {
 
   try {
 
-    const { whatsappNumber } = req.query;
+    const {
+      whatsappNumber
+    } = req.query;
 
     if (!whatsappNumber) {
+
       return res.status(400).json({
-        message: "whatsappNumber required"
+        message:
+          "whatsappNumber required"
       });
     }
 
@@ -374,8 +442,10 @@ router.get("/", async (req, res) => {
       });
 
     if (!linked) {
+
       return res.status(404).json({
-        message: "Business not linked"
+        message:
+          "Business not linked"
       });
     }
 
@@ -385,14 +455,17 @@ router.get("/", async (req, res) => {
       );
 
     if (!business) {
+
       return res.status(404).json({
-        message: "Business not found"
+        message:
+          "Business not found"
       });
     }
 
     const products =
       await Product.find({
-        business: business._id
+        business:
+          business._id
       });
 
     res.json(products);
@@ -402,10 +475,10 @@ router.get("/", async (req, res) => {
     console.error(err);
 
     res.status(500).json({
-      message: err.message
+      message:
+        err.message
     });
   }
 });
-
 
 module.exports = router;
