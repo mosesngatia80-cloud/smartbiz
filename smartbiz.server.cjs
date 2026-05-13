@@ -23,6 +23,7 @@ app.use("/api/business-whatsapp", require("./routes/business.whatsapp"));
 app.use("/api/auth", require("./routes/auth.whatsapp"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/wallet", require("./routes/wallet"));
+app.use("/api/expense", require("./routes/expense"));
 app.use("/api/internal-secure", require("./routes/internal.orders"));
 app.use("/api/internal-secure", require("./routes/internal.wallet.topup"));
 
