@@ -137,6 +137,13 @@ router.post("/", auth, async (req, res) => {
 
         total,
 
+        amountPaid: 0,
+
+        balance: total,
+
+        paymentStatus:
+          "UNPAID",
+
         status:
           "UNPAID",
 
@@ -348,6 +355,14 @@ router.post("/:orderId/mark-paid", async (req, res) => {
     order.status =
       "PAID";
 
+    order.paymentStatus =
+      "PAID";
+
+    order.amountPaid =
+      order.total;
+
+    order.balance = 0;
+
     order.paymentRef =
       paymentRef;
 
@@ -476,6 +491,30 @@ router.post(
       });
     }
 
+    const amountPaid =
+      Number(req.body.amountPaid || 0);
+
+    const balance =
+      total - amountPaid;
+
+    let paymentStatus =
+      "UNPAID";
+
+    if (
+      amountPaid > 0 &&
+      balance > 0
+    ) {
+
+      paymentStatus =
+        "PARTIAL";
+    }
+
+    if (balance <= 0) {
+
+      paymentStatus =
+        "PAID";
+    }
+
     const order =
       await Order.create({
 
@@ -488,6 +527,12 @@ router.post(
           orderItems,
 
         total,
+
+        amountPaid,
+
+        balance,
+
+        paymentStatus,
 
         status:
           "PENDING",
@@ -608,8 +653,6 @@ router.post(
   }
 });
 
-module.exports = router;
-
 /**
  * GET BUSINESS CUSTOMERS
  */
@@ -688,3 +731,4 @@ router.get(
   }
 });
 
+module.exports = router;
