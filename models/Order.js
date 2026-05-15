@@ -49,6 +49,32 @@ const OrderSchema = new mongoose.Schema(
     },
 
     /* =========================
+       PAYMENT TRACKING
+    ========================= */
+
+    amountPaid: {
+      type: Number,
+      default: 0
+    },
+
+    balance: {
+      type: Number,
+      default: 0
+    },
+
+    paymentStatus: {
+      type: String,
+
+      enum: [
+        "UNPAID",
+        "PARTIAL",
+        "PAID"
+      ],
+
+      default: "UNPAID"
+    },
+
+    /* =========================
        ORDER STATUS
     ========================= */
 
