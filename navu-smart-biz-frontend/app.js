@@ -1817,3 +1817,133 @@ async function loadOrders() {
   }
 }
 
+
+/* ================= IMAGE PRODUCT UPLOAD ================= */
+
+async function addProduct() {
+
+  const msg =
+    document.getElementById(
+      "productMsg"
+    );
+
+  const business =
+    JSON.parse(
+      localStorage.getItem(
+        "business"
+      )
+    );
+
+  const name =
+    document.getElementById(
+      "newProductName"
+    ).value;
+
+  const price =
+    Number(
+      document.getElementById(
+        "newProductPrice"
+      ).value
+    );
+
+  const stock =
+    Number(
+      document.getElementById(
+        "newProductStock"
+      ).value
+    );
+
+  const image =
+    document.getElementById(
+      "productImage"
+    ).files[0];
+
+  try {
+
+    const formData =
+      new FormData();
+
+    formData.append(
+      "name",
+      name
+    );
+
+    formData.append(
+      "price",
+      price
+    );
+
+    formData.append(
+      "stock",
+      stock
+    );
+
+    formData.append(
+      "whatsappNumber",
+      business.whatsappNumber
+    );
+
+    if (image) {
+
+      formData.append(
+        "image",
+        image
+      );
+    }
+
+    const res =
+      await fetch(
+
+        API_BASE +
+        "/products/create",
+
+        {
+          method: "POST",
+
+          body:
+            formData
+        }
+      );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+
+      msg.innerText =
+        data.message ||
+        "Upload failed ❌";
+
+      return;
+    }
+
+    msg.innerText =
+      "Product uploaded ✅";
+
+    document.getElementById(
+      "newProductName"
+    ).value = "";
+
+    document.getElementById(
+      "newProductPrice"
+    ).value = "";
+
+    document.getElementById(
+      "newProductStock"
+    ).value = "";
+
+    document.getElementById(
+      "productImage"
+    ).value = "";
+
+    loadProducts();
+
+  } catch (err) {
+
+    console.error(err);
+
+    msg.innerText =
+      "Server error ❌";
+  }
+}
+

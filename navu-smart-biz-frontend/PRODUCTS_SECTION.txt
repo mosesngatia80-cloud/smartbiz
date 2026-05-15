@@ -1,0 +1,43 @@
+      <!-- PRODUCTS -->
+      <section id="products" class="view hidden">
+
+        <h1>Products</h1>
+
+        <div class="product-form">
+
+          <input
+            id="newProductName"
+            placeholder="Product name"
+          />
+
+          <input
+            id="newProductPrice"
+            type="number"
+            placeholder="Price (KES)"
+          />
+
+          <input
+            id="newProductStock"
+            type="number"
+            placeholder="Stock Qty"
+          />
+
+          <!-- ✅ PRODUCT IMAGE -->
+
+          <input
+            id="productImage"
+            type="file"
+            accept="image/*"
+          />
+
+          <button onclick="addProduct()">
+            Add Product
+          </button>
+
+          <p id="productMsg"></p>
+
+        </div>
+
+        <ul id="productsList"></ul>
+
+      </section>
