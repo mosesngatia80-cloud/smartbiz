@@ -14,6 +14,13 @@ const ProductSchema = new mongoose.Schema(
       min: 0
     },
 
+    /* ✅ PRODUCT IMAGE */
+
+    image: {
+      type: String,
+      default: ""
+    },
+
     /* ✅ UNIT SYSTEM */
 
     unitType: {
@@ -38,26 +45,33 @@ const ProductSchema = new mongoose.Schema(
       default: 0
     },
 
-    // 📦 INVENTORY
+    /* 📦 INVENTORY */
+
     stock: {
       type: Number,
       default: 0
     },
 
-    // 🔐 BUSINESS OWNER
+    /* 🔐 BUSINESS OWNER */
+
     business: {
-      type: mongoose.Schema.Types.ObjectId,
+      type:
+        mongoose.Schema.Types.ObjectId,
+
       ref: "Business",
+
       required: true
     },
 
-    // ✅ TEMP WHATSAPP OWNER
+    /* ✅ TEMP WHATSAPP OWNER */
+
     owner: {
       type: String,
       required: false
     },
 
-    // 🗑️ SOFT DELETE
+    /* 🗑️ SOFT DELETE */
+
     isActive: {
       type: Boolean,
       default: true
@@ -74,4 +88,8 @@ const ProductSchema = new mongoose.Schema(
 
 module.exports =
   mongoose.models.Product ||
-  mongoose.model("Product", ProductSchema);
+
+  mongoose.model(
+    "Product",
+    ProductSchema
+  );

@@ -369,4 +369,243 @@ router.post("/:orderId/mark-paid", async (req, res) => {
   }
 });
 
+/**
+ * PUBLIC STORE CHECKOUT
+ */
+router.post(
+  "/public-checkout",
+
+  async (req, res) => {
+
+  try {
+
+    const {
+      businessSlug,
+      customerPhone,
+      items
+    } = req.body;
+
+    if (
+      !businessSlug ||
+      !customerPhone ||
+      !items ||
+      !items.length
+    ) {
+
+      return res.status(400).json({
+        message:
+          "Missing checkout data"
+      });
+    }
+
+    const business =
+      await Business.findOne({
+        slug: businessSlug
+      });
+
+    if (!business) {
+
+      return res.status(404).json({
+        message:
+          "Business not found"
+      });
+    }
+
+    let total = 0;
+
+    const orderItems = [];
+
+    for (const item of items) {
+
+      const product =
+        await Product.findOne({
+
+          _id:
+            item.productId,
+
+          business:
+            business._id
+        });
+
+      if (!product) {
+
+        return res.status(404).json({
+
+          message:
+            "Product not found"
+        });
+      }
+
+      const qty =
+        Number(item.qty);
+
+      if (
+        product.stock < qty
+      ) {
+
+        return res.status(400).json({
+
+          message:
+            `${product.name} out of stock`
+        });
+      }
+
+      product.stock -= qty;
+
+      await product.save();
+
+      const lineTotal =
+        product.price * qty;
+
+      total += lineTotal;
+
+      orderItems.push({
+
+        product:
+          product._id,
+
+        name:
+          product.name,
+
+        price:
+          product.price,
+
+        qty,
+
+        lineTotal
+      });
+    }
+
+    const order =
+      await Order.create({
+
+        business:
+          business._id,
+
+        customerPhone,
+
+        items:
+          orderItems,
+
+        total,
+
+        status:
+          "PENDING",
+
+        paymentMethod:
+          "CASH",
+
+        source:
+          "STORE_FRONT"
+      });
+
+    res.status(201).json({
+
+      success: true,
+
+      orderId:
+        order._id,
+
+      total,
+
+      order
+    });
+
+  } catch (err) {
+
+    console.error(
+      "PUBLIC CHECKOUT ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      message:
+        err.message
+    });
+  }
+});
+
+/**
+ * UPDATE ORDER STATUS
+ */
+router.post(
+  "/:orderId/status",
+
+  async (req, res) => {
+
+  try {
+
+    const {
+      status
+    } = req.body;
+
+    const allowed = [
+
+      "PENDING",
+
+      "ACCEPTED",
+
+      "PREPARING",
+
+      "DELIVERED",
+
+      "PAID",
+
+      "REJECTED",
+
+      "REFUNDED"
+    ];
+
+    if (
+      !allowed.includes(status)
+    ) {
+
+      return res.status(400).json({
+        message:
+          "Invalid status"
+      });
+    }
+
+    const order =
+      await Order.findById(
+        req.params.orderId
+      );
+
+    if (!order) {
+
+      return res.status(404).json({
+        message:
+          "Order not found"
+      });
+    }
+
+    order.status =
+      status;
+
+    await order.save();
+
+    res.json({
+
+      success: true,
+
+      status:
+        order.status,
+
+      order
+    });
+
+  } catch (err) {
+
+    console.error(
+      "UPDATE STATUS ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      message:
+        err.message
+    });
+  }
+});
+
 module.exports = router;

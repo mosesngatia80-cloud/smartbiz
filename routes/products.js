@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
 
 const Product = require("../models/Product");
 const Business = require("../models/Business");
@@ -9,9 +10,40 @@ const Order = require("../models/Order");
 const Wallet = require("../models/Wallet");
 
 /* =========================
+   MULTER CONFIG
+========================= */
+
+const storage =
+  multer.diskStorage({
+
+  destination:
+    "uploads/",
+
+  filename:
+    (req, file, cb) => {
+
+    cb(
+      null,
+      Date.now() +
+      "-" +
+      file.originalname
+    );
+  }
+});
+
+const upload =
+  multer({ storage });
+
+/* =========================
    CREATE PRODUCT
 ========================= */
-router.post("/create", async (req, res) => {
+
+router.post(
+  "/create",
+
+  upload.single("image"),
+
+  async (req, res) => {
 
   try {
 
@@ -48,12 +80,19 @@ router.post("/create", async (req, res) => {
       });
     }
 
+    const image =
+      req.file
+      ? `/uploads/${req.file.filename}`
+      : "";
+
     const product =
       await Product.create({
 
         name,
         price,
         stock,
+
+        image,
 
         unitType,
         allowFractions,
@@ -69,6 +108,7 @@ router.post("/create", async (req, res) => {
       });
 
     res.json({
+
       message:
         "Product created",
 
@@ -90,9 +130,78 @@ router.post("/create", async (req, res) => {
 });
 
 /* =========================
+   STORE PRODUCTS
+========================= */
+
+router.get(
+  "/store/:slug",
+
+  async (req, res) => {
+
+  try {
+
+    const business =
+      await Business.findOne({
+
+      slug:
+        req.params.slug
+    });
+
+    if (!business) {
+
+      return res.status(404).json({
+        message:
+          "Business not found"
+      });
+    }
+
+    const products =
+      await Product.find({
+
+        business:
+          business._id,
+
+        isActive: true
+      })
+      .sort({
+        createdAt: -1
+      });
+
+    res.json({
+
+      business: {
+        name:
+          business.name,
+
+        slug:
+          business.slug,
+
+        whatsappNumber:
+          business.whatsappNumber
+      },
+
+      products
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      message:
+        err.message
+    });
+  }
+});
+
+/* =========================
    GET BUSINESS PRODUCTS
 ========================= */
-router.get("/my-products", async (req, res) => {
+
+router.get(
+  "/my-products",
+
+  async (req, res) => {
 
   try {
 
@@ -107,23 +216,10 @@ router.get("/my-products", async (req, res) => {
       });
     }
 
-    const linked =
-      await BusinessWhatsApp.findOne({
+    const business =
+      await Business.findOne({
         whatsappNumber
       });
-
-    if (!linked) {
-
-      return res.status(404).json({
-        message:
-          "Business not linked"
-      });
-    }
-
-    const business =
-      await Business.findById(
-        linked.business
-      );
 
     if (!business) {
 
@@ -162,9 +258,13 @@ router.get("/my-products", async (req, res) => {
 });
 
 /* =========================
-   CASH SALE (POS)
+   CASH SALE
 ========================= */
-router.post("/cash-sale", async (req, res) => {
+
+router.post(
+  "/cash-sale",
+
+  async (req, res) => {
 
   try {
 
@@ -186,8 +286,6 @@ router.post("/cash-sale", async (req, res) => {
       });
     }
 
-    /* 🔍 FIND BUSINESS */
-
     const business =
       await Business.findOne({
         whatsappNumber
@@ -200,8 +298,6 @@ router.post("/cash-sale", async (req, res) => {
           "Business not found"
       });
     }
-
-    /* 🔍 FIND WALLET */
 
     const wallet =
       await Wallet.findOne({
@@ -221,8 +317,6 @@ router.post("/cash-sale", async (req, res) => {
       });
     }
 
-    /* 🔍 FIND PRODUCT WITH STOCK */
-
     const products =
       await Product.find({
 
@@ -240,9 +334,6 @@ router.post("/cash-sale", async (req, res) => {
         },
 
         isActive: true
-      })
-      .sort({
-        createdAt: -1
       });
 
     if (!products.length) {
@@ -252,8 +343,6 @@ router.post("/cash-sale", async (req, res) => {
           "Product not found"
       });
     }
-
-    /* ✅ PICK PRODUCT THAT HAS STOCK */
 
     const product =
       products.find(
@@ -268,47 +357,17 @@ router.post("/cash-sale", async (req, res) => {
       });
     }
 
-    /* 📏 QUANTITY */
-
     const qty =
       Number(quantity);
 
-    /* ❌ INVALID QUANTITY */
-
-    if (qty <= 0) {
-
-      return res.status(400).json({
-        message:
-          "Invalid quantity"
-      });
-    }
-
-    /* ❌ FRACTIONS NOT ALLOWED */
-
-    if (
-      !product.allowFractions &&
-      qty % 1 !== 0
-    ) {
-
-      return res.status(400).json({
-
-        message:
-          `${product.name} does not allow fractional selling`
-      });
-    }
-
-    /* 💰 CALCULATE EXPECTED TOTAL */
-
     const unitPrice =
       product.pricePerUnit > 0
-        ? product.pricePerUnit
-        : product.price;
+      ? product.pricePerUnit
+      : product.price;
 
     const expectedTotal =
       Number(unitPrice) *
       Number(qty);
-
-    /* ❌ VALIDATE AMOUNT */
 
     if (
       Number(amount) !==
@@ -318,11 +377,9 @@ router.post("/cash-sale", async (req, res) => {
       return res.status(400).json({
 
         message:
-          `Incorrect amount. ${qty} ${product.unitType} of ${product.name} costs KES ${expectedTotal}`
+          `Incorrect amount. Expected KES ${expectedTotal}`
       });
     }
-
-    /* 📦 CHECK STOCK */
 
     if (product.stock < qty) {
 
@@ -332,15 +389,9 @@ router.post("/cash-sale", async (req, res) => {
       });
     }
 
-    /* ✅ REDUCE STOCK */
-
     product.stock -= qty;
 
     await product.save();
-
-    /* =========================
-       CREATE ORDER
-    ========================= */
 
     const order =
       await Order.create({
@@ -365,8 +416,7 @@ router.post("/cash-sale", async (req, res) => {
             price:
               unitPrice,
 
-            qty:
-              qty,
+            qty,
 
             lineTotal:
               expectedTotal
@@ -408,71 +458,6 @@ router.post("/cash-sale", async (req, res) => {
       "CASH SALE ERROR:",
       err
     );
-
-    res.status(500).json({
-      message:
-        err.message
-    });
-  }
-});
-
-/* =========================
-   GET PRODUCTS BY WHATSAPP
-========================= */
-
-router.get("/", async (req, res) => {
-
-  try {
-
-    const {
-      whatsappNumber
-    } = req.query;
-
-    if (!whatsappNumber) {
-
-      return res.status(400).json({
-        message:
-          "whatsappNumber required"
-      });
-    }
-
-    const linked =
-      await BusinessWhatsApp.findOne({
-        whatsappNumber
-      });
-
-    if (!linked) {
-
-      return res.status(404).json({
-        message:
-          "Business not linked"
-      });
-    }
-
-    const business =
-      await Business.findById(
-        linked.business
-      );
-
-    if (!business) {
-
-      return res.status(404).json({
-        message:
-          "Business not found"
-      });
-    }
-
-    const products =
-      await Product.find({
-        business:
-          business._id
-      });
-
-    res.json(products);
-
-  } catch (err) {
-
-    console.error(err);
 
     res.status(500).json({
       message:

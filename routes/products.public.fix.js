@@ -1,46 +1,178 @@
 
 const express = require("express");
+
 const router = express.Router();
-const Product = require("../models/Product");
-const Business = require("../models/Business");
 
-/*
- 🔓 PUBLIC: Create product (FIXED)
-*/
-router.post("/public/create", async (req, res) => {
+const Product =
+  require("../models/Product");
+
+const Business =
+  require("../models/Business");
+
+/* =========================
+   PUBLIC STORE FRONT
+========================= */
+
+router.get(
+  "/store/:slug",
+
+  async (req, res) => {
+
   try {
-    const { name, price, stock = 0 } = req.body;
 
-    if (!name || price == null) {
-      return res.status(400).json({ message: "Missing fields" });
-    }
+    const business =
+      await Business.findOne({
 
-    // ✅ Get any existing business (MVP)
-    const business = await Business.findOne();
+      slug:
+        req.params.slug
+    });
 
     if (!business) {
-      return res.status(400).json({ message: "No business found" });
+
+      return res
+        .status(404)
+        .json({
+
+        message:
+          "Business not found"
+      });
     }
 
-    const product = await Product.create({
+    const products =
+      await Product.find({
+
+      business:
+        business._id,
+
+      isActive: true
+    })
+
+    .sort({
+      createdAt: -1
+    });
+
+    res.json({
+
+      business: {
+
+        name:
+          business.name,
+
+        slug:
+          business.slug,
+
+        whatsappNumber:
+          business.whatsappNumber
+      },
+
+      products
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500)
+      .json({
+
+      message:
+        err.message
+    });
+  }
+});
+
+/* =========================
+   PUBLIC PRODUCT CREATE
+========================= */
+
+router.post(
+  "/public/create",
+
+  async (req, res) => {
+
+  try {
+
+    const {
       name,
       price,
+      stock = 0,
+      businessSlug
+    } = req.body;
+
+    if (
+      !name ||
+      price == null ||
+      !businessSlug
+    ) {
+
+      return res
+        .status(400)
+        .json({
+
+        message:
+          "Missing fields"
+      });
+    }
+
+    const business =
+      await Business.findOne({
+
+      slug:
+        businessSlug
+    });
+
+    if (!business) {
+
+      return res
+        .status(404)
+        .json({
+
+        message:
+          "Business not found"
+      });
+    }
+
+    const product =
+      await Product.create({
+
+      name,
+
+      price,
+
       stock,
-      owner: business.owner,   // ✅ auto-fill
-      business: business._id,  // ✅ auto-fill
+
+      owner:
+        business.owner,
+
+      business:
+        business._id,
+
       isActive: true
     });
 
-    res.status(201).json({
-      message: "Product created",
+    res.status(201)
+      .json({
+
+      message:
+        "Product created",
+
       product
     });
 
   } catch (err) {
-    console.error("Public create error:", err);
-    res.status(500).json({ message: err.message });
+
+    console.error(
+      "Public create error:",
+      err
+    );
+
+    res.status(500)
+      .json({
+
+      message:
+        err.message
+    });
   }
 });
 
 module.exports = router;
-

@@ -11,10 +11,9 @@ const OrderSchema = new mongoose.Schema(
     businessWalletId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Wallet",
-      required: true
+      required: false
     },
 
-    // ✅ OPTIONAL FOR WALK-IN CUSTOMERS
     customerUserId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -33,9 +32,13 @@ const OrderSchema = new mongoose.Schema(
           ref: "Product",
           required: true
         },
+
         name: String,
+
         price: Number,
+
         qty: Number,
+
         lineTotal: Number
       }
     ],
@@ -45,35 +48,75 @@ const OrderSchema = new mongoose.Schema(
       required: true
     },
 
+    /* =========================
+       ORDER STATUS
+    ========================= */
+
     status: {
       type: String,
-      enum: ["UNPAID", "PAID", "REFUNDED"],
-      default: "UNPAID"
+
+      enum: [
+        "PENDING",
+        "ACCEPTED",
+        "PREPARING",
+        "DELIVERED",
+        "UNPAID",
+        "PAID",
+        "REFUNDED",
+        "REJECTED"
+      ],
+
+      default: "PENDING"
     },
 
     paymentRef: String,
+
     paidAt: Date,
-    refundedAt: Date
+
+    refundedAt: Date,
+
+    /* =========================
+       PAYMENT
+    ========================= */
+
+    paymentMethod: {
+      type: String,
+
+      enum: [
+        "CASH",
+        "WALLET",
+        "MPESA"
+      ],
+
+      default: "CASH"
+    },
+
+    /* =========================
+       ORDER SOURCE
+    ========================= */
+
+    source: {
+      type: String,
+
+      enum: [
+        "WHATSAPP",
+        "MANUAL",
+        "STORE_FRONT"
+      ],
+
+      default: "WHATSAPP"
+    }
   },
-  { timestamps: true }
+
+  {
+    timestamps: true
+  }
 );
 
-/* ================= SMARTBIZ EXTENSIONS ================= */
+module.exports =
+  mongoose.models.Order ||
 
-OrderSchema.add({
-  paymentMethod: {
-    type: String,
-    enum: ["CASH", "WALLET", "MPESA"],
-    default: "CASH"
-  }
-});
-
-OrderSchema.add({
-  source: {
-    type: String,
-    enum: ["WHATSAPP", "MANUAL"],
-    default: "WHATSAPP"
-  }
-});
-
-module.exports = mongoose.model("Order", OrderSchema);
+  mongoose.model(
+    "Order",
+    OrderSchema
+  );
