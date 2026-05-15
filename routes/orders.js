@@ -609,3 +609,82 @@ router.post(
 });
 
 module.exports = router;
+
+/**
+ * GET BUSINESS CUSTOMERS
+ */
+router.get(
+  "/customers/list",
+  auth,
+
+  async (req, res) => {
+
+  try {
+
+    const userId =
+      req.user.user;
+
+    const business =
+      await Business.findOne({
+        owner: userId
+      });
+
+    if (!business) {
+
+      return res.status(404).json({
+        message:
+          "Business not found"
+      });
+    }
+
+    const orders =
+      await Order.find({
+        business:
+          business._id
+      });
+
+    const map = {};
+
+    orders.forEach(order => {
+
+      const phone =
+        order.customerPhone;
+
+      if (!phone) return;
+
+      if (!map[phone]) {
+
+        map[phone] = {
+
+          phone,
+
+          totalOrders: 0,
+
+          totalSpent: 0
+        };
+      }
+
+      map[phone].totalOrders += 1;
+
+      map[phone].totalSpent +=
+        Number(order.total);
+    });
+
+    res.json(
+      Object.values(map)
+    );
+
+  } catch (err) {
+
+    console.error(
+      "CUSTOMERS ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      message:
+        err.message
+    });
+  }
+});
+
