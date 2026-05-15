@@ -1173,3 +1173,502 @@ async function loadDebts() {
   }
 }
 
+
+/* ================= CUSTOMERS ================= */
+
+async function loadCustomers() {
+
+  const list =
+    document.getElementById(
+      "customersList"
+    );
+
+  if (!list) return;
+
+  try {
+
+    const token =
+      localStorage.getItem(
+        "token"
+      );
+
+    const res =
+      await fetch(
+
+        API_BASE +
+        "/orders/customers/list",
+
+        {
+          headers: {
+            Authorization:
+              "Bearer " + token
+          }
+        }
+      );
+
+    const customers =
+      await res.json();
+
+    if (!res.ok) {
+
+      list.innerHTML =
+        "<li>Failed to load customers</li>";
+
+      return;
+    }
+
+    list.innerHTML = "";
+
+    document.getElementById(
+      "totalCustomers"
+    ).innerText =
+      customers.length;
+
+    customers.forEach(customer => {
+
+      list.innerHTML += `
+
+        <li class="order-card">
+
+          <div>
+            <strong>Phone:</strong>
+            ${customer.phone}
+          </div>
+
+          <div>
+            <strong>Total Orders:</strong>
+            ${customer.totalOrders}
+          </div>
+
+          <div>
+            <strong>Total Spent:</strong>
+            KES ${customer.totalSpent}
+          </div>
+
+        </li>
+      `;
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    list.innerHTML =
+      "<li>Customers load failed</li>";
+  }
+}
+
+
+/* ================= CLEAN ORDER UI ================= */
+
+async function loadOrders() {
+
+  const list =
+    document.getElementById(
+      "ordersList"
+    );
+
+  if (!list) return;
+
+  try {
+
+    const token =
+      localStorage.getItem(
+        "token"
+      );
+
+    const res =
+      await fetch(
+
+        API_BASE +
+        "/orders",
+
+        {
+          headers: {
+            Authorization:
+              "Bearer " +
+              token
+          }
+        }
+      );
+
+    const orders =
+      await res.json();
+
+    if (!res.ok) {
+
+      list.innerHTML =
+        "<li>Failed to load orders</li>";
+
+      return;
+    }
+
+    list.innerHTML = "";
+
+    orders.forEach(order => {
+
+      const items =
+        order.items
+          ?.map(i =>
+            `${i.name} x${i.qty}`
+          )
+          .join(", ");
+
+      const created =
+        new Date(
+          order.createdAt
+        ).toLocaleString();
+
+      list.innerHTML += `
+
+        <li class="order-card">
+
+          <div>
+            <strong>Customer:</strong>
+            ${order.customerPhone || "-"}
+          </div>
+
+          <div>
+            <strong>Items:</strong>
+            ${items}
+          </div>
+
+          <div>
+            <strong>Total:</strong>
+            KES ${order.total}
+          </div>
+
+          <div>
+            <strong>Status:</strong>
+            ${order.status}
+          </div>
+
+          <div>
+            <strong>Source:</strong>
+            ${order.source || "-"}
+          </div>
+
+          <div>
+            <strong>Date:</strong>
+            ${created}
+          </div>
+
+        </li>
+      `;
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    list.innerHTML =
+      "<li>Orders failed</li>";
+  }
+}
+
+
+/* ================= FINAL ORDER UI ================= */
+
+async function loadOrders() {
+
+  const list =
+    document.getElementById(
+      "ordersList"
+    );
+
+  if (!list) return;
+
+  try {
+
+    const token =
+      localStorage.getItem(
+        "token"
+      );
+
+    const res =
+      await fetch(
+
+        API_BASE +
+        "/orders",
+
+        {
+          headers: {
+            Authorization:
+              "Bearer " +
+              token
+          }
+        }
+      );
+
+    const orders =
+      await res.json();
+
+    if (!res.ok) {
+
+      list.innerHTML =
+        "<li>Failed to load orders</li>";
+
+      return;
+    }
+
+    list.innerHTML = "";
+
+    orders.forEach(order => {
+
+      const items =
+        order.items
+          ?.map(i =>
+            `${i.name} x${i.qty}`
+          )
+          .join(", ");
+
+      const created =
+        new Date(
+          order.createdAt
+        ).toLocaleString();
+
+      list.innerHTML += `
+
+        <li class="order-card">
+
+          <div>
+            <strong>Customer:</strong>
+            ${order.customerPhone || "-"}
+          </div>
+
+          <div>
+            <strong>Items:</strong>
+            ${items}
+          </div>
+
+          <div>
+            <strong>Total:</strong>
+            KES ${order.total}
+          </div>
+
+          <div>
+            <strong>Status:</strong>
+            ${order.status}
+          </div>
+
+          <div>
+            <strong>Source:</strong>
+            ${order.source || "-"}
+          </div>
+
+          <div>
+            <strong>Date:</strong>
+            ${created}
+          </div>
+
+          <div style="margin-top:10px;">
+
+            <button
+              onclick="updateOrderStatus('${order._id}','ACCEPTED')"
+            >
+              Accept
+            </button>
+
+          </div>
+
+        </li>
+      `;
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    list.innerHTML =
+      "<li>Orders failed</li>";
+  }
+}
+
+/* ================= UPDATE ORDER STATUS ================= */
+
+async function updateOrderStatus(id, status) {
+
+  try {
+
+    const res =
+      await fetch(
+
+        API_BASE +
+        "/orders/" +
+        id +
+        "/status",
+
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              status
+            })
+        }
+      );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+
+      alert(
+        data.message ||
+        "Status update failed ❌"
+      );
+
+      return;
+    }
+
+    alert(
+      "Order updated ✅"
+    );
+
+    loadOrders();
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      "Server error ❌"
+    );
+  }
+}
+
+
+/* ================= SMART ORDER UI FILTER ================= */
+
+async function loadOrders() {
+
+  const list =
+    document.getElementById(
+      "ordersList"
+    );
+
+  if (!list) return;
+
+  try {
+
+    const token =
+      localStorage.getItem(
+        "token"
+      );
+
+    const res =
+      await fetch(
+
+        API_BASE +
+        "/orders",
+
+        {
+          headers: {
+            Authorization:
+              "Bearer " +
+              token
+          }
+        }
+      );
+
+    const orders =
+      await res.json();
+
+    if (!res.ok) {
+
+      list.innerHTML =
+        "<li>Failed to load orders</li>";
+
+      return;
+    }
+
+    list.innerHTML = "";
+
+    orders.forEach(order => {
+
+      const items =
+        order.items
+          ?.map(i =>
+            `${i.name} x${i.qty}`
+          )
+          .join(", ");
+
+      const created =
+        new Date(
+          order.createdAt
+        ).toLocaleString();
+
+      const showAcceptButton =
+
+        order.source === "STORE_FRONT" &&
+
+        order.status === "PENDING";
+
+      list.innerHTML += `
+
+        <li class="order-card">
+
+          <div>
+            <strong>Customer:</strong>
+            ${order.customerPhone || "-"}
+          </div>
+
+          <div>
+            <strong>Items:</strong>
+            ${items}
+          </div>
+
+          <div>
+            <strong>Total:</strong>
+            KES ${order.total}
+          </div>
+
+          <div>
+            <strong>Status:</strong>
+            ${order.status}
+          </div>
+
+          <div>
+            <strong>Source:</strong>
+            ${order.source || "-"}
+          </div>
+
+          <div>
+            <strong>Date:</strong>
+            ${created}
+          </div>
+
+          ${
+            showAcceptButton
+            ? `
+              <div style="margin-top:10px;">
+
+                <button
+                  onclick="updateOrderStatus('${order._id}','ACCEPTED')"
+                >
+                  Accept
+                </button>
+
+              </div>
+            `
+            : ""
+          }
+
+        </li>
+      `;
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    list.innerHTML =
+      "<li>Orders failed</li>";
+  }
+}
+

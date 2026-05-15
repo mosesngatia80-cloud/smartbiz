@@ -55,6 +55,15 @@ const DebtSchema = new mongoose.Schema(
     note: {
       type: String,
       default: ""
+    },
+
+    source: {
+      type: String,
+      enum: [
+        "MANUAL",
+        "ORDER"
+      ],
+      default: "MANUAL"
     }
   },
   { timestamps: true }
