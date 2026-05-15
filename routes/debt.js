@@ -26,7 +26,7 @@ router.post(
 
     const business =
       await Business.findOne({
-        phone
+        whatsappNumber: phone
       });
 
     if (!business) {
@@ -199,7 +199,7 @@ router.get(
 
     const business =
       await Business.findOne({
-        phone
+        whatsappNumber: phone
       });
 
     if (!business) {
