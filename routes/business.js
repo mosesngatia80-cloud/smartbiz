@@ -66,3 +66,75 @@ router.get("/search", async (req, res) => {
 });
 
 module.exports = router;
+
+/* =========================
+   CREATE / UPDATE SLUG
+========================= */
+
+router.post(
+  "/create-slug",
+  async (req, res) => {
+
+  try {
+
+    const {
+      whatsappNumber,
+      slug
+    } = req.body;
+
+    if (
+      !whatsappNumber ||
+      !slug
+    ) {
+
+      return res.status(400).json({
+        message:
+          "WhatsApp number and slug required"
+      });
+    }
+
+    const business =
+      await Business.findOne({
+        whatsappNumber
+      });
+
+    if (!business) {
+
+      return res.status(404).json({
+        message:
+          "Business not found"
+      });
+    }
+
+    business.slug =
+      slug
+        .toLowerCase()
+        .trim();
+
+    await business.save();
+
+    res.json({
+
+      message:
+        "Slug saved ✅",
+
+      slug:
+        business.slug,
+
+      business
+    });
+
+  } catch (err) {
+
+    console.error(
+      "CREATE SLUG ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      message:
+        err.message
+    });
+  }
+});
+

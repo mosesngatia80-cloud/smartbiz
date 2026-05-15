@@ -154,3 +154,124 @@ document.addEventListener("DOMContentLoaded", async () => {
   const token = localStorage.getItem("token");
   if (token) await showApp();
 });
+
+/* ================= DEBTS ================= */
+
+async function loadDebts() {
+
+  const list =
+    document.getElementById(
+      "debtsList"
+    );
+
+  if (!list) return;
+
+  try {
+
+    const business =
+      JSON.parse(
+        localStorage.getItem(
+          "business"
+        )
+      );
+
+    const res =
+      await fetch(
+
+        API_BASE +
+
+        "/debt?phone=" +
+
+        encodeURIComponent(
+          business.whatsappNumber
+        )
+      );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+
+      list.innerHTML =
+        "<li>Failed to load debts</li>";
+
+      return;
+    }
+
+    document.getElementById(
+      "totalDebt"
+    ).innerText =
+      `KES ${data.totalDebt}`;
+
+    list.innerHTML = "";
+
+    data.debts.forEach(debt => {
+
+      const created =
+        new Date(
+          debt.createdAt
+        ).toLocaleString();
+
+      list.innerHTML += `
+
+        <li class="order-card">
+
+          <div>
+            <strong>Customer:</strong>
+            ${debt.customerName}
+          </div>
+
+          <div>
+            <strong>Phone:</strong>
+            ${debt.customerPhone}
+          </div>
+
+          <div>
+            <strong>Total:</strong>
+            KES ${debt.totalAmount}
+          </div>
+
+          <div>
+            <strong>Paid:</strong>
+            KES ${debt.amountPaid}
+          </div>
+
+          <div>
+            <strong>Balance:</strong>
+            KES ${debt.balance}
+          </div>
+
+          <div>
+            <strong>Status:</strong>
+            ${debt.status}
+          </div>
+
+          <div>
+            <strong>Note:</strong>
+            ${debt.note || "-"}
+          </div>
+
+          <div>
+            <strong>Created:</strong>
+            ${created}
+          </div>
+
+          <button
+            onclick="payDebt('${debt._id}')"
+          >
+            Pay
+          </button>
+
+        </li>
+      `;
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    list.innerHTML =
+      "<li>Failed to load debts</li>";
+  }
+}
+
