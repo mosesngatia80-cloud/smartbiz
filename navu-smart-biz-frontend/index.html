@@ -216,7 +216,7 @@
 
       </section>
 
-      <!-- PRODUCTS -->
+            <!-- PRODUCTS -->
       <section id="products" class="view hidden">
 
         <h1>Products</h1>
@@ -240,6 +240,14 @@
             placeholder="Stock Qty"
           />
 
+          <!-- ✅ PRODUCT IMAGE -->
+
+          <input
+            id="productImage"
+            type="file"
+            accept="image/*"
+          />
+
           <button onclick="addProduct()">
             Add Product
           </button>
@@ -251,6 +259,7 @@
         <ul id="productsList"></ul>
 
       </section>
+
 
       <!-- ORDERS -->
       <section id="orders" class="view hidden">
@@ -446,3 +455,85 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
+
+<!-- ================= PRODUCT MODAL ================= -->
+
+<div
+  id="productModal"
+  class="product-modal hidden"
+>
+
+  <div class="product-modal-content">
+
+    <button
+      class="close-modal"
+      onclick="closeProductModal()"
+    >
+      ×
+    </button>
+
+    <img
+      id="modalImage"
+      class="modal-image"
+      src=""
+      alt=""
+    />
+
+    <h2 id="modalName"></h2>
+
+    <p id="modalPrice"></p>
+
+    <p id="modalStock"></p>
+
+    <button
+      id="modalAddBtn"
+      class="modal-cart-btn"
+    >
+      Add To Cart
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- ================= PRODUCT MODAL ================= -->
+
+<div
+  id="productModal"
+  class="product-modal hidden"
+>
+
+  <div class="product-modal-content">
+
+    <button
+      class="close-modal"
+      onclick="closeProductModal()"
+    >
+      ×
+    </button>
+
+    <img
+      id="modalImage"
+      class="modal-image"
+      src=""
+      alt=""
+    />
+
+    <h2 id="modalName"></h2>
+
+    <p id="modalPrice"></p>
+
+    <p id="modalStock"></p>
+
+    <button
+      id="modalAddBtn"
+      class="modal-cart-btn"
+    >
+      Add To Cart
+    </button>
+
+  </div>
+
+</div>
+

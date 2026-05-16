@@ -1947,3 +1947,268 @@ async function addProduct() {
   }
 }
 
+
+/* ================= PRODUCT MODAL ================= */
+
+function openProductModal(product) {
+
+  const modal =
+    document.getElementById(
+      "productModal"
+    );
+
+  document.getElementById(
+    "modalImage"
+  ).src =
+    product.image
+    ? "https://navu-smart-biz-sbdh.onrender.com" + product.image
+    : "";
+
+  document.getElementById(
+    "modalName"
+  ).innerText =
+    product.name;
+
+  document.getElementById(
+    "modalPrice"
+  ).innerText =
+    "KES " + product.price;
+
+  document.getElementById(
+    "modalStock"
+  ).innerText =
+    "Stock: " + product.stock;
+
+  modal.classList.remove(
+    "hidden"
+  );
+}
+
+function closeProductModal() {
+
+  document
+    .getElementById(
+      "productModal"
+    )
+    .classList.add(
+      "hidden"
+    );
+}
+
+
+/* ================= PRODUCT IMAGE UI ================= */
+
+async function loadProducts() {
+
+  const list =
+    document.getElementById(
+      "productsList"
+    );
+
+  if (!list) return;
+
+  try {
+
+    const business =
+      JSON.parse(
+        localStorage.getItem(
+          "business"
+        )
+      );
+
+    const res =
+      await fetch(
+
+        API_BASE +
+
+        "/products/my-products?whatsappNumber=" +
+
+        encodeURIComponent(
+          business.whatsappNumber
+        )
+      );
+
+    const products =
+      await res.json();
+
+    list.innerHTML = "";
+
+    products.forEach(p => {
+
+      const imageUrl =
+        p.image
+        ? "https://navu-smart-biz-sbdh.onrender.com" + p.image
+        : "";
+
+      list.innerHTML += `
+
+        <li class="order-card">
+
+          ${
+            p.image
+            ? `
+              <img
+                src="${imageUrl}"
+                style="
+                  width:100%;
+                  max-height:200px;
+                  object-fit:cover;
+                  border-radius:12px;
+                  cursor:pointer;
+                  margin-bottom:10px;
+                "
+                onclick='openProductModal(${JSON.stringify(p)})'
+              />
+            `
+            : ""
+          }
+
+          <div>
+            <strong>${p.name}</strong>
+          </div>
+
+          <div>
+            KES ${p.price}
+          </div>
+
+          <div>
+            Stock: ${p.stock}
+          </div>
+
+        </li>
+      `;
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    list.innerHTML =
+      "<li>Failed to load products</li>";
+  }
+}
+
+
+/* ================= PRODUCT MODAL ================= */
+
+function openProductModal(index) {
+
+  const product =
+    products[index];
+
+  document.getElementById(
+    "modalImage"
+  ).src =
+    product.image
+    ? SITE_BASE + product.image
+    : "";
+
+  document.getElementById(
+    "modalName"
+  ).innerText =
+    product.name;
+
+  document.getElementById(
+    "modalPrice"
+  ).innerText =
+    "KES " +
+    Number(product.price)
+    .toLocaleString();
+
+  document.getElementById(
+    "modalStock"
+  ).innerText =
+    "Stock: " +
+    product.stock;
+
+  document.getElementById(
+    "modalAddBtn"
+  ).onclick = () => {
+
+    addToCart(index);
+
+    closeProductModal();
+  };
+
+  document
+    .getElementById(
+      "productModal"
+    )
+    .classList.remove(
+      "hidden"
+    );
+}
+
+function closeProductModal() {
+
+  document
+    .getElementById(
+      "productModal"
+    )
+    .classList.add(
+      "hidden"
+    );
+}
+
+
+/* ================= PRODUCT MODAL ================= */
+
+function openProductModal(index) {
+
+  const product =
+    products[index];
+
+  document.getElementById(
+    "modalImage"
+  ).src =
+    product.image
+    ? SITE_BASE + product.image
+    : "";
+
+  document.getElementById(
+    "modalName"
+  ).innerText =
+    product.name;
+
+  document.getElementById(
+    "modalPrice"
+  ).innerText =
+    "KES " +
+    Number(product.price)
+    .toLocaleString();
+
+  document.getElementById(
+    "modalStock"
+  ).innerText =
+    "Stock: " +
+    product.stock;
+
+  document.getElementById(
+    "modalAddBtn"
+  ).onclick = () => {
+
+    addToCart(index);
+
+    closeProductModal();
+  };
+
+  document
+    .getElementById(
+      "productModal"
+    )
+    .classList.remove(
+      "hidden"
+    );
+}
+
+function closeProductModal() {
+
+  document
+    .getElementById(
+      "productModal"
+    )
+    .classList.add(
+      "hidden"
+    );
+}
+
