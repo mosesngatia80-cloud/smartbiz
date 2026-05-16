@@ -2212,3 +2212,169 @@ function closeProductModal() {
     );
 }
 
+
+/* ================= STORE LINK ================= */
+
+async function loadStoreLink() {
+
+  try {
+
+    const business =
+      JSON.parse(
+        localStorage.getItem(
+          "business"
+        )
+      );
+
+    if (!business) return;
+
+    const slug =
+
+      business.slug ||
+
+      business.name
+        .toLowerCase()
+        .replace(/\s+/g, "-");
+
+    const storeLink =
+
+      "https://your-netlify-site.netlify.app/?store=" +
+      slug;
+
+    const input =
+      document.getElementById(
+        "storeLink"
+      );
+
+    if (input) {
+
+      input.value =
+        storeLink;
+    }
+
+  } catch (err) {
+
+    console.error(
+      "Store link error:",
+      err
+    );
+  }
+}
+
+function copyStoreLink() {
+
+  const input =
+    document.getElementById(
+      "storeLink"
+    );
+
+  input.select();
+
+  document.execCommand(
+    "copy"
+  );
+
+  alert(
+    "Store link copied ✅"
+  );
+}
+
+function openStoreLink() {
+
+  const link =
+    document.getElementById(
+      "storeLink"
+    ).value;
+
+  window.open(
+    link,
+    "_blank"
+  );
+}
+
+
+/* ================= STORE LINK ================= */
+
+function loadStoreLink() {
+
+  const business =
+    JSON.parse(
+      localStorage.getItem(
+        "business"
+      )
+    );
+
+  if (!business) return;
+
+  const slug =
+
+    business.slug ||
+
+    business.name
+      .toLowerCase()
+      .replace(/\s+/g, "-");
+
+  const link =
+
+    "https://navu-smart-order.netlify.app/?store=" +
+
+    slug;
+
+  const input =
+    document.getElementById(
+      "storeLink"
+    );
+
+  if (input) {
+
+    input.value = link;
+  }
+}
+
+function copyStoreLink() {
+
+  const input =
+    document.getElementById(
+      "storeLink"
+    );
+
+  if (!input) return;
+
+  navigator.clipboard.writeText(
+    input.value
+  );
+
+  alert(
+    "Store link copied ✅"
+  );
+}
+
+function openStoreLink() {
+
+  const input =
+    document.getElementById(
+      "storeLink"
+    );
+
+  if (!input) return;
+
+  window.open(
+    input.value,
+    "_blank"
+  );
+}
+
+/* AUTO LOAD STORE LINK */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+
+    setTimeout(() => {
+
+      loadStoreLink();
+
+    }, 1000);
+  }
+);
+
