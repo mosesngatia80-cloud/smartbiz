@@ -65,7 +65,6 @@ router.get("/search", async (req, res) => {
   }
 });
 
-module.exports = router;
 
 /* =========================
    CREATE / UPDATE SLUG
@@ -138,3 +137,59 @@ router.post(
   }
 });
 
+
+/* =========================
+   GENERATE STORE LINK
+========================= */
+
+router.get(
+  "/store-link/:slug",
+
+  async (req, res) => {
+
+  try {
+
+    const business =
+      await Business.findOne({
+
+      slug:
+        req.params.slug
+    });
+
+    if (!business) {
+
+      return res.status(404).json({
+
+        message:
+          "Business not found"
+      });
+    }
+
+    const storeLink =
+
+      `https://your-netlify-site.netlify.app/?store=${business.slug}`;
+
+    res.json({
+
+      business:
+        business.name,
+
+      slug:
+        business.slug,
+
+      storeLink
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+
+      message:
+        err.message
+    });
+  }
+});
+
+module.exports = router;
