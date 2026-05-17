@@ -2378,3 +2378,139 @@ document.addEventListener(
   }
 );
 
+
+/* ================= PUBLIC STORE PRODUCTS ================= */
+
+async function loadPublicStoreProducts() {
+
+  try {
+
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+    const slug =
+      params.get("store");
+
+    if (!slug) return;
+
+    const productsContainer =
+      document.getElementById(
+        "publicProducts"
+      );
+
+    const storeTitle =
+      document.getElementById(
+        "storeTitle"
+      );
+
+    if (!productsContainer) return;
+
+    const res =
+      await fetch(
+
+        "https://navu-smart-biz-sbdh.onrender.com/api/products/store/" +
+
+        slug
+      );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+
+      productsContainer.innerHTML = `
+        <p>
+          Store not found ❌
+        </p>
+      `;
+
+      return;
+    }
+
+    if (storeTitle) {
+
+      storeTitle.innerText =
+        data.business.name;
+    }
+
+    productsContainer.innerHTML = "";
+
+    if (!data.products.length) {
+
+      productsContainer.innerHTML = `
+        <p>
+          No products available
+        </p>
+      `;
+
+      return;
+    }
+
+    data.products.forEach(product => {
+
+      const imageUrl =
+
+        product.image
+        ? "https://navu-smart-biz-sbdh.onrender.com" + product.image
+        : "";
+
+      productsContainer.innerHTML += `
+
+        <div class="order-card">
+
+          ${
+            product.image
+            ? `
+              <img
+                src="${imageUrl}"
+                style="
+                  width:100%;
+                  max-height:220px;
+                  object-fit:cover;
+                  border-radius:12px;
+                  margin-bottom:10px;
+                "
+              />
+            `
+            : ""
+          }
+
+          <h3>
+            ${product.name}
+          </h3>
+
+          <p>
+            KES ${product.price}
+          </p>
+
+          <p>
+            Stock:
+            ${product.stock}
+          </p>
+
+        </div>
+      `;
+    });
+
+  } catch (err) {
+
+    console.error(
+      "PUBLIC STORE ERROR:",
+      err
+    );
+  }
+}
+
+/* ================= AUTO LOAD STORE ================= */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+
+    loadPublicStoreProducts();
+
+  }
+);
+
