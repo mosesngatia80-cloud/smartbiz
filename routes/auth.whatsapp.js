@@ -187,3 +187,32 @@ router.post(
   }
 );
 
+
+/* ================= DEBUG BUSINESS ================= */
+
+router.get(
+  "/debug-business/:number",
+  async (req, res) => {
+
+    try {
+
+      const business =
+        await Business.findOne({
+          whatsappNumber:
+            req.params.number
+        });
+
+      res.json(business);
+
+    }
+
+    catch (err) {
+
+      res.status(500).json({
+        message:
+          err.message
+      });
+    }
+  }
+);
+
