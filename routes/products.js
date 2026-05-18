@@ -331,3 +331,63 @@ router.get(
   }
 );
 
+
+/* =========================
+   PUBLIC STORE PRODUCTS
+   (SLUG VERSION)
+========================= */
+
+router.get(
+  "/store/:slug",
+
+  async (req, res) => {
+
+    try {
+
+      const business =
+        await Business.findOne({
+          slug:
+            req.params.slug
+        });
+
+      if (!business) {
+
+        return res.status(404).json({
+          message:
+            "Business not found"
+        });
+      }
+
+      const products =
+        await Product.find({
+          business:
+            business._id
+        })
+
+        .sort({
+          createdAt: -1
+        });
+
+      res.json({
+        business,
+        products
+      });
+
+    } catch (err) {
+
+      console.error(
+        "STORE PRODUCTS ERROR:"
+      );
+
+      console.error(err);
+
+      res.status(500).json({
+        message:
+          "Failed to load store"
+      });
+
+    }
+
+  }
+);
+
