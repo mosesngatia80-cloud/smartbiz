@@ -1961,7 +1961,7 @@ function openProductModal(product) {
     "modalImage"
   ).src =
     product.image
-    ? "https://navu-smart-biz-sbdh.onrender.com" + product.image
+    ? product.image
     : "";
 
   document.getElementById(
@@ -2037,7 +2037,7 @@ async function loadProducts() {
 
       const imageUrl =
         p.image
-        ? "https://navu-smart-biz-sbdh.onrender.com" + p.image
+        ? p.image
         : "";
 
       list.innerHTML += `
@@ -2453,7 +2453,7 @@ async function loadPublicStoreProducts() {
       const imageUrl =
 
         product.image
-        ? "https://navu-smart-biz-sbdh.onrender.com" + product.image
+        ? product.image
         : "";
 
       productsContainer.innerHTML += `
