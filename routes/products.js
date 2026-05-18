@@ -4,39 +4,85 @@ const router = express.Router();
 const Product = require("../models/Product");
 const Business = require("../models/Business");
 
-/* ✅ AUTH */
-const verifyToken = require("../middleware/authMiddleware");
+const verifyToken =
+  require("../middleware/authMiddleware");
+
+const multer =
+  require("multer");
+
+const cloudinary =
+  require("cloudinary").v2;
 
 /* =========================
-   SIMPLE MULTER DEBUG MODE
+   CLOUDINARY CONFIG
 ========================= */
+cloudinary.config({
 
-const multer = require("multer");
+  cloud_name:
+    process.env.CLOUDINARY_CLOUD_NAME,
 
-/* TEMP LOCAL STORAGE */
-const storage = multer.memoryStorage();
+  api_key:
+    process.env.CLOUDINARY_API_KEY,
 
-const upload = multer({
-  storage
+  api_secret:
+    process.env.CLOUDINARY_API_SECRET
+
 });
+
+/* =========================
+   MEMORY STORAGE
+========================= */
+const storage =
+  multer.memoryStorage();
+
+const upload =
+  multer({ storage });
+
+/* =========================
+   CLOUDINARY UPLOAD
+========================= */
+async function uploadToCloudinary(fileBuffer) {
+
+  return new Promise(
+    (resolve, reject) => {
+
+      cloudinary.uploader.upload_stream(
+
+        {
+          folder:
+            "navu-smartbiz-products"
+        },
+
+        (error, result) => {
+
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result);
+          }
+
+        }
+
+      )
+
+      .end(fileBuffer);
+
+    }
+  );
+
+}
 
 /* =========================
    CREATE PRODUCT
 ========================= */
 router.post(
   "/",
+
   upload.single("image"),
 
   async (req, res) => {
 
     try {
-
-      console.log("BODY:", req.body);
-
-      console.log(
-        "FILE EXISTS:",
-        !!req.file
-      );
 
       const {
         name,
@@ -70,13 +116,18 @@ router.post(
 
       }
 
-      /* TEMP IMAGE PLACEHOLDER */
       let imageUrl = "";
 
+      /* ✅ REAL CLOUDINARY */
       if (req.file) {
 
+        const uploaded =
+          await uploadToCloudinary(
+            req.file.buffer
+          );
+
         imageUrl =
-          "UPLOAD_WORKING_TEMP";
+          uploaded.secure_url;
 
       }
 
@@ -95,7 +146,8 @@ router.post(
           stock,
           description,
 
-          image: imageUrl
+          image:
+            imageUrl
 
         });
 
@@ -116,7 +168,8 @@ router.post(
       console.error(err);
 
       res.status(500).json({
-        error: err.message
+        error:
+          err.message
       });
 
     }
@@ -175,116 +228,11 @@ router.get(
 
     } catch (err) {
 
-      console.error(
-        "MY PRODUCTS ERROR:",
-        err
-      );
+      console.error(err);
 
       res.status(500).json({
         message:
           "Failed to load products"
-      });
-
-    }
-
-  }
-);
-
-/* =========================
-   GET ALL PRODUCTS
-========================= */
-router.get(
-  "/",
-
-  verifyToken,
-
-  async (req, res) => {
-
-    try {
-
-      const business =
-        await Business.findOne({
-          owner:
-            req.user._id
-        });
-
-      const products =
-        await Product.find({
-          business:
-            business._id
-        });
-
-      res.json({
-        products
-      });
-
-    } catch (err) {
-
-      res.status(500).json({
-        error:
-          err.message
-      });
-
-    }
-
-  }
-);
-
-/* =========================
-   UPDATE PRODUCT
-========================= */
-router.put(
-  "/:id",
-
-  verifyToken,
-
-  async (req, res) => {
-
-    try {
-
-      const updates =
-        req.body;
-
-      const product =
-        await Product.findOneAndUpdate(
-
-          {
-            _id:
-              req.params.id,
-
-            owner:
-              req.user._id
-          },
-
-          updates,
-
-          {
-            new: true
-          }
-
-        );
-
-      if (!product) {
-
-        return res.status(404).json({
-          message:
-            "Product not found"
-        });
-
-      }
-
-      res.json({
-        message:
-          "Product updated",
-
-        product
-      });
-
-    } catch (err) {
-
-      res.status(500).json({
-        error:
-          err.message
       });
 
     }
@@ -298,35 +246,17 @@ router.put(
 router.delete(
   "/:id",
 
-  verifyToken,
-
   async (req, res) => {
 
     try {
 
-      const deleted =
-        await Product.findOneAndDelete({
-
-          _id:
-            req.params.id,
-
-          owner:
-            req.user._id
-
-        });
-
-      if (!deleted) {
-
-        return res.status(404).json({
-          message:
-            "Product not found"
-        });
-
-      }
+      await Product.findByIdAndDelete(
+        req.params.id
+      );
 
       res.json({
         message:
-          "Product deleted"
+          "Deleted"
       });
 
     } catch (err) {
@@ -334,145 +264,6 @@ router.delete(
       res.status(500).json({
         error:
           err.message
-      });
-
-    }
-
-  }
-);
-
-/* =========================
-   PUBLIC CREATE PRODUCT
-========================= */
-router.post(
-  "/public/create",
-
-  upload.single("image"),
-
-  async (req, res) => {
-
-    try {
-
-      console.log(
-        "PUBLIC BODY:",
-        req.body
-      );
-
-      console.log(
-        "PUBLIC FILE EXISTS:",
-        !!req.file
-      );
-
-      const {
-        name,
-        category,
-        price,
-        stock,
-        description
-      } = req.body;
-
-      if (
-        !name ||
-        price == null
-      ) {
-
-        return res.status(400).json({
-          message:
-            "Missing fields"
-        });
-
-      }
-
-      const business =
-        await Business.findOne();
-
-      if (!business) {
-
-        return res.status(400).json({
-          message:
-            "No business found in system"
-        });
-
-      }
-
-      const product =
-        new Product({
-
-          owner:
-            business.owner,
-
-          business:
-            business._id,
-
-          name,
-          category,
-          price,
-          stock,
-          description,
-
-          image:
-            req.file
-              ? "UPLOAD_WORKING_TEMP"
-              : ""
-
-        });
-
-      await product.save();
-
-      res.json({
-        message:
-          "Product created (public)",
-
-        product
-      });
-
-    } catch (err) {
-
-      console.error(
-        "Public create error:"
-      );
-
-      console.error(err);
-
-      res.status(500).json({
-        error:
-          err.message
-      });
-
-    }
-
-  }
-);
-
-/* =========================
-   PUBLIC GET PRODUCTS
-========================= */
-router.get(
-  "/public/all",
-
-  async (req, res) => {
-
-    try {
-
-      const products =
-        await Product.find()
-
-        .sort({
-          createdAt: -1
-        });
-
-      res.json(products);
-
-    } catch (err) {
-
-      console.error(
-        "Public products error:",
-        err.message
-      );
-
-      res.status(500).json({
-        message:
-          "Failed to load products"
       });
 
     }
