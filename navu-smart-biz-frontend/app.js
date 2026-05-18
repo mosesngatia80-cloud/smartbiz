@@ -1133,3 +1133,287 @@ function openStoreLink() {
   );
 }
 
+
+/* ================= CASH POS ================= */
+
+async function sellCashProduct() {
+
+  const business =
+    JSON.parse(
+      localStorage.getItem(
+        "business"
+      )
+    );
+
+  if (!business) {
+
+    alert("Business not found");
+
+    return;
+  }
+
+  const productName =
+    document.getElementById(
+      "cashProduct"
+    ).value;
+
+  const quantity =
+    Number(
+      document.getElementById(
+        "cashQuantity"
+      ).value
+    );
+
+  const amount =
+    Number(
+      document.getElementById(
+        "cashAmount"
+      ).value
+    );
+
+  const msg =
+    document.getElementById(
+      "cashMsg"
+    );
+
+  try {
+
+    const res =
+      await fetch(
+
+        API_BASE +
+        "/products/cash-sale",
+
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+
+              productName,
+              quantity,
+              amount,
+
+              whatsappNumber:
+                business.whatsappNumber
+            })
+        }
+      );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+
+      msg.innerText =
+        data.message ||
+        "Cash sale failed ❌";
+
+      return;
+    }
+
+    msg.innerText =
+      "Cash sale recorded ✅";
+
+    loadDashboard();
+    loadProducts();
+    loadOrders();
+
+  }
+
+  catch (err) {
+
+    console.error(err);
+
+    msg.innerText =
+      "Server error ❌";
+  }
+}
+
+
+/* ================= BETTER ORDERS UI ================= */
+
+async function loadOrders() {
+
+  const list =
+    document.getElementById(
+      "ordersList"
+    );
+
+  if (!list) return;
+
+  try {
+
+    const token =
+      localStorage.getItem(
+        "token"
+      );
+
+    const res =
+      await fetch(
+
+        API_BASE + "/orders",
+
+        {
+          headers: {
+            Authorization:
+              "Bearer " + token
+          }
+        }
+      );
+
+    const orders =
+      await res.json();
+
+    if (!res.ok) {
+
+      list.innerHTML =
+        "<li>Failed to load orders</li>";
+
+      return;
+    }
+
+    list.innerHTML = "";
+
+    document.getElementById(
+      "totalOrders"
+    ).innerText =
+      orders.length || 0;
+
+    const paid =
+      orders.filter(
+        o =>
+          o.paymentMethod === "CASH" ||
+          o.status === "PAID"
+      ).length;
+
+    document.getElementById(
+      "paidOrders"
+    ).innerText = paid;
+
+    document.getElementById(
+      "pendingOrders"
+    ).innerText =
+      orders.length - paid;
+
+    orders.forEach(order => {
+
+      const items =
+        order.items
+          ?.map(i =>
+            `${i.name} x${i.qty}`
+          )
+          .join(", ");
+
+      const created =
+        new Date(
+          order.createdAt
+        ).toLocaleString();
+
+      list.innerHTML += `
+
+        <li class="order-card">
+
+          <div>
+            <strong>Customer:</strong>
+            ${order.customerPhone || "-"}
+
+          </div>
+
+          <div>
+            <strong>Items:</strong>
+            ${items || "-"}
+          </div>
+
+          <div>
+            <strong>Total:</strong>
+            KES ${order.total || 0}
+          </div>
+
+          <div>
+            <strong>Status:</strong>
+            ${order.status || "-"}
+          </div>
+
+          <div>
+            <strong>Payment:</strong>
+            ${order.paymentMethod || "-"}
+          </div>
+
+          <div>
+            <strong>Source:</strong>
+            ${order.source || "-"}
+          </div>
+
+          <div>
+            <strong>Date:</strong>
+            ${created}
+          </div>
+
+        </li>
+      `;
+    });
+
+  }
+
+  catch (err) {
+
+    console.error(err);
+
+    list.innerHTML =
+      "<li>Orders failed</li>";
+  }
+}
+
+
+/* ================= AUTO LOAD STORE LINK ================= */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+
+    const business =
+      JSON.parse(
+        localStorage.getItem(
+          "business"
+        )
+      );
+
+    if (!business) return;
+
+    const input =
+      document.getElementById(
+        "storeLink"
+      );
+
+    if (!input) return;
+
+    const slug = (
+
+      business.slug ||
+
+      business.name ||
+
+      "store"
+
+    )
+
+    .toLowerCase()
+
+    .replace(/\s+/g, "-")
+
+    .replace(/[^a-z0-9-]/g, "");
+
+    input.value =
+
+      "https://navu-smart-order.netlify.app/?store=" +
+
+      slug;
+  }
+);
+
