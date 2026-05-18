@@ -391,3 +391,136 @@ router.get(
   }
 );
 
+
+/* =========================
+   CASH SALE
+========================= */
+
+router.post(
+  "/cash-sale",
+
+  async (req, res) => {
+
+    try {
+
+      const {
+        productName,
+        amount,
+        quantity = 1,
+        whatsappNumber
+      } = req.body;
+
+      if (
+        !productName ||
+        !whatsappNumber
+      ) {
+
+        return res.status(400).json({
+          message:
+            "Missing fields"
+        });
+      }
+
+      const business =
+        await Business.findOne({
+          whatsappNumber
+        });
+
+      if (!business) {
+
+        return res.status(404).json({
+          message:
+            "Business not found"
+        });
+      }
+
+      const product =
+        await Product.findOne({
+
+          business:
+            business._id,
+
+          name: {
+            $regex:
+              new RegExp(
+                "^" +
+                productName +
+                "$",
+                "i"
+              )
+          }
+        });
+
+      if (!product) {
+
+        return res.status(404).json({
+          message:
+            "Product not found"
+        });
+      }
+
+      const expectedTotal =
+
+        Number(product.price) *
+
+        Number(quantity);
+
+      if (
+
+        Number(amount) !==
+        Number(expectedTotal)
+
+      ) {
+
+        return res.status(400).json({
+
+          message:
+            `Incorrect amount. Expected KES ${expectedTotal}`
+        });
+      }
+
+      if (
+        product.stock <
+        quantity
+      ) {
+
+        return res.status(400).json({
+          message:
+            "Insufficient stock"
+        });
+      }
+
+      product.stock -=
+        Number(quantity);
+
+      await product.save();
+
+      res.json({
+
+        success: true,
+
+        message:
+          "Cash sale recorded ✅",
+
+        remainingStock:
+          product.stock
+      });
+
+    }
+
+    catch (err) {
+
+      console.error(
+        "CASH SALE ERROR:"
+      );
+
+      console.error(err);
+
+      res.status(500).json({
+        message:
+          err.message
+      });
+    }
+  }
+);
+
