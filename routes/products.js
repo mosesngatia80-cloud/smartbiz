@@ -4,40 +4,21 @@ const router = express.Router();
 const Product = require("../models/Product");
 const Business = require("../models/Business");
 
-/* ✅ FIXED AUTH IMPORT */
+/* ✅ AUTH */
 const verifyToken = require("../middleware/authMiddleware");
 
-/* CLOUDINARY + MULTER */
+/* =========================
+   SIMPLE MULTER DEBUG MODE
+========================= */
+
 const multer = require("multer");
-const cloudinary = require("cloudinary").v2;
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
-/* =========================
-   CLOUDINARY CONFIG
-========================= */
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+/* TEMP LOCAL STORAGE */
+const storage = multer.memoryStorage();
+
+const upload = multer({
+  storage
 });
-
-/* =========================
-   STORAGE
-========================= */
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: "navu-smartbiz-products",
-    allowed_formats: [
-      "jpg",
-      "jpeg",
-      "png",
-      "webp"
-    ],
-  },
-});
-
-const upload = multer({ storage });
 
 /* =========================
    CREATE PRODUCT
@@ -45,12 +26,17 @@ const upload = multer({ storage });
 router.post(
   "/",
   upload.single("image"),
+
   async (req, res) => {
 
     try {
 
       console.log("BODY:", req.body);
-      console.log("FILE:", req.file);
+
+      console.log(
+        "FILE EXISTS:",
+        !!req.file
+      );
 
       const {
         name,
@@ -62,9 +48,12 @@ router.post(
       } = req.body;
 
       if (!whatsappNumber) {
+
         return res.status(400).json({
-          message: "WhatsApp number required"
+          message:
+            "WhatsApp number required"
         });
+
       }
 
       const business =
@@ -73,29 +62,48 @@ router.post(
         });
 
       if (!business) {
+
         return res.status(404).json({
-          message: "Business not found"
+          message:
+            "Business not found"
         });
+
       }
 
-      const product = new Product({
-        owner: business.owner,
-        business: business._id,
-        name,
-        category,
-        price,
-        stock,
-        description,
+      /* TEMP IMAGE PLACEHOLDER */
+      let imageUrl = "";
 
-        image: req.file
-          ? req.file.path
-          : ""
-      });
+      if (req.file) {
+
+        imageUrl =
+          "UPLOAD_WORKING_TEMP";
+
+      }
+
+      const product =
+        new Product({
+
+          owner:
+            business.owner,
+
+          business:
+            business._id,
+
+          name,
+          category,
+          price,
+          stock,
+          description,
+
+          image: imageUrl
+
+        });
 
       await product.save();
 
       res.json({
-        message: "Product created",
+        message:
+          "Product created",
         product
       });
 
@@ -121,6 +129,7 @@ router.post(
 ========================= */
 router.get(
   "/my-products",
+
   async (req, res) => {
 
     try {
@@ -130,10 +139,12 @@ router.get(
       } = req.query;
 
       if (!whatsappNumber) {
+
         return res.status(400).json({
           message:
             "WhatsApp number required"
         });
+
       }
 
       const business =
@@ -142,16 +153,21 @@ router.get(
         });
 
       if (!business) {
+
         return res.status(404).json({
           message:
             "Business not found"
         });
+
       }
 
       const products =
         await Product.find({
-          business: business._id
-        }).sort({
+          business:
+            business._id
+        })
+
+        .sort({
           createdAt: -1
         });
 
@@ -179,19 +195,23 @@ router.get(
 ========================= */
 router.get(
   "/",
+
   verifyToken,
+
   async (req, res) => {
 
     try {
 
       const business =
         await Business.findOne({
-          owner: req.user._id
+          owner:
+            req.user._id
         });
 
       const products =
         await Product.find({
-          business: business._id
+          business:
+            business._id
         });
 
       res.json({
@@ -201,7 +221,8 @@ router.get(
     } catch (err) {
 
       res.status(500).json({
-        error: err.message
+        error:
+          err.message
       });
 
     }
@@ -214,7 +235,9 @@ router.get(
 ========================= */
 router.put(
   "/:id",
+
   verifyToken,
+
   async (req, res) => {
 
     try {
@@ -224,12 +247,21 @@ router.put(
 
       const product =
         await Product.findOneAndUpdate(
+
           {
-            _id: req.params.id,
-            owner: req.user._id
+            _id:
+              req.params.id,
+
+            owner:
+              req.user._id
           },
+
           updates,
-          { new: true }
+
+          {
+            new: true
+          }
+
         );
 
       if (!product) {
@@ -244,13 +276,15 @@ router.put(
       res.json({
         message:
           "Product updated",
+
         product
       });
 
     } catch (err) {
 
       res.status(500).json({
-        error: err.message
+        error:
+          err.message
       });
 
     }
@@ -263,15 +297,22 @@ router.put(
 ========================= */
 router.delete(
   "/:id",
+
   verifyToken,
+
   async (req, res) => {
 
     try {
 
       const deleted =
         await Product.findOneAndDelete({
-          _id: req.params.id,
-          owner: req.user._id
+
+          _id:
+            req.params.id,
+
+          owner:
+            req.user._id
+
         });
 
       if (!deleted) {
@@ -291,7 +332,8 @@ router.delete(
     } catch (err) {
 
       res.status(500).json({
-        error: err.message
+        error:
+          err.message
       });
 
     }
@@ -304,6 +346,7 @@ router.delete(
 ========================= */
 router.post(
   "/public/create",
+
   upload.single("image"),
 
   async (req, res) => {
@@ -316,8 +359,8 @@ router.post(
       );
 
       console.log(
-        "PUBLIC FILE:",
-        req.file
+        "PUBLIC FILE EXISTS:",
+        !!req.file
       );
 
       const {
@@ -367,9 +410,10 @@ router.post(
           stock,
           description,
 
-          image: req.file
-            ? req.file.path
-            : ""
+          image:
+            req.file
+              ? "UPLOAD_WORKING_TEMP"
+              : ""
 
         });
 
@@ -391,7 +435,8 @@ router.post(
       console.error(err);
 
       res.status(500).json({
-        error: err.message
+        error:
+          err.message
       });
 
     }
@@ -404,12 +449,14 @@ router.post(
 ========================= */
 router.get(
   "/public/all",
+
   async (req, res) => {
 
     try {
 
       const products =
         await Product.find()
+
         .sort({
           createdAt: -1
         });
