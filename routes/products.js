@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
+
+const upload =
+  require("../cloudinaryStorage");
 
 const Product = require("../models/Product");
 const Business = require("../models/Business");
@@ -8,31 +10,6 @@ const BusinessWhatsApp =
   require("../models/BusinessWhatsApp");
 const Order = require("../models/Order");
 const Wallet = require("../models/Wallet");
-
-/* =========================
-   MULTER CONFIG
-========================= */
-
-const storage =
-  multer.diskStorage({
-
-  destination:
-    "uploads/",
-
-  filename:
-    (req, file, cb) => {
-
-    cb(
-      null,
-      Date.now() +
-      "-" +
-      file.originalname
-    );
-  }
-});
-
-const upload =
-  multer({ storage });
 
 /* =========================
    CREATE PRODUCT
@@ -82,7 +59,7 @@ router.post(
 
     const image =
       req.file
-      ? `/uploads/${req.file.filename}`
+      ? req.file.path
       : "";
 
     const product =
