@@ -1,11 +1,15 @@
 const API_BASE = "https://navu-smart-biz-sbdh.onrender.com/api";
+const SITE_BASE = "https://navu-smart-biz-sbdh.onrender.com";
 
 /* ================= UTIL ================= */
 
 function logout() {
+
   localStorage.removeItem("token");
   localStorage.removeItem("business");
+
   location.reload();
+
 }
 
 /* ================= APP ================= */
@@ -14,7 +18,9 @@ function showView(id) {
 
   document
     .querySelectorAll(".view")
-    .forEach(v => v.classList.add("hidden"));
+    .forEach(v =>
+      v.classList.add("hidden")
+    );
 
   const el =
     document.getElementById(id);
@@ -46,6 +52,7 @@ function showView(id) {
   if (id === "profile") {
     loadBusinessProfile();
   }
+
 }
 
 /* ================= LOGIN ================= */
@@ -64,13 +71,17 @@ async function login() {
       .value
       .trim();
 
-  if (!whatsapp || !businessName) {
+  if (
+    !whatsapp ||
+    !businessName
+  ) {
 
     alert(
       "Enter WhatsApp and Business Name ⚠️"
     );
 
     return;
+
   }
 
   try {
@@ -91,13 +102,17 @@ async function login() {
 
           body:
             JSON.stringify({
+
               whatsappNumber:
                 whatsapp,
 
               name:
                 businessName
+
             })
+
         }
+
       );
 
     const data =
@@ -111,6 +126,7 @@ async function login() {
       );
 
       return;
+
     }
 
     localStorage.setItem(
@@ -127,26 +143,26 @@ async function login() {
 
     document.getElementById(
       "authScreen"
-    ).style.display =
-      "none";
+    ).style.display = "none";
 
     document.getElementById(
       "app"
-    ).style.display =
-      "block";
+    ).style.display = "block";
 
-    showView(
-      "dashboard"
-    );
+    showView("dashboard");
 
-  } catch (err) {
+  }
+
+  catch (err) {
 
     console.error(err);
 
     alert(
       "Server error ❌"
     );
+
   }
+
 }
 
 /* ================= DASHBOARD ================= */
@@ -168,12 +184,12 @@ async function loadDashboard() {
       await fetch(
 
         API_BASE +
-
         "/dashboard/summary?whatsappNumber=" +
 
         encodeURIComponent(
           business.whatsappNumber
         )
+
       );
 
     const data =
@@ -201,13 +217,17 @@ async function loadDashboard() {
     ).innerText =
       data.totalOrders || 0;
 
-  } catch (err) {
+  }
+
+  catch (err) {
 
     console.error(
       "Dashboard error:",
       err
     );
+
   }
+
 }
 
 /* ================= PRODUCTS ================= */
@@ -234,12 +254,12 @@ async function loadProducts() {
       await fetch(
 
         API_BASE +
-
         "/products/my-products?whatsappNumber=" +
 
         encodeURIComponent(
           business.whatsappNumber
         )
+
       );
 
     const products =
@@ -249,1574 +269,60 @@ async function loadProducts() {
 
     products.forEach(p => {
 
+      const imageUrl =
+        p.image
+        ? p.image
+        : "";
+
       list.innerHTML += `
-        <li>
-          ${p.name}
-          —
-          KES ${p.price}
-          —
-          Stock: ${p.stock}
+        <li class="order-card">
+
+          ${
+            p.image
+            ? `
+              <img
+                src="${imageUrl}"
+                style="
+                  width:100%;
+                  max-height:200px;
+                  object-fit:cover;
+                  border-radius:12px;
+                  margin-bottom:10px;
+                "
+              />
+            `
+            : ""
+          }
+
+          <div>
+            <strong>${p.name}</strong>
+          </div>
+
+          <div>
+            KES ${p.price}
+          </div>
+
+          <div>
+            Stock: ${p.stock}
+          </div>
+
         </li>
       `;
+
     });
 
-  } catch (err) {
+  }
+
+  catch (err) {
 
     console.error(err);
 
     list.innerHTML =
       "<li>Failed to load products</li>";
+
   }
+
 }
-
-async function addProduct() {
-
-  const msg =
-    document.getElementById(
-      "productMsg"
-    );
-
-  const business =
-    JSON.parse(
-      localStorage.getItem(
-        "business"
-      )
-    );
-
-  const name =
-    document.getElementById(
-      "newProductName"
-    ).value;
-
-  const price =
-    Number(
-      document.getElementById(
-        "newProductPrice"
-      ).value
-    );
-
-  const stock =
-    Number(
-      document.getElementById(
-        "newProductStock"
-      ).value
-    );
-
-  try {
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/products",
-
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              name,
-              price,
-              stock,
-
-              whatsappNumber:
-                business.whatsappNumber
-            })
-        }
-      );
-
-    const data =
-      await res.json();
-
-    if (!res.ok) {
-
-      msg.innerText =
-        data.message ||
-        "Failed ❌";
-
-      return;
-    }
-
-    msg.innerText =
-      "Product added ✅";
-
-    loadProducts();
-
-  } catch (err) {
-
-    console.error(err);
-
-    msg.innerText =
-      "Server error ❌";
-  }
-}
-
-/* ================= ORDERS ================= */
-
-async function loadOrders() {
-
-  const list =
-    document.getElementById(
-      "ordersList"
-    );
-
-  if (!list) return;
-
-  try {
-
-    const token =
-      localStorage.getItem(
-        "token"
-      );
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/orders",
-
-        {
-          headers: {
-            Authorization:
-              "Bearer " +
-              token
-          }
-        }
-      );
-
-    const orders =
-      await res.json();
-
-    list.innerHTML = "";
-
-    orders.forEach(order => {
-
-      const items =
-        order.items
-          ?.map(i =>
-            `${i.name} x${i.qty}`
-          )
-          .join(", ");
-
-      list.innerHTML += `
-        <li>
-          ${items}
-          —
-          KES ${order.total}
-          —
-          ${order.status}
-        </li>
-      `;
-    });
-
-  } catch (err) {
-
-    console.error(err);
-
-    list.innerHTML =
-      "<li>Orders failed</li>";
-  }
-}
-
-/* ================= EXPENSES ================= */
-
-async function loadExpenses() {
-  return;
-}
-
-/* ================= DEBTS ================= */
-
-async function loadDebts() {
-  return;
-}
-
-/* ================= PROFILE ================= */
-
-async function loadBusinessProfile() {
-
-  const business =
-    JSON.parse(
-      localStorage.getItem(
-        "business"
-      )
-    );
-
-  if (!business) return;
-
-  document.getElementById(
-    "profileBusinessName"
-  ).innerText =
-    business.name || "-";
-
-  document.getElementById(
-    "profileWhatsapp"
-  ).innerText =
-    business.whatsappNumber || "-";
-}
-
-/* ================= INIT ================= */
-
-document.addEventListener(
-  "DOMContentLoaded",
-  () => {
-
-    const token =
-      localStorage.getItem(
-        "token"
-      );
-
-    if (token) {
-
-      document.getElementById(
-        "authScreen"
-      ).style.display =
-        "none";
-
-      document.getElementById(
-        "app"
-      ).style.display =
-        "block";
-
-      showView(
-        "dashboard"
-      );
-
-    } else {
-
-      document.getElementById(
-        "authScreen"
-      ).style.display =
-        "flex";
-
-      document.getElementById(
-        "app"
-      ).style.display =
-        "none";
-    }
-  }
-);
-
-/* ================= EXPENSES ================= */
-
-async function loadExpenses() {
-
-  const list =
-    document.getElementById(
-      "expensesList"
-    );
-
-  if (!list) return;
-
-  try {
-
-    const business =
-      JSON.parse(
-        localStorage.getItem(
-          "business"
-        )
-      );
-
-    const res =
-      await fetch(
-
-        API_BASE +
-
-        "/expense?whatsappNumber=" +
-
-        encodeURIComponent(
-          business.whatsappNumber
-        )
-      );
-
-    const data =
-      await res.json();
-
-    if (!res.ok) {
-
-      list.innerHTML =
-        "<li>Failed to load expenses</li>";
-
-      return;
-    }
-
-    document.getElementById(
-      "totalExpenses"
-    ).innerText =
-      `KES ${data.totalExpenses}`;
-
-    list.innerHTML = "";
-
-    data.expenses.forEach(exp => {
-
-      list.innerHTML += `
-        <li>
-          ${exp.title}
-          —
-          KES ${exp.amount}
-          —
-          ${exp.category}
-        </li>
-      `;
-    });
-
-  } catch (err) {
-
-    console.error(err);
-  }
-}
-
-async function addExpense() {
-
-  const business =
-    JSON.parse(
-      localStorage.getItem(
-        "business"
-      )
-    );
-
-  const title =
-    document.getElementById(
-      "expenseTitle"
-    ).value;
-
-  const amount =
-    Number(
-      document.getElementById(
-        "expenseAmount"
-      ).value
-    );
-
-  const category =
-    document.getElementById(
-      "expenseCategory"
-    ).value;
-
-  const note =
-    document.getElementById(
-      "expenseNote"
-    ).value;
-
-  const msg =
-    document.getElementById(
-      "expenseMsg"
-    );
-
-  try {
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/expense/create",
-
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              whatsappNumber:
-                business.whatsappNumber,
-
-              title,
-              amount,
-              category,
-              note
-            })
-        }
-      );
-
-    const data =
-      await res.json();
-
-    if (!res.ok) {
-
-      msg.innerText =
-        data.message ||
-        "Failed ❌";
-
-      return;
-    }
-
-    msg.innerText =
-      "Expense added ✅";
-
-    loadExpenses();
-
-  } catch (err) {
-
-    console.error(err);
-
-    msg.innerText =
-      "Server error ❌";
-  }
-}
-
-/* ================= DEBTS ================= */
-
-async function loadDebts() {
-
-  const list =
-    document.getElementById(
-      "debtsList"
-    );
-
-  if (!list) return;
-
-  try {
-
-    const business =
-      JSON.parse(
-        localStorage.getItem(
-          "business"
-        )
-      );
-
-    const res =
-      await fetch(
-
-        API_BASE +
-
-        "/debt?phone=" +
-
-        encodeURIComponent(
-
-          business.phone ||
-
-          business.whatsappNumber
-        )
-      );
-
-    const data =
-      await res.json();
-
-    document.getElementById(
-      "totalDebt"
-    ).innerText =
-      `KES ${data.totalDebt}`;
-
-    list.innerHTML = "";
-
-    data.debts.forEach(d => {
-
-      list.innerHTML += `
-        <li>
-
-          ${d.customerName}
-          —
-          KES ${d.balance}
-          —
-          ${d.status}
-
-          <button
-            onclick="payDebt('${d._id}')"
-          >
-            Pay
-          </button>
-
-        </li>
-      `;
-    });
-
-  } catch (err) {
-
-    console.error(err);
-  }
-}
-
-async function addDebt() {
-
-  const business =
-    JSON.parse(
-      localStorage.getItem(
-        "business"
-      )
-    );
-
-  const customerName =
-    document.getElementById(
-      "debtCustomerName"
-    ).value;
-
-  const customerPhone =
-    document.getElementById(
-      "debtCustomerPhone"
-    ).value;
-
-  const totalAmount =
-    document.getElementById(
-      "debtTotalAmount"
-    ).value;
-
-  const amountPaid =
-    document.getElementById(
-      "debtAmountPaid"
-    ).value || 0;
-
-  const note =
-    document.getElementById(
-      "debtNote"
-    ).value;
-
-  const msg =
-    document.getElementById(
-      "debtMsg"
-    );
-
-  try {
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/debt/create",
-
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              phone:
-                business.phone ||
-
-                business.whatsappNumber,
-
-              customerName,
-              customerPhone,
-              totalAmount,
-              amountPaid,
-              note
-            })
-        }
-      );
-
-    const data =
-      await res.json();
-
-    if (!res.ok) {
-
-      msg.innerText =
-        data.message ||
-        "Failed ❌";
-
-      return;
-    }
-
-    msg.innerText =
-      "Debt added ✅";
-
-    loadDebts();
-
-  } catch (err) {
-
-    console.error(err);
-  }
-}
-
-async function payDebt(id) {
-
-  const amount =
-    prompt(
-      "Enter payment amount"
-    );
-
-  if (!amount) return;
-
-  try {
-
-    await fetch(
-
-      API_BASE +
-      "/debt/pay/" +
-      id,
-
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-
-        body:
-          JSON.stringify({
-            amount
-          })
-      }
-    );
-
-    loadDebts();
-
-  } catch (err) {
-
-    console.error(err);
-  }
-}
-
-/* ================= CASH POS ================= */
-
-async function sellCashProduct() {
-
-  const business =
-    JSON.parse(
-      localStorage.getItem(
-        "business"
-      )
-    );
-
-  const productName =
-    document.getElementById(
-      "cashProduct"
-    ).value;
-
-  const quantity =
-    Number(
-      document.getElementById(
-        "cashQuantity"
-      ).value
-    );
-
-  const amount =
-    Number(
-      document.getElementById(
-        "cashAmount"
-      ).value
-    );
-
-  const msg =
-    document.getElementById(
-      "cashMsg"
-    );
-
-  try {
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/products/cash-sale",
-
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              productName,
-              quantity,
-              amount,
-
-              whatsappNumber:
-                business.whatsappNumber
-            })
-        }
-      );
-
-    const data =
-      await res.json();
-
-    if (!res.ok) {
-
-      msg.innerText =
-        data.message ||
-        "Sale failed ❌";
-
-      return;
-    }
-
-    msg.innerText =
-      "Cash sale recorded ✅";
-
-    loadDashboard();
-    loadProducts();
-    loadOrders();
-
-  } catch (err) {
-
-    console.error(err);
-  }
-}
-
-
-/* ================= CASH SALE ================= */
-
-async function sellCashProduct() {
-
-  const msg =
-    document.getElementById(
-      "cashMsg"
-    );
-
-  const business =
-    JSON.parse(
-      localStorage.getItem(
-        "business"
-      )
-    );
-
-  const productName =
-    document.getElementById(
-      "cashProduct"
-    ).value;
-
-  const quantity =
-    Number(
-      document.getElementById(
-        "cashQuantity"
-      ).value
-    );
-
-  const amount =
-    Number(
-      document.getElementById(
-        "cashAmount"
-      ).value
-    );
-
-  try {
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/products/cash-sale",
-
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              productName,
-              quantity,
-              amount,
-
-              whatsappNumber:
-                business.whatsappNumber
-            })
-        }
-      );
-
-    const data =
-      await res.json();
-
-    if (!res.ok) {
-
-      msg.innerText =
-        data.message ||
-        "Cash sale failed ❌";
-
-      return;
-    }
-
-    msg.innerText =
-      "Cash sale recorded ✅";
-
-    loadDashboard();
-    loadProducts();
-    loadOrders();
-
-  } catch (err) {
-
-    console.error(err);
-
-    msg.innerText =
-      "Server error ❌";
-  }
-}
-
-
-/* ================= DEBTS ================= */
-
-async function loadDebts() {
-
-  const list =
-    document.getElementById(
-      "debtsList"
-    );
-
-  if (!list) return;
-
-  try {
-
-    const business =
-      JSON.parse(
-        localStorage.getItem(
-          "business"
-        )
-      );
-
-    const res =
-      await fetch(
-
-        API_BASE +
-
-        "/debt?phone=" +
-
-        encodeURIComponent(
-          business.whatsappNumber
-        )
-      );
-
-    const data =
-      await res.json();
-
-    if (!res.ok) {
-
-      list.innerHTML =
-        "<li>Failed to load debts</li>";
-
-      return;
-    }
-
-    document.getElementById(
-      "totalDebt"
-    ).innerText =
-      `KES ${data.totalDebt}`;
-
-    list.innerHTML = "";
-
-    data.debts.forEach(debt => {
-
-      const created =
-        new Date(
-          debt.createdAt
-        ).toLocaleString();
-
-      list.innerHTML += `
-
-        <li class="order-card">
-
-          <div>
-            <strong>Customer:</strong>
-            ${debt.customerName}
-          </div>
-
-          <div>
-            <strong>Phone:</strong>
-            ${debt.customerPhone}
-          </div>
-
-          <div>
-            <strong>Total:</strong>
-            KES ${debt.totalAmount}
-          </div>
-
-          <div>
-            <strong>Paid:</strong>
-            KES ${debt.amountPaid}
-          </div>
-
-          <div>
-            <strong>Balance:</strong>
-            KES ${debt.balance}
-          </div>
-
-          <div>
-            <strong>Status:</strong>
-            ${debt.status}
-          </div>
-
-          <div>
-            <strong>Note:</strong>
-            ${debt.note || "-"}
-          </div>
-
-          <div>
-            <strong>Created:</strong>
-            ${created}
-          </div>
-
-          <button
-            onclick="payDebt('${debt._id}')"
-          >
-            Pay
-          </button>
-
-        </li>
-      `;
-    });
-
-  } catch (err) {
-
-    console.error(err);
-
-    list.innerHTML =
-      "<li>Failed to load debts</li>";
-  }
-}
-
-
-/* ================= CUSTOMERS ================= */
-
-async function loadCustomers() {
-
-  const list =
-    document.getElementById(
-      "customersList"
-    );
-
-  if (!list) return;
-
-  try {
-
-    const token =
-      localStorage.getItem(
-        "token"
-      );
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/orders/customers/list",
-
-        {
-          headers: {
-            Authorization:
-              "Bearer " + token
-          }
-        }
-      );
-
-    const customers =
-      await res.json();
-
-    if (!res.ok) {
-
-      list.innerHTML =
-        "<li>Failed to load customers</li>";
-
-      return;
-    }
-
-    list.innerHTML = "";
-
-    document.getElementById(
-      "totalCustomers"
-    ).innerText =
-      customers.length;
-
-    customers.forEach(customer => {
-
-      list.innerHTML += `
-
-        <li class="order-card">
-
-          <div>
-            <strong>Phone:</strong>
-            ${customer.phone}
-          </div>
-
-          <div>
-            <strong>Total Orders:</strong>
-            ${customer.totalOrders}
-          </div>
-
-          <div>
-            <strong>Total Spent:</strong>
-            KES ${customer.totalSpent}
-          </div>
-
-        </li>
-      `;
-    });
-
-  } catch (err) {
-
-    console.error(err);
-
-    list.innerHTML =
-      "<li>Customers load failed</li>";
-  }
-}
-
-
-/* ================= CLEAN ORDER UI ================= */
-
-async function loadOrders() {
-
-  const list =
-    document.getElementById(
-      "ordersList"
-    );
-
-  if (!list) return;
-
-  try {
-
-    const token =
-      localStorage.getItem(
-        "token"
-      );
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/orders",
-
-        {
-          headers: {
-            Authorization:
-              "Bearer " +
-              token
-          }
-        }
-      );
-
-    const orders =
-      await res.json();
-
-    if (!res.ok) {
-
-      list.innerHTML =
-        "<li>Failed to load orders</li>";
-
-      return;
-    }
-
-    list.innerHTML = "";
-
-    orders.forEach(order => {
-
-      const items =
-        order.items
-          ?.map(i =>
-            `${i.name} x${i.qty}`
-          )
-          .join(", ");
-
-      const created =
-        new Date(
-          order.createdAt
-        ).toLocaleString();
-
-      list.innerHTML += `
-
-        <li class="order-card">
-
-          <div>
-            <strong>Customer:</strong>
-            ${order.customerPhone || "-"}
-          </div>
-
-          <div>
-            <strong>Items:</strong>
-            ${items}
-          </div>
-
-          <div>
-            <strong>Total:</strong>
-            KES ${order.total}
-          </div>
-
-          <div>
-            <strong>Status:</strong>
-            ${order.status}
-          </div>
-
-          <div>
-            <strong>Source:</strong>
-            ${order.source || "-"}
-          </div>
-
-          <div>
-            <strong>Date:</strong>
-            ${created}
-          </div>
-
-        </li>
-      `;
-    });
-
-  } catch (err) {
-
-    console.error(err);
-
-    list.innerHTML =
-      "<li>Orders failed</li>";
-  }
-}
-
-
-/* ================= FINAL ORDER UI ================= */
-
-async function loadOrders() {
-
-  const list =
-    document.getElementById(
-      "ordersList"
-    );
-
-  if (!list) return;
-
-  try {
-
-    const token =
-      localStorage.getItem(
-        "token"
-      );
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/orders",
-
-        {
-          headers: {
-            Authorization:
-              "Bearer " +
-              token
-          }
-        }
-      );
-
-    const orders =
-      await res.json();
-
-    if (!res.ok) {
-
-      list.innerHTML =
-        "<li>Failed to load orders</li>";
-
-      return;
-    }
-
-    list.innerHTML = "";
-
-    orders.forEach(order => {
-
-      const items =
-        order.items
-          ?.map(i =>
-            `${i.name} x${i.qty}`
-          )
-          .join(", ");
-
-      const created =
-        new Date(
-          order.createdAt
-        ).toLocaleString();
-
-      list.innerHTML += `
-
-        <li class="order-card">
-
-          <div>
-            <strong>Customer:</strong>
-            ${order.customerPhone || "-"}
-          </div>
-
-          <div>
-            <strong>Items:</strong>
-            ${items}
-          </div>
-
-          <div>
-            <strong>Total:</strong>
-            KES ${order.total}
-          </div>
-
-          <div>
-            <strong>Status:</strong>
-            ${order.status}
-          </div>
-
-          <div>
-            <strong>Source:</strong>
-            ${order.source || "-"}
-          </div>
-
-          <div>
-            <strong>Date:</strong>
-            ${created}
-          </div>
-
-          <div style="margin-top:10px;">
-
-            <button
-              onclick="updateOrderStatus('${order._id}','ACCEPTED')"
-            >
-              Accept
-            </button>
-
-          </div>
-
-        </li>
-      `;
-    });
-
-  } catch (err) {
-
-    console.error(err);
-
-    list.innerHTML =
-      "<li>Orders failed</li>";
-  }
-}
-
-/* ================= UPDATE ORDER STATUS ================= */
-
-async function updateOrderStatus(id, status) {
-
-  try {
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/orders/" +
-        id +
-        "/status",
-
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-              status
-            })
-        }
-      );
-
-    const data =
-      await res.json();
-
-    if (!res.ok) {
-
-      alert(
-        data.message ||
-        "Status update failed ❌"
-      );
-
-      return;
-    }
-
-    alert(
-      "Order updated ✅"
-    );
-
-    loadOrders();
-
-  } catch (err) {
-
-    console.error(err);
-
-    alert(
-      "Server error ❌"
-    );
-  }
-}
-
-
-/* ================= SMART ORDER UI FILTER ================= */
-
-async function loadOrders() {
-
-  const list =
-    document.getElementById(
-      "ordersList"
-    );
-
-  if (!list) return;
-
-  try {
-
-    const token =
-      localStorage.getItem(
-        "token"
-      );
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/orders",
-
-        {
-          headers: {
-            Authorization:
-              "Bearer " +
-              token
-          }
-        }
-      );
-
-    const orders =
-      await res.json();
-
-    if (!res.ok) {
-
-      list.innerHTML =
-        "<li>Failed to load orders</li>";
-
-      return;
-    }
-
-    list.innerHTML = "";
-
-    orders.forEach(order => {
-
-      const items =
-        order.items
-          ?.map(i =>
-            `${i.name} x${i.qty}`
-          )
-          .join(", ");
-
-      const created =
-        new Date(
-          order.createdAt
-        ).toLocaleString();
-
-      const showAcceptButton =
-
-        order.source === "STORE_FRONT" &&
-
-        order.status === "PENDING";
-
-      list.innerHTML += `
-
-        <li class="order-card">
-
-          <div>
-            <strong>Customer:</strong>
-            ${order.customerPhone || "-"}
-          </div>
-
-          <div>
-            <strong>Items:</strong>
-            ${items}
-          </div>
-
-          <div>
-            <strong>Total:</strong>
-            KES ${order.total}
-          </div>
-
-          <div>
-            <strong>Status:</strong>
-            ${order.status}
-          </div>
-
-          <div>
-            <strong>Source:</strong>
-            ${order.source || "-"}
-          </div>
-
-          <div>
-            <strong>Date:</strong>
-            ${created}
-          </div>
-
-          ${
-            showAcceptButton
-            ? `
-              <div style="margin-top:10px;">
-
-                <button
-                  onclick="updateOrderStatus('${order._id}','ACCEPTED')"
-                >
-                  Accept
-                </button>
-
-              </div>
-            `
-            : ""
-          }
-
-        </li>
-      `;
-    });
-
-  } catch (err) {
-
-    console.error(err);
-
-    list.innerHTML =
-      "<li>Orders failed</li>";
-  }
-}
-
-
-/* ================= CREDIT ORDER UI ================= */
-
-async function loadOrders() {
-
-  const list =
-    document.getElementById(
-      "ordersList"
-    );
-
-  if (!list) return;
-
-  try {
-
-    const token =
-      localStorage.getItem(
-        "token"
-      );
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/orders",
-
-        {
-          headers: {
-            Authorization:
-              "Bearer " +
-              token
-          }
-        }
-      );
-
-    const orders =
-      await res.json();
-
-    if (!res.ok) {
-
-      list.innerHTML =
-        "<li>Failed to load orders</li>";
-
-      return;
-    }
-
-    list.innerHTML = "";
-
-    orders.forEach(order => {
-
-      const items =
-        order.items
-          ?.map(i =>
-            `${i.name} x${i.qty}`
-          )
-          .join(", ");
-
-      const created =
-        new Date(
-          order.createdAt
-        ).toLocaleString();
-
-      const showAcceptButton =
-
-        order.source === "STORE_FRONT" &&
-
-        order.status === "PENDING";
-
-      list.innerHTML += `
-
-        <li class="order-card">
-
-          <div>
-            <strong>Customer:</strong>
-            ${order.customerPhone || "-"}
-          </div>
-
-          <div>
-            <strong>Items:</strong>
-            ${items}
-          </div>
-
-          <div>
-            <strong>Total:</strong>
-            KES ${order.total}
-          </div>
-
-          <div>
-            <strong>Paid:</strong>
-            KES ${order.amountPaid || 0}
-          </div>
-
-          <div>
-            <strong>Balance:</strong>
-            KES ${order.balance || 0}
-          </div>
-
-          <div>
-            <strong>Payment:</strong>
-            ${order.paymentStatus || "UNPAID"}
-          </div>
-
-          <div>
-            <strong>Status:</strong>
-            ${order.status}
-          </div>
-
-          <div>
-            <strong>Source:</strong>
-            ${order.source || "-"}
-          </div>
-
-          <div>
-            <strong>Date:</strong>
-            ${created}
-          </div>
-
-          ${
-            showAcceptButton
-            ? `
-              <div style="margin-top:10px;">
-
-                <button
-                  onclick="updateOrderStatus('${order._id}','ACCEPTED')"
-                >
-                  Accept
-                </button>
-
-              </div>
-            `
-            : ""
-          }
-
-        </li>
-      `;
-    });
-
-  } catch (err) {
-
-    console.error(err);
-
-    list.innerHTML =
-      "<li>Orders failed</li>";
-  }
-}
-
 
 /* ================= IMAGE PRODUCT UPLOAD ================= */
 
@@ -1841,16 +347,20 @@ async function addProduct() {
 
   const price =
     Number(
+
       document.getElementById(
         "newProductPrice"
       ).value
+
     );
 
   const stock =
     Number(
+
       document.getElementById(
         "newProductStock"
       ).value
+
     );
 
   const image =
@@ -1889,6 +399,7 @@ async function addProduct() {
         "image",
         image
       );
+
     }
 
     const res =
@@ -1899,22 +410,25 @@ async function addProduct() {
 
         {
           method: "POST",
-
-          body:
-            formData
+          body: formData
         }
+
       );
 
     const data =
       await res.json();
 
+    console.log(data);
+
     if (!res.ok) {
 
       msg.innerText =
+        data.error ||
         data.message ||
         "Upload failed ❌";
 
       return;
+
     }
 
     msg.innerText =
@@ -1938,579 +452,15 @@ async function addProduct() {
 
     loadProducts();
 
-  } catch (err) {
+  }
+
+  catch (err) {
 
     console.error(err);
 
     msg.innerText =
       "Server error ❌";
-  }
-}
-
-
-/* ================= PRODUCT MODAL ================= */
-
-function openProductModal(product) {
-
-  const modal =
-    document.getElementById(
-      "productModal"
-    );
-
-  document.getElementById(
-    "modalImage"
-  ).src =
-    product.image
-    ? product.image
-    : "";
-
-  document.getElementById(
-    "modalName"
-  ).innerText =
-    product.name;
-
-  document.getElementById(
-    "modalPrice"
-  ).innerText =
-    "KES " + product.price;
-
-  document.getElementById(
-    "modalStock"
-  ).innerText =
-    "Stock: " + product.stock;
-
-  modal.classList.remove(
-    "hidden"
-  );
-}
-
-function closeProductModal() {
-
-  document
-    .getElementById(
-      "productModal"
-    )
-    .classList.add(
-      "hidden"
-    );
-}
-
-
-/* ================= PRODUCT IMAGE UI ================= */
-
-async function loadProducts() {
-
-  const list =
-    document.getElementById(
-      "productsList"
-    );
-
-  if (!list) return;
-
-  try {
-
-    const business =
-      JSON.parse(
-        localStorage.getItem(
-          "business"
-        )
-      );
-
-    const res =
-      await fetch(
-
-        API_BASE +
-
-        "/products/my-products?whatsappNumber=" +
-
-        encodeURIComponent(
-          business.whatsappNumber
-        )
-      );
-
-    const products =
-      await res.json();
-
-    list.innerHTML = "";
-
-    products.forEach(p => {
-
-      const imageUrl =
-        p.image
-        ? p.image
-        : "";
-
-      list.innerHTML += `
-
-        <li class="order-card">
-
-          ${
-            p.image
-            ? `
-              <img
-                src="${imageUrl}"
-                style="
-                  width:100%;
-                  max-height:200px;
-                  object-fit:cover;
-                  border-radius:12px;
-                  cursor:pointer;
-                  margin-bottom:10px;
-                "
-                onclick='openProductModal(${JSON.stringify(p)})'
-              />
-            `
-            : ""
-          }
-
-          <div>
-            <strong>${p.name}</strong>
-          </div>
-
-          <div>
-            KES ${p.price}
-          </div>
-
-          <div>
-            Stock: ${p.stock}
-          </div>
-
-        </li>
-      `;
-    });
-
-  } catch (err) {
-
-    console.error(err);
-
-    list.innerHTML =
-      "<li>Failed to load products</li>";
-  }
-}
-
-
-/* ================= PRODUCT MODAL ================= */
-
-function openProductModal(index) {
-
-  const product =
-    products[index];
-
-  document.getElementById(
-    "modalImage"
-  ).src =
-    product.image
-    ? SITE_BASE + product.image
-    : "";
-
-  document.getElementById(
-    "modalName"
-  ).innerText =
-    product.name;
-
-  document.getElementById(
-    "modalPrice"
-  ).innerText =
-    "KES " +
-    Number(product.price)
-    .toLocaleString();
-
-  document.getElementById(
-    "modalStock"
-  ).innerText =
-    "Stock: " +
-    product.stock;
-
-  document.getElementById(
-    "modalAddBtn"
-  ).onclick = () => {
-
-    addToCart(index);
-
-    closeProductModal();
-  };
-
-  document
-    .getElementById(
-      "productModal"
-    )
-    .classList.remove(
-      "hidden"
-    );
-}
-
-function closeProductModal() {
-
-  document
-    .getElementById(
-      "productModal"
-    )
-    .classList.add(
-      "hidden"
-    );
-}
-
-
-/* ================= PRODUCT MODAL ================= */
-
-function openProductModal(index) {
-
-  const product =
-    products[index];
-
-  document.getElementById(
-    "modalImage"
-  ).src =
-    product.image
-    ? SITE_BASE + product.image
-    : "";
-
-  document.getElementById(
-    "modalName"
-  ).innerText =
-    product.name;
-
-  document.getElementById(
-    "modalPrice"
-  ).innerText =
-    "KES " +
-    Number(product.price)
-    .toLocaleString();
-
-  document.getElementById(
-    "modalStock"
-  ).innerText =
-    "Stock: " +
-    product.stock;
-
-  document.getElementById(
-    "modalAddBtn"
-  ).onclick = () => {
-
-    addToCart(index);
-
-    closeProductModal();
-  };
-
-  document
-    .getElementById(
-      "productModal"
-    )
-    .classList.remove(
-      "hidden"
-    );
-}
-
-function closeProductModal() {
-
-  document
-    .getElementById(
-      "productModal"
-    )
-    .classList.add(
-      "hidden"
-    );
-}
-
-
-/* ================= STORE LINK ================= */
-
-async function loadStoreLink() {
-
-  try {
-
-    const business =
-      JSON.parse(
-        localStorage.getItem(
-          "business"
-        )
-      );
-
-    if (!business) return;
-
-    const slug =
-
-      business.slug ||
-
-      business.name
-        .toLowerCase()
-        .replace(/\s+/g, "-");
-
-    const storeLink =
-
-      "https://your-netlify-site.netlify.app/?store=" +
-      slug;
-
-    const input =
-      document.getElementById(
-        "storeLink"
-      );
-
-    if (input) {
-
-      input.value =
-        storeLink;
-    }
-
-  } catch (err) {
-
-    console.error(
-      "Store link error:",
-      err
-    );
-  }
-}
-
-function copyStoreLink() {
-
-  const input =
-    document.getElementById(
-      "storeLink"
-    );
-
-  input.select();
-
-  document.execCommand(
-    "copy"
-  );
-
-  alert(
-    "Store link copied ✅"
-  );
-}
-
-function openStoreLink() {
-
-  const link =
-    document.getElementById(
-      "storeLink"
-    ).value;
-
-  window.open(
-    link,
-    "_blank"
-  );
-}
-
-
-/* ================= STORE LINK ================= */
-
-function loadStoreLink() {
-
-  const business =
-    JSON.parse(
-      localStorage.getItem(
-        "business"
-      )
-    );
-
-  if (!business) return;
-
-  const slug =
-
-    business.slug ||
-
-    business.name
-      .toLowerCase()
-      .replace(/\s+/g, "-");
-
-  const link =
-
-    "https://navu-smart-order.netlify.app/?store=" +
-
-    slug;
-
-  const input =
-    document.getElementById(
-      "storeLink"
-    );
-
-  if (input) {
-
-    input.value = link;
-  }
-}
-
-function copyStoreLink() {
-
-  const input =
-    document.getElementById(
-      "storeLink"
-    );
-
-  if (!input) return;
-
-  navigator.clipboard.writeText(
-    input.value
-  );
-
-  alert(
-    "Store link copied ✅"
-  );
-}
-
-function openStoreLink() {
-
-  const input =
-    document.getElementById(
-      "storeLink"
-    );
-
-  if (!input) return;
-
-  window.open(
-    input.value,
-    "_blank"
-  );
-}
-
-/* AUTO LOAD STORE LINK */
-
-document.addEventListener(
-  "DOMContentLoaded",
-  () => {
-
-    setTimeout(() => {
-
-      loadStoreLink();
-
-    }, 1000);
-  }
-);
-
-
-/* ================= PUBLIC STORE PRODUCTS ================= */
-
-async function loadPublicStoreProducts() {
-
-  try {
-
-    const params =
-      new URLSearchParams(
-        window.location.search
-      );
-
-    const slug =
-      params.get("store");
-
-    if (!slug) return;
-
-    const productsContainer =
-      document.getElementById(
-        "publicProducts"
-      );
-
-    const storeTitle =
-      document.getElementById(
-        "storeTitle"
-      );
-
-    if (!productsContainer) return;
-
-    const res =
-      await fetch(
-
-        "https://navu-smart-biz-sbdh.onrender.com/api/products/store/" +
-
-        slug
-      );
-
-    const data =
-      await res.json();
-
-    if (!res.ok) {
-
-      productsContainer.innerHTML = `
-        <p>
-          Store not found ❌
-        </p>
-      `;
-
-      return;
-    }
-
-    if (storeTitle) {
-
-      storeTitle.innerText =
-        data.business.name;
-    }
-
-    productsContainer.innerHTML = "";
-
-    if (!data.products.length) {
-
-      productsContainer.innerHTML = `
-        <p>
-          No products available
-        </p>
-      `;
-
-      return;
-    }
-
-    data.products.forEach(product => {
-
-      const imageUrl =
-
-        product.image
-        ? product.image
-        : "";
-
-      productsContainer.innerHTML += `
-
-        <div class="order-card">
-
-          ${
-            product.image
-            ? `
-              <img
-                src="${imageUrl}"
-                style="
-                  width:100%;
-                  max-height:220px;
-                  object-fit:cover;
-                  border-radius:12px;
-                  margin-bottom:10px;
-                "
-              />
-            `
-            : ""
-          }
-
-          <h3>
-            ${product.name}
-          </h3>
-
-          <p>
-            KES ${product.price}
-          </p>
-
-          <p>
-            Stock:
-            ${product.stock}
-          </p>
-
-        </div>
-      `;
-    });
-
-  } catch (err) {
-
-    console.error(
-      "PUBLIC STORE ERROR:",
-      err
-    );
-  }
-}
-
-/* ================= AUTO LOAD STORE ================= */
-
-document.addEventListener(
-  "DOMContentLoaded",
-  () => {
-
-    loadPublicStoreProducts();
 
   }
-);
 
+}
