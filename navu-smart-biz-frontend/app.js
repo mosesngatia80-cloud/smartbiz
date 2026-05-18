@@ -308,7 +308,7 @@ async function addProduct() {
       await fetch(
 
         API_BASE +
-        "/products/create",
+        "/products",
 
         {
           method: "POST",
@@ -1895,7 +1895,7 @@ async function addProduct() {
       await fetch(
 
         API_BASE +
-        "/products/create",
+        "/products",
 
         {
           method: "POST",
