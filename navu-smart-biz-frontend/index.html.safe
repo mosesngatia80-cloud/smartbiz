@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SmartBiz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="authScreen" class="center-screen">
+  <div class="auth-card">
+
+    <h2>SmartBiz Login</h2>
+
+    <input
+      id="whatsapp"
+      placeholder="WhatsApp Number"
+    />
+
+    <input
+      id="businessName"
+      placeholder="Business Name"
+    />
+
+    <button onclick="login()">
+      Enter SmartBiz
+    </button>
+
+    <p id="authMsg"></p>
+
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <h2>SmartBiz</h2>
+
+      <nav>
+
+        <button onclick="showView('dashboard')">
+          Dashboard
+        </button>
+
+        <button onclick="showView('sales')">
+          Sales
+        </button>
+
+        <button onclick="showView('income')">
+          Income
+        </button>
+
+        <button onclick="showView('expenses')">
+          Expenses
+        </button>
+
+        <button onclick="showView('cash')">
+          Cash
+        </button>
+
+        <button onclick="showView('products')">
+          Products
+        </button>
+
+        <button onclick="showView('orders')">
+          Orders
+        </button>
+
+        <button onclick="showView('customers')">
+          Customers
+        </button>
+
+        <!-- ✅ DEBTS BUTTON -->
+
+        <button onclick="showView('debts')">
+          Debts
+        </button>
+
+        <button onclick="showView('profile')">
+          Business Profile
+        </button>
+
+        <button
+          class="logout"
+          onclick="logout()"
+        >
+          Logout
+        </button>
+
+      </nav>
+
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="content">
+
+      <!-- DASHBOARD -->
+      <section id="dashboard" class="view">
+
+        <h1>Dashboard</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Total Sales</h3>
+            <p id="totalSales">0</p>
+          </div>
+
+          <div class="card">
+            <h3>Wallet</h3>
+            <p id="walletBalance">KES 0</p>
+          </div>
+
+          <div class="card">
+            <h3>Revenue</h3>
+            <p id="revenue">KES 0</p>
+          </div>
+
+          <div class="card">
+            <h3>Orders</h3>
+            <p id="ordersCount">0</p>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- EXPENSES -->
+      <section id="expenses" class="view hidden">
+
+        <h1>Expenses</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Total Expenses</h3>
+            <p id="totalExpenses">KES 0</p>
+          </div>
+
+        </div>
+
+        <div class="product-form">
+
+          <input
+            id="expenseTitle"
+            placeholder="Expense title"
+          />
+
+          <input
+            id="expenseAmount"
+            type="number"
+            placeholder="Amount (KES)"
+          />
+
+          <input
+            id="expenseCategory"
+            placeholder="Category"
+          />
+
+          <input
+            id="expenseNote"
+            placeholder="Note"
+          />
+
+          <button onclick="addExpense()">
+            Add Expense
+          </button>
+
+          <p id="expenseMsg"></p>
+
+        </div>
+
+        <ul id="expensesList"></ul>
+
+      </section>
+
+      <!-- CASH -->
+      <section id="cash" class="view hidden">
+
+        <h1>Cash POS</h1>
+
+        <div class="product-form">
+
+          <input
+            id="cashProduct"
+            placeholder="Product Name"
+          />
+
+          <input
+            id="cashQuantity"
+            type="number"
+            step="0.01"
+            placeholder="Quantity"
+          />
+
+          <input
+            id="cashAmount"
+            type="number"
+            placeholder="Amount (KES)"
+          />
+
+          <button onclick="sellCashProduct()">
+            Record Cash Sale
+          </button>
+
+          <p id="cashMsg"></p>
+
+        </div>
+
+      </section>
+
+            <!-- PRODUCTS -->
+      <section id="products" class="view hidden">
+
+        <h1>Products</h1>
+
+        <div class="product-form">
+
+          <input
+            id="newProductName"
+            placeholder="Product name"
+          />
+
+          <input
+            id="newProductPrice"
+            type="number"
+            placeholder="Price (KES)"
+          />
+
+          <input
+            id="newProductStock"
+            type="number"
+            placeholder="Stock Qty"
+          />
+
+          <!-- ✅ PRODUCT IMAGE -->
+
+          <input
+            id="productImage"
+            type="file"
+            accept="image/*"
+          />
+
+          <button onclick="addProduct()">
+            Add Product
+          </button>
+
+          <p id="productMsg"></p>
+
+        </div>
+
+        <ul id="productsList"></ul>
+
+      </section>
+
+
+      <!-- ORDERS -->
+      <section id="orders" class="view hidden">
+
+        <h1>Orders</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Total Orders</h3>
+            <p id="totalOrders">0</p>
+          </div>
+
+          <div class="card">
+            <h3>Paid Orders</h3>
+            <p id="paidOrders">0</p>
+          </div>
+
+          <div class="card">
+            <h3>Pending Orders</h3>
+            <p id="pendingOrders">0</p>
+          </div>
+
+        </div>
+
+        <ul id="ordersList"></ul>
+
+      </section>
+
+      <!-- CUSTOMERS -->
+      <section id="customers" class="view hidden">
+
+        <h1>Customers</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Total Customers</h3>
+            <p id="totalCustomers">0</p>
+          </div>
+
+        </div>
+
+        <ul id="customersList"></ul>
+
+      </section>
+
+      <!-- ✅ DEBTS -->
+      <section id="debts" class="view hidden">
+
+        <h1>Debts</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Total Debt</h3>
+            <p id="totalDebt">KES 0</p>
+          </div>
+
+        </div>
+
+        <div class="product-form">
+
+          <input
+            id="debtCustomerName"
+            placeholder="Customer Name"
+          />
+
+          <input
+            id="debtCustomerPhone"
+            placeholder="Customer Phone"
+          />
+
+          <input
+            id="debtTotalAmount"
+            type="number"
+            placeholder="Total Amount"
+          />
+
+          <input
+            id="debtAmountPaid"
+            type="number"
+            placeholder="Amount Paid"
+          />
+
+          <input
+            id="debtNote"
+            placeholder="Note"
+          />
+
+          <button onclick="addDebt()">
+            Add Debt
+          </button>
+
+          <p id="debtMsg"></p>
+
+        </div>
+
+        <ul id="debtsList"></ul>
+
+      </section>
+
+      <!-- SALES -->
+      <section id="sales" class="view hidden">
+
+        <h1>Sales</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Today's Sales</h3>
+            <p id="todaySales">KES 0</p>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- INCOME -->
+      <section id="income" class="view hidden">
+
+        <h1>Income</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Total Income</h3>
+            <p id="incomeTotal">KES 0</p>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- PROFILE -->
+      <section id="profile" class="view hidden">
+
+        <h1>Business Profile</h1>
+
+        <div class="dashboard-grid">
+
+          <div class="card">
+            <h3>Business Name</h3>
+            <p id="profileBusinessName">-</p>
+          </div>
+
+          <div class="card">
+            <h3>WhatsApp</h3>
+            <p id="profileWhatsapp">-</p>
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  const token = localStorage.getItem("token");
+
+  const auth =
+    document.getElementById("authScreen");
+
+  const app =
+    document.getElementById("app");
+
+  if (token) {
+
+    auth.style.display = "none";
+
+    app.style.display = "block";
+
+    if (typeof showView === "function") {
+      showView("dashboard");
+    }
+
+  } else {
+
+    auth.style.display = "flex";
+
+    app.style.display = "none";
+  }
+});
+</script>
+
+</body>
+</html>
+
+<!-- ================= PRODUCT MODAL ================= -->
+
+<div
+  id="productModal"
+  class="product-modal hidden"
+>
+
+  <div class="product-modal-content">
+
+    <button
+      class="close-modal"
+      onclick="closeProductModal()"
+    >
+      ×
+    </button>
+
+    <img
+      id="modalImage"
+      class="modal-image"
+      src=""
+      alt=""
+    />
+
+    <h2 id="modalName"></h2>
+
+    <p id="modalPrice"></p>
+
+    <p id="modalStock"></p>
+
+    <button
+      id="modalAddBtn"
+      class="modal-cart-btn"
+    >
+      Add To Cart
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- ================= PRODUCT MODAL ================= -->
+
+<div
+  id="productModal"
+  class="product-modal hidden"
+>
+
+  <div class="product-modal-content">
+
+    <button
+      class="close-modal"
+      onclick="closeProductModal()"
+    >
+      ×
+    </button>
+
+    <img
+      id="modalImage"
+      class="modal-image"
+      src=""
+      alt=""
+    />
+
+    <h2 id="modalName"></h2>
+
+    <p id="modalPrice"></p>
+
+    <p id="modalStock"></p>
+
+    <button
+      id="modalAddBtn"
+      class="modal-cart-btn"
+    >
+      Add To Cart
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- ================= STORE LINK CARD ================= -->
+
+<div class="card">
+
+  <h3>
+    Store Link
+  </h3>
+
+  <input
+    id="storeLink"
+    readonly
+  />
+
+  <div
+    style="
+      display:flex;
+      gap:10px;
+      margin-top:10px;
+      flex-wrap:wrap;
+    "
+  >
+
+    <button
+      onclick="copyStoreLink()"
+    >
+      Copy Link
+    </button>
+
+    <button
+      onclick="openStoreLink()"
+    >
+      Open Store
+    </button>
+
+  </div>
+
+</div>
+
+
+<h1 id="storeTitle"></h1>
+
+<div id="publicProducts"></div>
+
+
+<!-- ================= PUBLIC STORE PAGE ================= -->
+
+<section
+  id="publicStorePage"
+  style="
+    padding:20px;
+    max-width:1200px;
+    margin:auto;
+  "
+>
+
+  <h1
+    id="storeTitle"
+    style="
+      font-size:32px;
+      margin-bottom:20px;
+    "
+  >
+  </h1>
+
+  <div
+    id="publicProducts"
+    style="
+      display:grid;
+      grid-template-columns:
+        repeat(auto-fit,minmax(250px,1fr));
+      gap:20px;
+    "
+  >
+  </div>
+
+</section>
+
