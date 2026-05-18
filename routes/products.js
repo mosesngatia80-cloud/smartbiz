@@ -272,3 +272,62 @@ router.delete(
 );
 
 module.exports = router;
+
+/* =========================
+   PUBLIC STORE PRODUCTS
+========================= */
+router.get(
+  "/store/:whatsappNumber",
+
+  async (req, res) => {
+
+    try {
+
+      const business =
+        await Business.findOne({
+          whatsappNumber:
+            req.params.whatsappNumber
+        });
+
+      if (!business) {
+
+        return res.status(404).json({
+          message:
+            "Business not found"
+        });
+
+      }
+
+      const products =
+        await Product.find({
+          business:
+            business._id
+        })
+
+        .sort({
+          createdAt: -1
+        });
+
+      res.json({
+        business,
+        products
+      });
+
+    } catch (err) {
+
+      console.error(
+        "STORE PRODUCTS ERROR:"
+      );
+
+      console.error(err);
+
+      res.status(500).json({
+        message:
+          "Failed to load store"
+      });
+
+    }
+
+  }
+);
+
