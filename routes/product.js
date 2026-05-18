@@ -5,13 +5,46 @@ const Product = require("../models/Product");
 const Business = require("../models/Business");
 const verifyToken = require("../middleware/authMiddleware").default;
 
-// CREATE PRODUCT
-router.post("/", verifyToken, async (req, res) => {
+/* CLOUDINARY + MULTER */
+const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+
+/* CLOUDINARY CONFIG */
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+/* STORAGE */
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "navu-smartbiz-products",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+  },
+});
+
+const upload = multer({ storage });
+
+/* =========================
+   CREATE PRODUCT
+========================= */
+router.post("/", verifyToken, upload.single("image"), async (req, res) => {
   try {
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
+
     const { name, category, price, stock, description } = req.body;
 
     const business = await Business.findOne({ owner: req.user._id });
-    if (!business) return res.status(404).json({ message: "No business found." });
+
+    if (!business) {
+      return res.status(404).json({
+        message: "No business found."
+      });
+    }
 
     const product = new Product({
       owner: req.user._id,
@@ -20,47 +53,86 @@ router.post("/", verifyToken, async (req, res) => {
       category,
       price,
       stock,
-      description
+      description,
+      image: req.file ? req.file.path : ""
     });
 
     await product.save();
-    res.json({ message: "Product created", product });
+
+    res.json({
+      message: "Product created",
+      product
+    });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("UPLOAD ERROR:");
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
   }
 });
 
-// GET ALL PRODUCTS FOR THIS BUSINESS
+/* =========================
+   GET ALL PRODUCTS
+========================= */
 router.get("/", verifyToken, async (req, res) => {
   try {
-    const business = await Business.findOne({ owner: req.user._id });
-    const products = await Product.find({ business: business._id });
+    const business = await Business.findOne({
+      owner: req.user._id
+    });
+
+    const products = await Product.find({
+      business: business._id
+    });
+
     res.json({ products });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 });
 
-// UPDATE A PRODUCT
+/* =========================
+   UPDATE PRODUCT
+========================= */
 router.put("/:id", verifyToken, async (req, res) => {
   try {
     const updates = req.body;
+
     const product = await Product.findOneAndUpdate(
-      { _id: req.params.id, owner: req.user._id },
+      {
+        _id: req.params.id,
+        owner: req.user._id
+      },
       updates,
       { new: true }
     );
 
-    if (!product) return res.status(404).json({ message: "Product not found" });
-    res.json({ message: "Product updated", product });
+    if (!product) {
+      return res.status(404).json({
+        message: "Product not found"
+      });
+    }
+
+    res.json({
+      message: "Product updated",
+      product
+    });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 });
 
-// DELETE PRODUCT
+/* =========================
+   DELETE PRODUCT
+========================= */
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
     const deleted = await Product.findOneAndDelete({
@@ -68,64 +140,101 @@ router.delete("/:id", verifyToken, async (req, res) => {
       owner: req.user._id
     });
 
-    if (!deleted) return res.status(404).json({ message: "Product not found" });
-    res.json({ message: "Product deleted" });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/*
- 🔓 PUBLIC: Create product (MVP TEST ONLY - NO AUTH)
-*/
-router.post("/public/create", async (req, res) => {
-  try {
-    const { name, category, price, stock, description } = req.body;
-
-    if (!name || price == null) {
-      return res.status(400).json({ message: "Missing fields" });
+    if (!deleted) {
+      return res.status(404).json({
+        message: "Product not found"
+      });
     }
-
-    // 👉 Use first available business (MVP mode)
-    const business = await Business.findOne();
-    if (!business) {
-      return res.status(400).json({ message: "No business found in system" });
-    }
-
-    const product = new Product({
-      owner: business.owner,
-      business: business._id,
-      name,
-      category,
-      price,
-      stock,
-      description
-    });
-
-    await product.save();
 
     res.json({
-      message: "Product created (public)",
-      product
+      message: "Product deleted"
     });
 
   } catch (err) {
-    console.error("Public create error:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 });
 
-/*
- 🔓 PUBLIC: Get all products (MVP TEST ONLY)
-*/
+/* =========================
+   PUBLIC CREATE PRODUCT
+========================= */
+router.post(
+  "/public/create",
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      console.log("PUBLIC BODY:", req.body);
+      console.log("PUBLIC FILE:", req.file);
+
+      const {
+        name,
+        category,
+        price,
+        stock,
+        description
+      } = req.body;
+
+      if (!name || price == null) {
+        return res.status(400).json({
+          message: "Missing fields"
+        });
+      }
+
+      const business = await Business.findOne();
+
+      if (!business) {
+        return res.status(400).json({
+          message: "No business found in system"
+        });
+      }
+
+      const product = new Product({
+        owner: business.owner,
+        business: business._id,
+        name,
+        category,
+        price,
+        stock,
+        description,
+        image: req.file ? req.file.path : ""
+      });
+
+      await product.save();
+
+      res.json({
+        message: "Product created (public)",
+        product
+      });
+
+    } catch (err) {
+      console.error("Public create error:");
+      console.error(err);
+
+      res.status(500).json({
+        error: err.message
+      });
+    }
+  }
+);
+
+/* =========================
+   PUBLIC GET PRODUCTS
+========================= */
 router.get("/public/all", async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
+    const products = await Product.find()
+      .sort({ createdAt: -1 });
+
     res.json(products);
+
   } catch (err) {
     console.error("Public products error:", err.message);
-    res.status(500).json({ message: "Failed to load products" });
+
+    res.status(500).json({
+      message: "Failed to load products"
+    });
   }
 });
 
