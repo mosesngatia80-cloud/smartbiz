@@ -216,3 +216,76 @@ router.get(
   }
 );
 
+
+/* ================= CUSTOM SLUG UPDATE ================= */
+
+router.post(
+  "/set-custom-slug",
+
+  async (req, res) => {
+
+    try {
+
+      const {
+        whatsappNumber,
+        slug
+      } = req.body;
+
+      if (
+        !whatsappNumber ||
+        !slug
+      ) {
+
+        return res.status(400).json({
+          message:
+            "WhatsApp and slug required"
+        });
+      }
+
+      const business =
+        await Business.findOne({
+          whatsappNumber
+        });
+
+      if (!business) {
+
+        return res.status(404).json({
+          message:
+            "Business not found"
+        });
+      }
+
+      business.slug =
+
+        slug
+
+        .toLowerCase()
+
+        .replace(/\s+/g, "-")
+
+        .replace(/[^a-z0-9-]/g, "");
+
+      await business.save();
+
+      res.json({
+
+        success: true,
+
+        slug:
+          business.slug
+      });
+
+    }
+
+    catch (err) {
+
+      console.error(err);
+
+      res.status(500).json({
+        message:
+          err.message
+      });
+    }
+  }
+);
+
