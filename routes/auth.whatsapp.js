@@ -289,3 +289,65 @@ router.post(
   }
 );
 
+
+/* ================= UPDATE BUSINESS NAME ================= */
+
+router.post(
+  "/update-business-name",
+  async (req, res) => {
+
+    try {
+
+      const {
+        whatsappNumber,
+        name
+      } = req.body;
+
+      if (
+        !whatsappNumber ||
+        !name
+      ) {
+
+        return res.status(400).json({
+          message:
+            "Missing fields"
+        });
+      }
+
+      const business =
+        await Business.findOne({
+          whatsappNumber
+        });
+
+      if (!business) {
+
+        return res.status(404).json({
+          message:
+            "Business not found"
+        });
+      }
+
+      business.name = name;
+
+      await business.save();
+
+      res.json({
+
+        success: true,
+        business
+      });
+
+    }
+
+    catch (err) {
+
+      console.error(err);
+
+      res.status(500).json({
+        message:
+          err.message
+      });
+    }
+  }
+);
+
