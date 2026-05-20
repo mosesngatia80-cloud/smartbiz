@@ -351,3 +351,71 @@ router.post(
   }
 );
 
+
+/* ================= UPDATE BUSINESS NUMBER ================= */
+
+router.post(
+  "/update-business-number",
+  async (req, res) => {
+
+    try {
+
+      const {
+        oldWhatsappNumber,
+        newWhatsappNumber
+      } = req.body;
+
+      if (
+        !oldWhatsappNumber ||
+        !newWhatsappNumber
+      ) {
+
+        return res.status(400).json({
+          message:
+            "Missing fields"
+        });
+      }
+
+      const business =
+        await Business.findOne({
+
+          whatsappNumber:
+            oldWhatsappNumber
+        });
+
+      if (!business) {
+
+        return res.status(404).json({
+          message:
+            "Business not found"
+        });
+      }
+
+      business.whatsappNumber =
+        newWhatsappNumber;
+
+      business.owner =
+        newWhatsappNumber;
+
+      await business.save();
+
+      res.json({
+
+        success: true,
+        business
+      });
+
+    }
+
+    catch (err) {
+
+      console.error(err);
+
+      res.status(500).json({
+        message:
+          err.message
+      });
+    }
+  }
+);
+
