@@ -109,6 +109,9 @@ router.post("/", auth, async (req, res) => {
         name:
           product.name,
 
+        image:
+          product.image,
+
         price:
           product.price,
 
@@ -481,6 +484,9 @@ router.post(
 
         name:
           product.name,
+
+        image:
+          product.image,
 
         price:
           product.price,

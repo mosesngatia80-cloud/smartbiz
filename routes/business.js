@@ -167,7 +167,7 @@ router.get(
 
     const storeLink =
 
-      `https://your-netlify-site.netlify.app/?store=${business.slug}`;
+      `https://navu-smart-biz.netlify.app/?store=${business.slug}`;
 
     res.json({
 

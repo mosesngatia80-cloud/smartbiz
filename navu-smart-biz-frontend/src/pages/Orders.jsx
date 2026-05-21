@@ -85,13 +85,105 @@ export default function Orders() {
       </button>
 
       <h3>Orders</h3>
-      <ul>
+      <div>
+
         {orders.map(o => (
-          <li key={o._id}>
-            {o.product?.name} × {o.quantity} = KES {o.total}
-          </li>
+
+          <div
+            key={o._id}
+            style={{
+              border: "1px solid #ccc",
+              padding: "15px",
+              marginBottom: "15px",
+              borderRadius: "10px"
+            }}
+          >
+
+            <p>
+              <strong>Customer:</strong>
+              {" "}
+              {o.customerPhone}
+            </p>
+
+            <p>
+              <strong>Total:</strong>
+              {" "}
+              KES {o.total}
+            </p>
+
+            <p>
+              <strong>Payment:</strong>
+              {" "}
+              {o.paymentStatus}
+            </p>
+
+            <p>
+              <strong>Status:</strong>
+              {" "}
+              {o.status}
+            </p>
+
+            <p>
+              <strong>Source:</strong>
+              {" "}
+              {o.source}
+            </p>
+
+            <div>
+
+              <strong>Items:</strong>
+
+              {o.items?.map((item, i) => (
+
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    gap: "10px",
+                    marginTop: "10px",
+                    alignItems: "center"
+                  }}
+                >
+
+                  {item.image && (
+
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      width="60"
+                      height="60"
+                      style={{
+                        objectFit: "cover",
+                        borderRadius: "8px"
+                      }}
+                    />
+                  )}
+
+                  <div>
+
+                    <div>
+                      {item.name}
+                    </div>
+
+                    <div>
+                      Qty: {item.qty}
+                    </div>
+
+                    <div>
+                      KES {item.lineTotal}
+                    </div>
+
+                  </div>
+
+                </div>
+              ))}
+
+            </div>
+
+          </div>
         ))}
-      </ul>
+
+      </div>
     </div>
   );
 }
