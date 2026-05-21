@@ -68,6 +68,11 @@ app.use(
 );
 
 app.use(
+  "/api/receipts",
+  require("./routes/receipt.routes")
+);
+
+app.use(
   "/api/wallet",
   require("./routes/wallet")
 );
@@ -120,9 +125,10 @@ mongoose.connect(
 .catch(err => {
 
   console.error(
-    "❌ DB ERROR:",
-    err.message
+    "❌ MongoDB connection error:"
   );
+
+  console.error(err);
 
 });
 
