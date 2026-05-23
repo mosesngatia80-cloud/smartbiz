@@ -1,0 +1,66 @@
+
+/* ================= ORDER STATUS ================= */
+
+async function updateOrderStatus(orderId, status) {
+
+  try {
+
+    const token =
+      localStorage.getItem("token");
+
+    const res =
+      await fetch(
+
+        API_BASE +
+        "/orders/" +
+        orderId +
+        "/status",
+
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            Authorization:
+              "Bearer " + token
+          },
+
+          body:
+            JSON.stringify({
+              status
+            })
+        }
+      );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+
+      alert(
+        data.message ||
+        "Status update failed"
+      );
+
+      return;
+    }
+
+    alert(
+      "Order updated to " +
+      status
+    );
+
+    loadOrders();
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      "Failed to update order"
+    );
+  }
+}
+

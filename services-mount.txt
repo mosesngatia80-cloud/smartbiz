@@ -1,0 +1,6 @@
+
+app.use(
+  "/api/services",
+  require("./routes/services")
+);
+

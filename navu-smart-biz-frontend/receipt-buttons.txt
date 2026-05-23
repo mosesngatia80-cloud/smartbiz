@@ -1,0 +1,19 @@
+
+          <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+
+            <button
+              onclick="viewReceipt('${order._id}')"
+              class="add-cart-btn"
+            >
+              View Receipt
+            </button>
+
+            <button
+              onclick="downloadReceipt('${order._id}')"
+              class="add-cart-btn"
+            >
+              Download PDF
+            </button>
+
+          </div>
+

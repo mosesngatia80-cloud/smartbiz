@@ -68,6 +68,18 @@ app.use(
 );
 
 app.use(
+  "/api/services",
+  require("./routes/services")
+);
+
+
+app.use(
+  "/api/bookings",
+  require("./routes/bookings")
+);
+
+
+app.use(
   "/api/receipts",
   require("./routes/receipt.routes")
 );

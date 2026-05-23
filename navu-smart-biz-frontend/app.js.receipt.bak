@@ -467,6 +467,92 @@ async function addProduct() {
 
 /* ================= ORDERS ================= */
 
+async function loadOrders() {
+
+  const list =
+    document.getElementById(
+      "ordersList"
+    );
+
+  if (!list) return;
+
+  try {
+
+    const token =
+      localStorage.getItem(
+        "token"
+      );
+
+    const res =
+      await fetch(
+
+        API_BASE + "/orders",
+
+        {
+          headers: {
+            Authorization:
+              "Bearer " + token
+          }
+        }
+      );
+
+    const orders =
+      await res.json();
+
+    list.innerHTML = "";
+
+    document.getElementById(
+      "totalOrders"
+    ).innerText =
+      orders.length || 0;
+
+    const paid =
+      orders.filter(
+        o => o.status === "PAID"
+      ).length;
+
+    document.getElementById(
+      "paidOrders"
+    ).innerText = paid;
+
+    document.getElementById(
+      "pendingOrders"
+    ).innerText =
+      orders.length - paid;
+
+    orders.forEach(o => {
+
+      list.innerHTML += `
+
+        <li class="order-card">
+
+          <strong>
+            ${o.customerPhone || "Customer"}
+          </strong>
+
+          <div>
+            Total:
+            KES ${o.total}
+          </div>
+
+          <div>
+            Status:
+            ${o.status}
+          </div>
+
+        </li>
+      `;
+    });
+
+  }
+
+  catch (err) {
+
+    console.error(err);
+
+  }
+
+}
 
 /* ================= CUSTOMERS ================= */
 
@@ -893,11 +979,44 @@ function openStoreLink() {
    COPY STORE LINK
 ========================= */
 
+function copyStoreLink() {
+
+  const input =
+    document.getElementById(
+      "storeLink"
+    );
+
+  if (!input) return;
+
+  input.select();
+
+  document.execCommand(
+    "copy"
+  );
+
+  alert(
+    "Store link copied ✅"
+  );
+}
 
 /* =========================
    OPEN STORE LINK
 ========================= */
 
+function openStoreLink() {
+
+  const input =
+    document.getElementById(
+      "storeLink"
+    );
+
+  if (!input) return;
+
+  window.open(
+    input.value,
+    "_blank"
+  );
+}
 
 
 /* =========================
@@ -970,11 +1089,49 @@ function loadBusinessProfile() {
    COPY STORE LINK
 ========================= */
 
+function copyStoreLink() {
+
+  const input =
+    document.getElementById(
+      "storeLink"
+    );
+
+  if (!input) return;
+
+  navigator.clipboard.writeText(
+    input.value
+  );
+
+  alert(
+    "Store link copied ✅"
+  );
+}
 
 /* =========================
    OPEN STORE
 ========================= */
 
+function openStoreLink() {
+
+  const input =
+    document.getElementById(
+      "storeLink"
+    );
+
+  if (!input || !input.value) {
+
+    alert(
+      "No store link found"
+    );
+
+    return;
+  }
+
+  window.open(
+    input.value,
+    "_blank"
+  );
+}
 
 
 /* ================= CASH POS ================= */
@@ -1189,71 +1346,16 @@ async function loadOrders() {
           </div>
 
           <div>
+            <strong>Source:</strong>
+            ${order.source || "-"}
+          </div>
+
+          <div>
             <strong>Date:</strong>
             ${created}
           </div>
 
-          <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-
-            ${
-              order.status === "PENDING"
-              ?
-
-              `
-              <button
-                onclick="updateOrderStatus('${order._id}','ACCEPTED')"
-                class="add-cart-btn"
-              >
-                Accept
-              </button>
-
-              <button
-                onclick="updateOrderStatus('${order._id}','REJECTED')"
-                class="add-cart-btn"
-              >
-                Reject
-              </button>
-              `
-
-              :
-
-              ""
-            }
-
-            ${
-              order.status === "ACCEPTED"
-              ?
-
-              `
-              <button
-                onclick="updateOrderStatus('${order._id}','PAID')"
-                class="add-cart-btn"
-              >
-                Mark Paid
-              </button>
-              `
-
-              :
-
-              ""
-            }
-
-            <button
-              onclick="viewReceipt('${order._id}')"
-              class="add-cart-btn"
-            >
-              View Receipt
-            </button>
-
-            <button
-              onclick="downloadReceipt('${order._id}')"
-              class="add-cart-btn"
-            >
-              Download PDF
-            </button>
-
-          </div>
-
+        </li>
       `;
     });
 
@@ -1314,190 +1416,4 @@ document.addEventListener(
       slug;
   }
 );
-
-
-/* ================= RECEIPTS ================= */
-
-async function viewReceipt(orderId) {
-
-  try {
-
-    const token =
-      localStorage.getItem("token");
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/receipts/order/" +
-        orderId,
-
-        {
-          headers: {
-            Authorization:
-              "Bearer " + token
-          }
-        }
-      );
-
-    const data =
-      await res.json();
-
-    if (!res.ok) {
-
-      alert(
-        data.message ||
-        "Receipt not found"
-      );
-
-      return;
-    }
-
-    alert(
-
-`🧾 RECEIPT
-
-Receipt ID:
-${data.receiptId}
-
-Amount:
-KES ${data.amount}
-
-Payment:
-${data.paymentMethod}
-
-Customer:
-${data.customerPhone}`
-    );
-
-  } catch (err) {
-
-    console.error(err);
-
-    alert(
-      "Failed to load receipt"
-    );
-  }
-}
-
-async function downloadReceipt(orderId) {
-
-  try {
-
-    const token =
-      localStorage.getItem("token");
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/receipts/order/" +
-        orderId,
-
-        {
-          headers: {
-            Authorization:
-              "Bearer " + token
-          }
-        }
-      );
-
-    const data =
-      await res.json();
-
-    if (!data._id) {
-
-      alert(
-        "Receipt not found"
-      );
-
-      return;
-    }
-
-    window.open(
-
-      API_BASE +
-      "/receipts/" +
-      data._id +
-      "/pdf?token=" +
-      token,
-
-      "_blank"
-    );
-
-  } catch (err) {
-
-    console.error(err);
-
-    alert(
-      "PDF download failed"
-    );
-  }
-}
-
-
-/* ================= ORDER STATUS ================= */
-
-async function updateOrderStatus(orderId, status) {
-
-  try {
-
-    const token =
-      localStorage.getItem("token");
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/orders/" +
-        orderId +
-        "/status",
-
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            Authorization:
-              "Bearer " + token
-          },
-
-          body:
-            JSON.stringify({
-              status
-            })
-        }
-      );
-
-    const data =
-      await res.json();
-
-    if (!res.ok) {
-
-      alert(
-        data.message ||
-        "Status update failed"
-      );
-
-      return;
-    }
-
-    alert(
-      "Order updated to " +
-      status
-    );
-
-    loadOrders();
-
-  } catch (err) {
-
-    console.error(err);
-
-    alert(
-      "Failed to update order"
-    );
-  }
-}
 
