@@ -5,6 +5,7 @@ const router = express.Router();
 const Booking = require("../models/Booking");
 
 const Service = require("../models/Service");
+const Business = require("../models/Business");
 
 const auth = require("../middleware/auth");
 
@@ -75,19 +76,32 @@ router.post("/", async (req, res) => {
 });
 
 /* =========================
-   GET BUSINESS BOOKINGS
 ========================= */
 
 router.get("/", auth, async (req, res) => {
 
   try {
 
+    const business =
+      await Business.findOne({
+
+        owner:
+          req.user.user
+      });
+
+    if (!business) {
+
+      return res.status(404).json({
+        message:
+          "Business not found"
+      });
+    }
+
     const bookings =
       await Booking.find({
 
         business:
-          req.user.business
-
+          business._id
       })
 
       .populate("service")
@@ -114,4 +128,60 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
+/* =========================
+   UPDATE BOOKING STATUS
+========================= */
+
+router.patch(
+  "/:id/status",
+
+  auth,
+
+  async (req, res) => {
+
+    try {
+
+      const {
+        status
+      } = req.body;
+
+      const booking =
+        await Booking.findById(
+          req.params.id
+        );
+
+      if (!booking) {
+
+        return res.status(404).json({
+          message:
+            "Booking not found"
+        });
+      }
+
+      booking.status =
+        status;
+
+      await booking.save();
+
+      res.json({
+        success: true,
+        booking
+      });
+
+    } catch (err) {
+
+      console.error(
+        "UPDATE BOOKING STATUS ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        message:
+          "Failed to update booking"
+      });
+    }
+  }
+);
+
 module.exports = router;
+

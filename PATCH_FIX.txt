@@ -1,7 +1,0 @@
-REPLACE THIS:
-
-customerUserId: "SYSTEM",
-
-WITH THIS:
-
-customerUserId: business,

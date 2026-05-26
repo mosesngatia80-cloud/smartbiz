@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 const Service = require("../models/Service");
+const Business = require("../models/Business");
 
 const auth = require("../middleware/auth");
 
@@ -15,7 +16,11 @@ router.post("/", auth, async (req, res) => {
   try {
 
     const business =
-      req.user.business;
+      await Business.findOne({
+
+        owner:
+          req.user.user
+      });
 
     if (!business) {
 
@@ -43,10 +48,11 @@ router.post("/", auth, async (req, res) => {
         image:
           req.body.image || "",
 
-        business,
+        business:
+          business._id,
 
         owner:
-          req.user.phone
+          req.user.user
       });
 
     res.status(201).json(
@@ -75,11 +81,26 @@ router.get("/", auth, async (req, res) => {
 
   try {
 
+    const business =
+      await Business.findOne({
+
+        owner:
+          req.user.user
+      });
+
+    if (!business) {
+
+      return res.status(400).json({
+        message:
+          "No business linked"
+      });
+    }
+
     const services =
       await Service.find({
 
         business:
-          req.user.business
+          business._id
 
       }).sort({
         createdAt: -1

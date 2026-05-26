@@ -3,6 +3,7 @@ const router = express.Router();
 
 const Product = require("../models/Product");
 const Business = require("../models/Business");
+const Order = require("../models/Order");
 
 const verifyToken =
   require("../middleware/authMiddleware");
@@ -494,6 +495,55 @@ router.post(
         Number(quantity);
 
       await product.save();
+
+      await Order.create({
+
+        business:
+          business._id,
+
+        customerPhone:
+          "CASH_CUSTOMER",
+
+        items: [
+          {
+            product:
+              product._id,
+
+            name:
+              product.name,
+
+            price:
+              product.price,
+
+            qty:
+              Number(quantity),
+
+            lineTotal:
+              expectedTotal
+          }
+        ],
+
+        total:
+          expectedTotal,
+
+        amountPaid:
+          expectedTotal,
+
+        balance: 0,
+
+        paymentStatus:
+          "PAID",
+
+        status:
+          "PAID",
+
+        paymentMethod:
+          "CASH",
+
+        source:
+          "MANUAL"
+      });
+
 
       res.json({
 

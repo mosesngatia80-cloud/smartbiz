@@ -67,6 +67,15 @@
 
         <button onclick="showView('products')">
           Products
+
+        <button onclick="showView('services')">
+          Services
+        </button>
+
+        <button onclick="showView('bookings')">
+          Bookings
+        </button>
+
         </button>
 
         <button onclick="showView('orders')">
@@ -289,6 +298,8 @@
 
       </section>
 
+
+
       <!-- CUSTOMERS -->
       <section id="customers" class="view hidden">
 
@@ -304,6 +315,62 @@
         </div>
 
         <ul id="customersList"></ul>
+
+      </section>
+
+      <!-- SERVICES -->
+      <section id="services" class="view hidden">
+
+        <h1>Services</h1>
+
+        <div class="product-form">
+
+          <input
+            id="serviceName"
+            placeholder="Service Name"
+          />
+
+          <input
+            id="servicePrice"
+            type="number"
+            placeholder="Price (KES)"
+          />
+
+          <input
+            id="serviceDuration"
+            type="number"
+            placeholder="Duration (Minutes)"
+          />
+
+          <input
+            id="serviceImage"
+            placeholder="Image URL"
+          />
+
+          <textarea
+            id="serviceDescription"
+            placeholder="Service Description"
+          ></textarea>
+
+          <button onclick="addService()">
+            Add Service
+          </button>
+
+          <p id="serviceMsg"></p>
+
+        </div>
+
+        <ul id="servicesList"></ul>
+
+      </section>
+
+      <!-- BOOKINGS -->
+      <section id="bookings" class="view hidden">
+
+        <h1>Bookings</h1>
+
+        <ul id="bookingsList"></ul>
+      </section>
 
       </section>
 

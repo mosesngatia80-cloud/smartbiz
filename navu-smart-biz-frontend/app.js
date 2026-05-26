@@ -1,4 +1,4 @@
-const API_BASE = "https://navu-smart-biz-sbdh.onrender.com/api";
+const API_BASE = "http://localhost:5001/api";
 const SITE_BASE = "https://navu-smart-biz-sbdh.onrender.com";
 
 /* ================= UTIL ================= */
@@ -43,6 +43,19 @@ function showView(id) {
 
   if (id === "expenses") {
     loadExpenses();
+  }
+
+
+  if (id === "customers") {
+    loadCustomers();
+  }
+
+  if (id === "services") {
+    loadServices();
+  }
+
+  if (id === "bookings") {
+    loadBookings();
   }
 
   if (id === "debts") {
@@ -275,7 +288,7 @@ async function loadProducts() {
         : "";
 
       list.innerHTML += `
-        <li class="order-card">
+        <div class="order-card">
 
           ${
             p.image
@@ -306,7 +319,7 @@ async function loadProducts() {
             Stock: ${p.stock}
           </div>
 
-        </li>
+        </div>
       `;
 
     });
@@ -318,7 +331,7 @@ async function loadProducts() {
     console.error(err);
 
     list.innerHTML =
-      "<li>Failed to load products</li>";
+      "<li>Failed to load products</div>";
 
   }
 
@@ -514,7 +527,7 @@ async function loadCustomers() {
 
       list.innerHTML += `
 
-        <li class="order-card">
+        <div class="order-card">
 
           <strong>
             ${c.phone}
@@ -530,7 +543,7 @@ async function loadCustomers() {
             KES ${c.totalSpent}
           </div>
 
-        </li>
+        </div>
       `;
     });
 
@@ -589,7 +602,7 @@ async function loadExpenses() {
 
       list.innerHTML += `
 
-        <li class="order-card">
+        <div class="order-card">
 
           <strong>
             ${e.title}
@@ -603,7 +616,7 @@ async function loadExpenses() {
             ${e.category || ""}
           </div>
 
-        </li>
+        </div>
       `;
     });
 
@@ -736,7 +749,7 @@ async function loadDebts() {
 
       list.innerHTML += `
 
-        <li class="order-card">
+        <div class="order-card">
 
           <strong>
             ${d.customerName}
@@ -752,7 +765,7 @@ async function loadDebts() {
             ${d.status}
           </div>
 
-        </li>
+        </div>
       `;
     });
 
@@ -1116,7 +1129,7 @@ async function loadOrders() {
     if (!res.ok) {
 
       list.innerHTML =
-        "<li>Failed to load orders</li>";
+        "<li>Failed to load orders</div>";
 
       return;
     }
@@ -1160,7 +1173,7 @@ async function loadOrders() {
 
       list.innerHTML += `
 
-        <li class="order-card">
+        <div class="order-card">
 
           <div>
             <strong>Customer:</strong>
@@ -1193,7 +1206,7 @@ async function loadOrders() {
             ${created}
           </div>
 
-          <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+          <div style="margin-top:12px;display:block;gap:10px;flex-wrap:wrap;">
 
             ${
               order.status === "PENDING"
@@ -1264,7 +1277,7 @@ async function loadOrders() {
     console.error(err);
 
     list.innerHTML =
-      "<li>Orders failed</li>";
+      "<li>Orders failed</div>";
   }
 }
 
@@ -1500,4 +1513,427 @@ async function updateOrderStatus(orderId, status) {
     );
   }
 }
+
+
+/* ================= SERVICES ================= */
+
+async function loadServices() {
+
+  const list =
+    document.getElementById(
+      "servicesList"
+    );
+
+  if (!list) return;
+
+  try {
+
+    const token =
+      localStorage.getItem(
+        "token"
+      );
+
+    const res =
+      await fetch(
+
+        API_BASE +
+        "/services",
+
+        {
+          headers: {
+            Authorization:
+              "Bearer " + token
+          }
+        }
+      );
+
+    const services =
+      await res.json();
+
+    list.innerHTML = "";
+
+    services.forEach(service => {
+
+      list.innerHTML += `
+
+        <div class="order-card">
+
+          ${
+            service.image
+            ?
+
+            `
+            <img
+              src="${service.image}"
+              style="
+                width:100%;
+                max-height:200px;
+                object-fit:cover;
+                border-radius:12px;
+                margin-bottom:10px;
+              "
+            />
+            `
+
+            :
+
+            ""
+          }
+
+          <div>
+            <strong>
+              ${service.name}
+            </strong>
+          </div>
+
+          <div>
+            KES ${service.price}
+          </div>
+
+          <div>
+            Duration:
+            ${service.duration} mins
+          </div>
+
+          <div>
+            ${service.description || ""}
+          </div>
+
+        </div>
+      `;
+    });
+
+  }
+
+  catch (err) {
+
+    console.error(err);
+
+  }
+}
+
+async function addService() {
+
+  const msg =
+    document.getElementById(
+      "serviceMsg"
+    );
+
+  try {
+
+    const token =
+      localStorage.getItem(
+        "token"
+      );
+
+    const payload = {
+
+      whatsappNumber:
+        JSON.parse(
+          localStorage.getItem(
+            "business"
+          )
+        ).whatsappNumber,
+
+      name:
+        document.getElementById(
+          "serviceName"
+        ).value,
+
+      price:
+        Number(
+
+          document.getElementById(
+            "servicePrice"
+          ).value
+
+        ),
+
+      duration:
+        Number(
+
+          document.getElementById(
+            "serviceDuration"
+          ).value
+
+        ),
+
+      whatsappNumber:
+        JSON.parse(
+          localStorage.getItem(
+            "business"
+          )
+        ).whatsappNumber,
+
+
+      image:
+        document.getElementById(
+          "serviceImage"
+        ).value,
+
+      description:
+        document.getElementById(
+          "serviceDescription"
+        ).value
+    };
+
+    const res =
+      await fetch(
+
+        API_BASE +
+        "/services",
+
+        {
+          method: "POST",
+
+          headers: {
+
+            "Content-Type":
+              "application/json",
+
+            Authorization:
+              "Bearer " + token
+          },
+
+          body:
+            JSON.stringify(
+              payload
+            )
+        }
+      );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+
+      msg.innerText =
+        data.message ||
+        "Failed ❌";
+
+      return;
+    }
+
+    msg.innerText =
+      "Service added ✅";
+
+    loadServices();
+
+  }
+
+  catch (err) {
+
+    console.error(err);
+
+    msg.innerText =
+      "Server error ❌";
+  }
+}
+
+
+async function loadBookings() {
+
+  const list =
+    document.getElementById(
+      "bookingsList"
+    );
+
+  if (!list) return;
+
+  try {
+
+    const token =
+      localStorage.getItem(
+        "token"
+      );
+
+    const res =
+      await fetch(
+
+        API_BASE +
+        "/bookings",
+
+        {
+          headers: {
+            Authorization:
+              "Bearer " + token
+          }
+        }
+      );
+
+    const bookings =
+      await res.json();
+
+    list.innerHTML = "";
+
+    bookings.forEach(booking => {
+
+      list.innerHTML += `
+
+        <div class="order-card">
+
+          <div>
+            <strong>
+              ${booking.customerPhone}
+            </strong>
+          </div>
+
+          <div>
+            Service:
+            ${booking.service?.name || "-"}
+          </div>
+
+          <div>
+            Date:
+            ${booking.bookingDate}
+          </div>
+
+          <div>
+            Time:
+            ${booking.bookingTime}
+          </div>
+
+          <div>
+            Status:
+            ${booking.status}
+          </div>
+
+          <div style="margin-top:12px;">
+
+            <div
+              onclick="updateBookingStatus('${booking._id}','ACCEPTED')"
+              style="
+                background:#0d6efd;
+                color:white;
+                padding:10px;
+                border-radius:8px;
+                margin-top:8px;
+                text-align:center;
+              "
+            >
+              Accept Booking
+            </div>
+
+            <div
+              onclick="updateBookingStatus('${booking._id}','REJECTED')"
+              style="
+                background:#dc3545;
+                color:white;
+                padding:10px;
+                border-radius:8px;
+                margin-top:8px;
+                text-align:center;
+              "
+            >
+              Reject Booking
+            </div>
+
+            <div
+              onclick="updateBookingStatus('${booking._id}','COMPLETED')"
+              style="
+                background:#198754;
+                color:white;
+                padding:10px;
+                border-radius:8px;
+                margin-top:8px;
+                text-align:center;
+              "
+            >
+              Complete Booking
+            </div>
+
+          </div>
+
+        </div>
+
+      `;
+
+    });
+
+  }
+
+  catch (err) {
+
+    console.error(err);
+
+  }
+}
+
+async function updateBookingStatus(
+  id,
+  status
+) {
+
+  try {
+
+    const token =
+      localStorage.getItem(
+        "token"
+      );
+
+    const res =
+      await fetch(
+
+        API_BASE +
+        "/bookings/" +
+        id +
+        "/status",
+
+        {
+          method: "PATCH",
+
+          headers: {
+
+            "Content-Type":
+              "application/json",
+
+            Authorization:
+              "Bearer " + token
+          },
+
+          body:
+            JSON.stringify({
+              status
+            })
+        }
+      );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+
+      alert(
+        data.message ||
+        "Update failed"
+      );
+
+      return;
+    }
+
+    loadBookings();
+
+  }
+
+  catch (err) {
+
+    console.error(err);
+
+    alert(
+      "Server error"
+    );
+  }
+}
+
+/* ================= STARTUP LOADERS ================= */
+
+loadProducts();
+
+loadOrders();
+
+loadCustomers();
+
+loadServices();
+
+loadBookings();
 
