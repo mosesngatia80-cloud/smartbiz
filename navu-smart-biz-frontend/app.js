@@ -103,7 +103,7 @@ async function login() {
       await fetch(
 
         API_BASE +
-        "/auth/login-whatsapp",
+        "/auth/login",
 
         {
           method: "POST",
