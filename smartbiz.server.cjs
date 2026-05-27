@@ -162,3 +162,4 @@ app.listen(
 
   }
 );
+app.get("/deploy-check",(req,res)=>res.send("DEPLOY-127312d"));
