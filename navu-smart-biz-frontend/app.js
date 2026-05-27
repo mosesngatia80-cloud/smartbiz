@@ -116,10 +116,10 @@ async function login() {
           body:
             JSON.stringify({
 
-              whatsappNumber:
+              whatsapp:
                 whatsapp,
 
-              name:
+              businessName:
                 businessName
 
             })
@@ -658,7 +658,7 @@ async function addExpense() {
           body:
             JSON.stringify({
 
-              whatsappNumber:
+              whatsapp:
                 business.whatsappNumber,
 
               title:
@@ -1055,7 +1055,7 @@ async function sellCashProduct() {
               quantity,
               amount,
 
-              whatsappNumber:
+              whatsapp:
                 business.whatsappNumber
             })
         }
@@ -1628,14 +1628,14 @@ async function addService() {
 
     const payload = {
 
-      whatsappNumber:
+      whatsapp:
         JSON.parse(
           localStorage.getItem(
             "business"
           )
         ).whatsappNumber,
 
-      name:
+      businessName:
         document.getElementById(
           "serviceName"
         ).value,
@@ -1658,7 +1658,7 @@ async function addService() {
 
         ),
 
-      whatsappNumber:
+      whatsapp:
         JSON.parse(
           localStorage.getItem(
             "business"
