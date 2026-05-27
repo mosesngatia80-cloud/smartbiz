@@ -1,4 +1,4 @@
-const API_BASE = "https://navu-smart-biz.onrender.com/api";
+const API_BASE = "https://navu-smart-biz-sbdh.onrender.com/api";
 const SITE_BASE = "https://navu-smart-biz-sbdh.onrender.com";
 
 /* ================= UTIL ================= */
@@ -103,7 +103,7 @@ async function login() {
       await fetch(
 
         API_BASE +
-        "/auth/login",
+        "/auth/login-whatsapp",
 
         {
           method: "POST",
