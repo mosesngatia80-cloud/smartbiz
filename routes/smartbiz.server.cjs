@@ -16,13 +16,14 @@ app.get("/", (req, res) => {
 });
 
 /* ================= ROUTES ================= */
-app.use("/api/products", require("./routes/products"));
-app.use("/api/products", require("./routes/products.public.fix")); // ✅ NEW FIX
-app.use("/api/business", require("./routes/business"));
-app.use("/api/orders", require("./routes/orders"));
-app.use("/api/wallet", require("./routes/wallet"));
-app.use("/api/internal-secure", require("./routes/internal.orders"));
-app.use("/api/internal-secure", require("./routes/internal.wallet.topup"));
+app.use("/api/products", require("./products"));
+app.use("/api/products", require("./products.public.fix")); // ✅ NEW FIX
+app.use("/api/business", require("./business"));
+app.use("/api/orders", require("./orders"));
+app.use("/api/wallet", require("./wallet"));
+app.use("/api/services", require("./services"));
+app.use("/api/internal-secure", require("./internal.orders"));
+app.use("/api/internal-secure", require("./internal.wallet.topup"));
 
 /* START SERVER */
 const PORT = process.env.PORT || 3000;

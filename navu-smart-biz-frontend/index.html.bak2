@@ -19,10 +19,21 @@
       placeholder="WhatsApp Number"
     />
 
-
     <input
       id="businessName"
+
+    <input
+      id="password"
+      type="password"
+      placeholder="Password"
+    />
       placeholder="Business Name"
+
+    <input
+      id="password"
+      type="password"
+      placeholder="Password"
+    />
     />
 
     <input

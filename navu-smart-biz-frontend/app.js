@@ -84,13 +84,20 @@ async function login() {
       .value
       .trim();
 
+  const password =
+    document
+      .getElementById("password")
+      .value
+      .trim();
+
   if (
     !whatsapp ||
-    !businessName
+    !businessName ||
+      !password
   ) {
 
     alert(
-      "Enter WhatsApp and Business Name ⚠️"
+      "Enter WhatsApp, Business Name and Password ⚠️"
     );
 
     return;
@@ -116,11 +123,14 @@ async function login() {
           body:
             JSON.stringify({
 
-              whatsapp:
+              whatsappNumber:
                 whatsapp,
 
               businessName:
                 businessName
+
+                ,password:
+                  password
 
             })
 
@@ -658,7 +668,7 @@ async function addExpense() {
           body:
             JSON.stringify({
 
-              whatsapp:
+              whatsappNumber:
                 business.whatsappNumber,
 
               title:
@@ -1055,7 +1065,7 @@ async function sellCashProduct() {
               quantity,
               amount,
 
-              whatsapp:
+              whatsappNumber:
                 business.whatsappNumber
             })
         }
@@ -1628,7 +1638,7 @@ async function addService() {
 
     const payload = {
 
-      whatsapp:
+      whatsappNumber:
         JSON.parse(
           localStorage.getItem(
             "business"
@@ -1658,7 +1668,7 @@ async function addService() {
 
         ),
 
-      whatsapp:
+      whatsappNumber:
         JSON.parse(
           localStorage.getItem(
             "business"

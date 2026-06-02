@@ -50,14 +50,9 @@ const BusinessSchema =
     whatsappLink: {
       type: String,
       default: ""
-    },
-
-    password: {
-      type: String,
-      default: ""
     }
-
   },
+
   { timestamps: true }
 );
 
