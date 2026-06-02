@@ -32,6 +32,22 @@ router.post("/login-whatsapp", async (req, res) => {
         whatsappNumber
       });
 
+      if (business && business.password) {
+
+        const validPassword =
+          await bcrypt.compare(
+            password || "",
+            business.password
+          );
+
+        if (!validPassword) {
+
+          return res.status(401).json({
+            message: "Invalid password"
+          });
+        }
+      }
+
     // ✅ AUTO CREATE BUSINESS
     if (!business) {
 
