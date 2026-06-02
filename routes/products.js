@@ -4,6 +4,7 @@ const router = express.Router();
 const Product = require("../models/Product");
 const Business = require("../models/Business");
 const Order = require("../models/Order");
+const Service = require("../models/Service");
 
 const verifyToken =
   require("../middleware/authMiddleware");
@@ -369,10 +370,21 @@ router.get(
           createdAt: -1
         });
 
-      res.json({
-        business,
-        products
-      });
+        const services =
+          await Service.find({
+            business:
+              business._id
+          })
+
+          .sort({
+            createdAt: -1
+          });
+
+        res.json({
+          business,
+          products,
+          services
+        });
 
     } catch (err) {
 
