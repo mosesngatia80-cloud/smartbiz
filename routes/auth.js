@@ -111,7 +111,7 @@ router.post("/login", async (req, res) => {
 
       await Business.create({
         name: businessName,
-        whatsapp,
+        whatsappNumber: whatsapp,
         owner: user._id
       });
 
@@ -140,7 +140,15 @@ router.post("/login", async (req, res) => {
       }
     );
 
-    res.json({ token });
+      const business =
+        await Business.findOne({
+          owner: user._id
+        });
+
+      res.json({
+        token,
+        business
+      });
 
   } catch (err) {
 
