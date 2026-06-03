@@ -126,7 +126,7 @@ async function login() {
               whatsappNumber:
                 whatsapp,
 
-              businessName:
+              name:
                 businessName
 
                 ,password:
@@ -1645,7 +1645,7 @@ async function addService() {
           )
         ).whatsappNumber,
 
-      businessName:
+      name:
         document.getElementById(
           "serviceName"
         ).value,
