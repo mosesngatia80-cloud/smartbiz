@@ -14,11 +14,11 @@ router.post("/login-whatsapp", async (req, res) => {
 
   try {
 
-      const {
-        whatsappNumber,
-        businessName,
-        password
-      } = req.body;
+    const {
+      whatsappNumber,
+      businessName,
+      password
+    } = req.body;
 
     if (!whatsappNumber) {
 
@@ -27,26 +27,33 @@ router.post("/login-whatsapp", async (req, res) => {
       });
     }
 
+    if (!businessName) {
+
+      return res.status(400).json({
+        message: "Business name required"
+      });
+    }
+
     let business =
       await Business.findOne({
         whatsappNumber
       });
 
-      if (business && business.password) {
+    if (business && business.password) {
 
-        const validPassword =
-          await bcrypt.compare(
-            password || "",
-            business.password
-          );
+      const validPassword =
+        await bcrypt.compare(
+          password || "",
+          business.password
+        );
 
-        if (!validPassword) {
+      if (!validPassword) {
 
-          return res.status(401).json({
-            message: "Invalid password"
-          });
-        }
+        return res.status(401).json({
+          message: "Invalid password"
+        });
       }
+    }
 
     // ✅ AUTO CREATE BUSINESS
     if (!business) {
@@ -54,16 +61,19 @@ router.post("/login-whatsapp", async (req, res) => {
       business =
         await Business.create({
 
-            name:
-              businessName || "My Business",
+          name:
+            businessName,
 
           whatsappNumber,
 
-            owner:
-              whatsappNumber,
+          owner:
+            whatsappNumber,
 
-            password:
-              await bcrypt.hash(password || "123456", 10)
+          password:
+            await bcrypt.hash(
+              password || "123456",
+              10
+            )
         });
     }
 
@@ -123,9 +133,9 @@ router.post("/login-whatsapp", async (req, res) => {
       );
 
     res.json({
+      success: true,
       token,
-      business,
-      linked
+      business
     });
 
   } catch (err) {
@@ -133,310 +143,10 @@ router.post("/login-whatsapp", async (req, res) => {
     console.error(err);
 
     res.status(500).json({
-      message: "Login failed"
+      message: err.message
     });
   }
 });
 
 module.exports = router;
-
-/* ================= AUTO FIX OLD BUSINESS SLUG ================= */
-
-router.post(
-  "/fix-business-slug",
-  async (req, res) => {
-
-    try {
-
-      const {
-        whatsappNumber
-      } = req.body;
-
-      if (!whatsappNumber) {
-
-        return res.status(400).json({
-          message:
-            "WhatsApp required"
-        });
-      }
-
-      const business =
-        await Business.findOne({
-          whatsappNumber
-        });
-
-      if (!business) {
-
-        return res.status(404).json({
-          message:
-            "Business not found"
-        });
-      }
-
-      business.slug =
-
-        (business.name || "store")
-
-        .toLowerCase()
-
-        .replace(/\s+/g, "-")
-
-        .replace(/[^a-z0-9-]/g, "");
-
-      await business.save();
-
-      res.json({
-
-        message:
-          "Business slug fixed ✅",
-
-        slug:
-          business.slug
-      });
-
-    }
-
-    catch (err) {
-
-      console.error(err);
-
-      res.status(500).json({
-        message:
-          err.message
-      });
-    }
-  }
-);
-
-
-/* ================= DEBUG BUSINESS ================= */
-
-router.get(
-  "/debug-business/:number",
-  async (req, res) => {
-
-    try {
-
-      const business =
-        await Business.findOne({
-          whatsappNumber:
-            req.params.number
-        });
-
-      res.json(business);
-
-    }
-
-    catch (err) {
-
-      res.status(500).json({
-        message:
-          err.message
-      });
-    }
-  }
-);
-
-
-/* ================= CUSTOM SLUG UPDATE ================= */
-
-router.post(
-  "/set-custom-slug",
-
-  async (req, res) => {
-
-    try {
-
-      const {
-        whatsappNumber,
-        slug
-      } = req.body;
-
-      if (
-        !whatsappNumber ||
-        !slug
-      ) {
-
-        return res.status(400).json({
-          message:
-            "WhatsApp and slug required"
-        });
-      }
-
-      const business =
-        await Business.findOne({
-          whatsappNumber
-        });
-
-      if (!business) {
-
-        return res.status(404).json({
-          message:
-            "Business not found"
-        });
-      }
-
-      business.slug =
-
-        slug
-
-        .toLowerCase()
-
-        .replace(/\s+/g, "-")
-
-        .replace(/[^a-z0-9-]/g, "");
-
-      await business.save();
-
-      res.json({
-
-        success: true,
-
-        slug:
-          business.slug
-      });
-
-    }
-
-    catch (err) {
-
-      console.error(err);
-
-      res.status(500).json({
-        message:
-          err.message
-      });
-    }
-  }
-);
-
-
-/* ================= UPDATE BUSINESS NAME ================= */
-
-router.post(
-  "/update-business-name",
-  async (req, res) => {
-
-    try {
-
-      const {
-        whatsappNumber,
-        name
-      } = req.body;
-
-      if (
-        !whatsappNumber ||
-        !name
-      ) {
-
-        return res.status(400).json({
-          message:
-            "Missing fields"
-        });
-      }
-
-      const business =
-        await Business.findOne({
-          whatsappNumber
-        });
-
-      if (!business) {
-
-        return res.status(404).json({
-          message:
-            "Business not found"
-        });
-      }
-
-      business.name = name;
-
-      await business.save();
-
-      res.json({
-
-        success: true,
-        business
-      });
-
-    }
-
-    catch (err) {
-
-      console.error(err);
-
-      res.status(500).json({
-        message:
-          err.message
-      });
-    }
-  }
-);
-
-
-/* ================= UPDATE BUSINESS NUMBER ================= */
-
-router.post(
-  "/update-business-number",
-  async (req, res) => {
-
-    try {
-
-      const {
-        oldWhatsappNumber,
-        newWhatsappNumber
-      } = req.body;
-
-      if (
-        !oldWhatsappNumber ||
-        !newWhatsappNumber
-      ) {
-
-        return res.status(400).json({
-          message:
-            "Missing fields"
-        });
-      }
-
-      const business =
-        await Business.findOne({
-
-          whatsappNumber:
-            oldWhatsappNumber
-        });
-
-      if (!business) {
-
-        return res.status(404).json({
-          message:
-            "Business not found"
-        });
-      }
-
-      business.whatsappNumber =
-        newWhatsappNumber;
-
-      business.owner =
-        newWhatsappNumber;
-
-      await business.save();
-
-      res.json({
-
-        success: true,
-        business
-      });
-
-    }
-
-    catch (err) {
-
-      console.error(err);
-
-      res.status(500).json({
-        message:
-          err.message
-      });
-    }
-  }
-);
 
