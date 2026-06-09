@@ -23,17 +23,17 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("🟢 User connected:", socket.id);
 
-  socket.on("join_room", async (businessId) => {
-    socket.join(businessId);
+  socket.on("join_room", async (orderId) => {
+    socket.join(orderId);
 
-    const history = await Message.find({ businessId }).sort({ createdAt: 1 });
+    const history = await Message.find({ orderId }).sort({ createdAt: 1 });
     socket.emit("chat_history", history);
   });
 
   socket.on("send_message", async (data) => {
     try {
       const msg = await Message.create(data);
-      io.to(data.businessId).emit("receive_message", msg);
+      io.to(data.orderId).emit("receive_message", msg);
     } catch (err) {
       console.error("Socket error:", err.message);
     }

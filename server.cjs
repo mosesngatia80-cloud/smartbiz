@@ -4,6 +4,10 @@ const express = require("express");
 const fetch = global.fetch;
 
 const app = express();
+const http = require("http");
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.json());
 app.use(express.text({ type: "*/*" }));
@@ -439,7 +443,7 @@ app.post(
 const PORT =
   process.env.PORT || 3000;
 
-app.listen(
+server.listen(
   PORT,
   "0.0.0.0",
   () => {
@@ -447,4 +451,19 @@ app.listen(
   console.log(
     `🚀 Smart Connect running on port ${PORT}`
   );
+});
+io.on("connection", (socket) => {
+  console.log("Socket connected:", socket.id);
+
+  socket.on("joinRoom", (orderId) => {
+    socket.join(orderId);
+  });
+
+  socket.on("sendMessage", (data) => {
+    io.to(data.orderId).emit("newMessage", {
+      orderId: data.orderId,
+      message: data.message,
+      senderType: data.senderType || "BUSINESS"
+    });
+  });
 });

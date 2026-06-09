@@ -1,4 +1,5 @@
 const API_BASE = "https://navu-smart-biz-sbdh.onrender.com/api";
+const socket = io("https://navu-smart-biz-sbdh.onrender.com");
 const SITE_BASE = "https://navu-smart-biz-sbdh.onrender.com";
 
 /* ================= UTIL ================= */
@@ -1967,8 +1968,10 @@ loadBookings();
 let currentChatOrderId = null;
 
 function openChat(orderId) {
+socket.emit("joinRoom", orderId);
 
 currentChatOrderId = orderId;
+socket.emit("join_room", orderId);
 
 const message =
 prompt(
@@ -2103,3 +2106,15 @@ alert("Chat load error");
 }
 }
 
+const socket = io("https://navu-smart-biz-sbdh.onrender.com");
+socket.on("newMessage", (data) => {
+  console.log("LIVE MESSAGE:", data);
+  if (data.orderId === currentChatOrderId) {
+    alert("[" + data.senderType + "] " + data.message);
+  }
+});
+socket.on("receive_message", (msg) => {
+  const box = document.getElementById("chatBox");
+  if (!box) return;
+  box.innerHTML += `<div><b>${msg.senderType}:</b> ${msg.message}</div>`;
+});
