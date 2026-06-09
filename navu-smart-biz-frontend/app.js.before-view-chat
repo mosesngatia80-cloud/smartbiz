@@ -126,7 +126,7 @@ async function login() {
               whatsappNumber:
                 whatsapp,
 
-              businessName:
+              name:
                 businessName
 
                 ,password:
@@ -1281,13 +1281,7 @@ async function loadOrders() {
           >
             💬 Chat Customer
           </button>
-
-          <button
-            onclick="viewChat('${order._id}')"
-            class="add-cart-btn"
-          >
-            📜 View Chat
-          </button>
+            </button>
 
           </div>
 

@@ -1,170 +1,47 @@
 const express = require("express");
 const router = express.Router();
+const Message = require("../models/Message");
 
-const Chat = require("../models/Chat");
-const Order = require("../models/Order");
-const auth = require("../middleware/auth");
+/* ================= SEND MESSAGE ================= */
+router.post("/send", async (req, res) => {
+  try {
+    const { businessId, sender, message } = req.body;
 
-/* =========================
-MERCHANT SEND
-========================= */
+    if (!businessId || !sender || !message) {
+      return res.status(400).json({
+        message: "businessId, sender, message required"
+      });
+    }
 
-router.post("/send", auth, async (req, res) => {
-try {
+    const newMsg = await Message.create({
+      businessId,
+      sender,
+      message
+    });
 
-const { orderId, message } = req.body;
+    res.status(201).json(newMsg);
 
-if (!orderId || !message) {
-return res.status(400).json({
-error: "orderId and message required"
-});
-}
-
-const chat = await Chat.create({
-orderId,
-message,
-senderId: String(req.user.user),
-senderType: "merchant"
-});
-
-res.status(201).json(chat);
-
-} catch (err) {
-
-res.status(500).json({
-error: err.message
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to send message"
+    });
+  }
 });
 
-}
-});
+/* ================= GET CHAT HISTORY ================= */
+router.get("/:businessId", async (req, res) => {
+  try {
+    const messages = await Message.find({
+      businessId: req.params.businessId
+    }).sort({ createdAt: 1 });
 
-/* =========================
-MERCHANT VIEW
-========================= */
+    res.json(messages);
 
-router.get("/:orderId", auth, async (req, res) => {
-try {
-
-const chats = await Chat.find({
-orderId: req.params.orderId
-}).sort({
-createdAt: 1
-});
-
-res.json(chats);
-
-} catch (err) {
-
-res.status(500).json({
-error: err.message
-});
-
-}
-});
-
-/* =========================
-CUSTOMER SEND
-========================= */
-
-router.post("/customer/send", async (req, res) => {
-try {
-
-const {
-orderId,
-customerPhone,
-message
-} = req.body;
-
-if (
-!orderId ||
-!customerPhone ||
-!message
-) {
-return res.status(400).json({
-error:
-"orderId, customerPhone and message required"
-});
-}
-
-const order =
-await Order.findById(orderId);
-
-if (!order) {
-return res.status(404).json({
-error: "Order not found"
-});
-}
-
-if (
-order.customerPhone !== customerPhone
-) {
-return res.status(403).json({
-error: "Invalid customer"
-});
-}
-
-const chat = await Chat.create({
-orderId,
-message,
-senderId: customerPhone,
-senderType: "customer"
-});
-
-res.status(201).json(chat);
-
-} catch (err) {
-
-res.status(500).json({
-error: err.message
-});
-
-}
-});
-
-/* =========================
-CUSTOMER VIEW
-========================= */
-
-router.post("/customer/view", async (req, res) => {
-try {
-
-const {
-orderId,
-customerPhone
-} = req.body;
-
-const order =
-await Order.findById(orderId);
-
-if (!order) {
-return res.status(404).json({
-error: "Order not found"
-});
-}
-
-if (
-order.customerPhone !== customerPhone
-) {
-return res.status(403).json({
-error: "Invalid customer"
-});
-}
-
-const chats = await Chat.find({
-orderId
-}).sort({
-createdAt: 1
-});
-
-res.json(chats);
-
-} catch (err) {
-
-res.status(500).json({
-error: err.message
-});
-
-}
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to load messages"
+    });
+  }
 });
 
 module.exports = router;

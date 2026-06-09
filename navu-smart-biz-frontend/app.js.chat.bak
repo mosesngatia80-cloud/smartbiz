@@ -126,7 +126,7 @@ async function login() {
               whatsappNumber:
                 whatsapp,
 
-              businessName:
+              name:
                 businessName
 
                 ,password:
@@ -1273,21 +1273,7 @@ async function loadOrders() {
               class="add-cart-btn"
             >
               Download PDF
-</button>
-
-          <button
-            onclick="openChat('${order._id}')"
-            class="add-cart-btn"
-          >
-            💬 Chat Customer
-          </button>
-
-          <button
-            onclick="viewChat('${order._id}')"
-            class="add-cart-btn"
-          >
-            📜 View Chat
-          </button>
+            </button>
 
           </div>
 
@@ -1960,146 +1946,4 @@ loadCustomers();
 loadServices();
 
 loadBookings();
-
-
-/* ================= CHAT ================= */
-
-let currentChatOrderId = null;
-
-function openChat(orderId) {
-
-currentChatOrderId = orderId;
-
-const message =
-prompt(
-"Send a message to the customer:"
-);
-
-if (!message) return;
-
-sendChatMessage(message);
-}
-
-async function sendChatMessage(message) {
-
-try {
-
-const token =
-  localStorage.getItem("token");
-
-const res =
-  await fetch(
-    API_BASE + "/chat/send",
-    {
-      method: "POST",
-
-      headers: {
-        "Content-Type":
-          "application/json",
-
-        Authorization:
-          "Bearer " + token
-      },
-
-      body: JSON.stringify({
-        orderId:
-          currentChatOrderId,
-
-        message
-      })
-    }
-  );
-
-const data =
-  await res.json();
-
-if (!res.ok) {
-
-  alert(
-    data.error ||
-    "Failed to send message"
-  );
-
-  return;
-}
-
-alert(
-  "Message sent ✅"
-);
-
-} catch (err) {
-
-console.error(err);
-
-alert(
-  "Chat error"
-);
-
-}
-}
-
-
-async function viewChat(orderId) {
-
-try {
-
-const token =
-localStorage.getItem("token");
-
-const res =
-await fetch(
-API_BASE + "/chat/" + orderId,
-{
-headers: {
-Authorization:
-"Bearer " + token
-}
-}
-);
-
-const messages =
-await res.json();
-
-if (!res.ok) {
-
-alert(
-messages.error ||
-"Failed to load chat"
-);
-
-return;
-}
-
-if (!messages.length) {
-
-alert(
-"No messages yet"
-);
-
-return;
-}
-
-let text = "💬 CHAT\n\n";
-
-messages.forEach(msg => {
-
-text +=
-"[" +
-msg.senderType +
-"] " +
-msg.message +
-"\n\n";
-
-});
-
-alert(text);
-
-} catch (err) {
-
-console.error(err);
-
-alert("Chat load error");
-
-}
-}
 

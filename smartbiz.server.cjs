@@ -3,167 +3,58 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const http = require("http");
+const { Server } = require("socket.io");
+
+const Message = require("./models/Message");
 
 const app = express();
+const server = http.createServer(app);
 
-console.log("🚀 Starting Smart Biz...");
-
-/* =========================
-MIDDLEWARE
-========================= */
-
+/* ================= MIDDLEWARE ================= */
 app.use(cors());
-
 app.use(express.json());
 
-app.use(
-"/uploads",
-express.static("uploads")
-);
-
-/* =========================
-ROOT
-========================= */
-
-app.get("/", (req, res) => {
-
-res.send(
-"SMART BIZ API RUNNING"
-);
-
+/* ================= SOCKET.IO ================= */
+const io = new Server(server, {
+  cors: { origin: "*" }
 });
 
-/* =========================
-ROUTES
-========================= */
+io.on("connection", (socket) => {
+  console.log("🟢 User connected:", socket.id);
 
-app.use(
-"/api/products",
-require("./routes/products")
-);
+  socket.on("join_room", async (businessId) => {
+    socket.join(businessId);
 
-app.use(
-"/api/products",
-require("./routes/products.public.fix")
-);
+    const history = await Message.find({ businessId }).sort({ createdAt: 1 });
+    socket.emit("chat_history", history);
+  });
 
-app.use(
-"/api/business",
-require("./routes/business")
-);
+  socket.on("send_message", async (data) => {
+    try {
+      const msg = await Message.create(data);
+      io.to(data.businessId).emit("receive_message", msg);
+    } catch (err) {
+      console.error("Socket message error:", err.message);
+    }
+  });
 
-app.use(
-"/api/business-whatsapp",
-require("./routes/business.whatsapp")
-);
-
-app.use(
-"/api/auth",
-require("./routes/auth.whatsapp")
-);
-
-app.use(
-"/api/orders",
-require("./routes/orders")
-);
-
-app.use(
-"/api/chat",
-require("./routes/chat")
-);
-
-app.use(
-"/api/services",
-require("./routes/services")
-);
-
-app.use(
-"/api/bookings",
-require("./routes/bookings")
-);
-
-app.use(
-"/api/receipts",
-require("./routes/receipt.routes")
-);
-
-app.use(
-"/api/wallet",
-require("./routes/wallet")
-);
-
-app.use(
-"/api/expense",
-require("./routes/expense")
-);
-
-app.use(
-"/api/debt",
-require("./routes/debt")
-);
-
-app.use(
-"/api/dashboard",
-require("./routes/dashboard")
-);
-
-app.use(
-"/api/internal-secure",
-require("./routes/internal.orders")
-);
-
-app.use(
-"/api/internal-secure",
-require("./routes/internal.wallet.topup")
-);
-
-/* =========================
-CONNECT DB
-========================= */
-
-console.log(
-"🟡 Connecting to MongoDB..."
-);
-
-mongoose.connect(
-process.env.MONGO_URI
-)
-
-.then(() => {
-
-console.log(
-"🟢 Smart Biz DB connected"
-);
-
-})
-
-.catch(err => {
-
-console.error(
-"❌ MongoDB connection error:"
-);
-
-console.error(err);
-
+  socket.on("disconnect", () => {
+    console.log("🔴 User disconnected:", socket.id);
+  });
 });
 
-/* =========================
-START SERVER
-========================= */
+/* ================= ROUTES ================= */
+app.use("/api/chat", require("./routes/chat"));
 
-const PORT =
-process.env.PORT || 3000;
+/* ================= DB ================= */
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("🟢 Smart Biz DB connected"))
+  .catch(err => console.error("DB error:", err));
 
-app.listen(
-PORT,
-"0.0.0.0",
-() => {
+/* ================= START ================= */
+const PORT = process.env.PORT || 5001;
 
-console.log(
-  `🚀 Server started on port ${PORT}`
-);
-
-}
-);
-
-app.get("/deploy-check",(req,res)=>res.send("DEPLOY-127312d"));
+server.listen(PORT, () => {
+  console.log(`🚀 Smart Biz running on port ${PORT}`);
+});
