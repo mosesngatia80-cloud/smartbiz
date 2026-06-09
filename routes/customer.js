@@ -3,7 +3,7 @@ const router = express.Router();
 
 const Customer = require("../models/Customer");
 const Business = require("../models/Business");
-const verifyToken = require("../middleware/authMiddleware").default;
+const verifyToken = require("../middleware/authMiddleware");
 
 // CREATE CUSTOMER
 router.post("/", verifyToken, async (req, res) => {
@@ -34,6 +34,8 @@ router.post("/", verifyToken, async (req, res) => {
 router.get("/", verifyToken, async (req, res) => {
   try {
     const business = await Business.findOne({ owner: req.user._id });
+    if (!business) return res.status(404).json({ message: "No business found." });
+
     const customers = await Customer.find({ business: business._id });
     res.json({ customers });
 
@@ -42,7 +44,7 @@ router.get("/", verifyToken, async (req, res) => {
   }
 });
 
-// GET SINGLE CUSTOMER (ADDED BLOCK)
+// GET SINGLE CUSTOMER
 router.get("/:id", verifyToken, async (req, res) => {
   try {
     const customer = await Customer.findOne({
@@ -64,14 +66,14 @@ router.get("/:id", verifyToken, async (req, res) => {
 // UPDATE CUSTOMER
 router.put("/:id", verifyToken, async (req, res) => {
   try {
-    const updates = req.body;
     const customer = await Customer.findOneAndUpdate(
       { _id: req.params.id, owner: req.user._id },
-      updates,
+      req.body,
       { new: true }
     );
 
     if (!customer) return res.status(404).json({ message: "Customer not found" });
+
     res.json({ message: "Customer updated", customer });
 
   } catch (err) {
@@ -88,6 +90,7 @@ router.delete("/:id", verifyToken, async (req, res) => {
     });
 
     if (!deleted) return res.status(404).json({ message: "Customer not found" });
+
     res.json({ message: "Customer deleted" });
 
   } catch (err) {

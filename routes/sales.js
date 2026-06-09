@@ -1,23 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const auth = require("../middleware/authMiddleware").default;
-const {
-  createSale,
-  getSales,
-  getDailySummary,
-  getMonthlySummary
-} = require("../controllers/saleController");
 
-// Create a sale
-router.post("/", auth, createSale);
+const auth = require("../middleware/authMiddleware");
 
-// Get all sales for logged-in business
-router.get("/", auth, getSales);
-
-// Dashboard daily summary
-router.get("/summary", auth, getDailySummary);
-
-// Monthly summary
-router.get("/summary/monthly", auth, getMonthlySummary);
+// TEMP SAFE HANDLER (prevents crash)
+router.post("/", auth, (req, res) => {
+  res.json({
+    message: "Sales route working (controller missing - stub mode)"
+  });
+});
 
 module.exports = router;
