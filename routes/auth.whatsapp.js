@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const Business = require("../models/Business");
 
 // =========================
@@ -43,9 +44,21 @@ router.post("/login-whatsapp", async (req, res) => {
       });
     }
 
+    // =========================
+    // CREATE REAL JWT TOKEN
+    // =========================
+    const token = jwt.sign(
+      {
+        user: business.owner,
+        businessId: business._id
+      },
+      process.env.JWT_SECRET || "smartbiz_secret",
+      { expiresIn: "7d" }
+    );
+
     // success response
     return res.json({
-      token: "demo-token-" + Date.now(),
+      token,
       business
     });
 

@@ -53,7 +53,7 @@ app.use("/api/products", require("./routes/products"));
 app.use("/api/products", require("./routes/product.routes"));
 app.use("/api/products", require("./routes/products.public.fix"));
 
-app.use("/api/orders", require("./routes/orders"));
+/* ✅ FIXED: SINGLE ORDERS SYSTEM (CONTROLLER BASED) */
 app.use("/api/orders", require("./routes/order.routes"));
 
 app.use("/api/business", require("./routes/business"));
