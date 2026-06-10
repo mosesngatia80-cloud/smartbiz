@@ -1,152 +1,60 @@
 const express = require("express");
 const router = express.Router();
-const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-
 const Business = require("../models/Business");
-const BusinessWhatsApp =
-  require("../models/BusinessWhatsApp");
 
-/*
- 🔐 LOGIN WITH WHATSAPP
-*/
+// =========================
+// LOGIN / AUTO CREATE BUSINESS
+// =========================
 router.post("/login-whatsapp", async (req, res) => {
-
   try {
-
     const {
       whatsappNumber,
-      businessName,
+      name: businessName,
       password
     } = req.body;
 
-    if (!whatsappNumber) {
-
+    // validation
+    if (!whatsappNumber || !businessName) {
       return res.status(400).json({
-        message: "WhatsApp required"
+        message: "WhatsApp number and business name are required"
       });
     }
 
-    if (!businessName) {
+    let business = await Business.findOne({ whatsappNumber });
 
-      return res.status(400).json({
-        message: "Business name required"
-      });
-    }
-
-    let business =
-      await Business.findOne({
-        whatsappNumber
-      });
-
-    if (business && business.password) {
-
-      const validPassword =
-        await bcrypt.compare(
-          password || "",
-          business.password
-        );
-
-      if (!validPassword) {
-
-        return res.status(401).json({
-          message: "Invalid password"
-        });
-      }
-    }
-
-    // ✅ AUTO CREATE BUSINESS
+    // =========================
+    // AUTO CREATE BUSINESS IF NOT EXISTS
+    // =========================
     if (!business) {
 
-      business =
-        await Business.create({
+      const slug = businessName
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "");
 
-          name:
-            businessName,
-
-          whatsappNumber,
-
-          owner:
-            whatsappNumber,
-
-          password:
-            await bcrypt.hash(
-              password || "123456",
-              10
-            )
-        });
-    }
-
-    /* =========================
-       AUTO LINK WHATSAPP
-    ========================= */
-
-    let linked =
-      await BusinessWhatsApp.findOne({
-        whatsappNumber
+      business = await Business.create({
+        name: businessName,
+        slug,
+        whatsappNumber,
+        owner: whatsappNumber,
+        password: await bcrypt.hash(password || "123456", 10)
       });
-
-    if (!linked) {
-
-      linked =
-        await BusinessWhatsApp.create({
-
-          business:
-            business._id,
-
-          businessName:
-            business.name,
-
-          whatsappNumber,
-
-          phoneNumberId:
-            "AUTO_LINKED",
-
-          wabaId:
-            "AUTO_LINKED",
-
-          active: true
-        });
-
-      console.log(
-        "✅ Auto WhatsApp linked:",
-        whatsappNumber
-      );
     }
 
-    // 🔐 SIMPLE TOKEN
-
-    const token =
-      jwt.sign(
-
-        {
-          user:
-            business.owner
-        },
-
-        process.env.JWT_SECRET ||
-        "smartbiz_secret",
-
-        {
-          expiresIn: "7d"
-        }
-      );
-
-    res.json({
-      success: true,
-      token,
+    // success response
+    return res.json({
+      token: "demo-token-" + Date.now(),
       business
     });
 
   } catch (err) {
-
-    console.error(err);
-
-    res.status(500).json({
-      message: err.message
+    console.error("login-whatsapp error:", err);
+    return res.status(500).json({
+      message: "Server error"
     });
   }
 });
 
 module.exports = router;
-
