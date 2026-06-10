@@ -45,7 +45,6 @@ io.on("connection", (socket) => {
 });
 
 /* ================= ROUTES ================= */
-
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/auth", require("./routes/auth.whatsapp"));
 
@@ -53,21 +52,23 @@ app.use("/api/products", require("./routes/products"));
 app.use("/api/products", require("./routes/product.routes"));
 app.use("/api/products", require("./routes/products.public.fix"));
 
-/* ✅ FIXED: SINGLE ORDERS SYSTEM (CONTROLLER BASED) */
-app.use("/api/orders", require("./routes/order.routes"));
+/* ================= ORDERS FIX ================= */
+/**
+ * 🔥 FIX: use correct unified orders system
+ * (DO NOT use order.routes.js anymore)
+ */
+app.use("/api/orders", require("./routes/orders.routes"));
 
 app.use("/api/business", require("./routes/business"));
 app.use("/api/business", require("./routes/business.routes"));
 app.use("/api/business-whatsapp", require("./routes/business.whatsapp"));
 
 app.use("/api/chat", require("./routes/chat"));
-
 app.use("/api/customers", require("./routes/customers"));
 app.use("/api/customer", require("./routes/customer"));
 
 app.use("/api/services", require("./routes/services"));
 app.use("/api/bookings", require("./routes/bookings"));
-
 app.use("/api/dashboard", require("./routes/dashboard"));
 
 app.use("/api/wallet", require("./routes/wallet"));
@@ -84,7 +85,6 @@ app.use("/api/sales", require("./routes/sales"));
 app.use("/api/sale", require("./routes/saleRoutes"));
 
 app.use("/api/receipt", require("./routes/receipt.routes"));
-
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/payments-wallet", require("./routes/payments.wallet.routes"));
 

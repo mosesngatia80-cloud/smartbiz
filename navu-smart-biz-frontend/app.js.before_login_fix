@@ -1,20 +1,3 @@
-function authHeaders() {
-  const token = localStorage.getItem("token");
-  const headers = {
-    "Content-Type": "application/json"
-  };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  return headers;
-}
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    "Authorization": token ? `Bearer ${token}` : undefined
-  };
-}
-
 const API_BASE = "https://navu-smart-biz-sbdh.onrender.com/api";
 const SITE_BASE = "https://navu-smart-biz-sbdh.onrender.com";
 
@@ -137,19 +120,14 @@ async function login() {
               "application/json"
           },
 
-          body:
-            JSON.stringify({
+body: JSON.stringify({
+  whatsappNumber: whatsapp,
+  name: businessName
+})
 
-              whatsappNumber:
-                whatsapp,
-
-              name:
-                businessName
-
-                ,password:
-                  password
-
-            })
+  whatsappNumber: whatsapp,
+  name: businessName
+})
 
         }
 
@@ -450,264 +428,12 @@ async function addProduct() {
 
         {
           method: "POST",
-          body: formData
-        }
-
-      );
-
-    const data =
-      await res.json();
-
-    console.log(data);
-
-    if (!res.ok) {
-
-      msg.innerText =
-        data.error ||
-        data.message ||
-        "Upload failed ❌";
-
-      return;
-
-    }
-
-    msg.innerText =
-      "Product uploaded ✅";
-
-    document.getElementById(
-      "newProductName"
-    ).value = "";
-
-    document.getElementById(
-      "newProductPrice"
-    ).value = "";
-
-    document.getElementById(
-      "newProductStock"
-    ).value = "";
-
-    document.getElementById(
-      "productImage"
-    ).value = "";
-
-    loadProducts();
-
-  }
-
-  catch (err) {
-
-    console.error(err);
-
-    msg.innerText =
-      "Server error ❌";
-
-  }
-
-}
-
-/* ================= ORDERS ================= */
-
-
-/* ================= CUSTOMERS ================= */
-
-async function loadCustomers() {
-
-  const list =
-    document.getElementById(
-      "customersList"
-    );
-
-  if (!list) return;
-
-  try {
-
-    const token =
-      localStorage.getItem(
-        "token"
-      );
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/orders/customers/list",
-
-        {
-          headers: {
-            Authorization:
-              "Bearer " + token
-          }
-        }
-      );
-
-    const customers =
-      await res.json();
-
-    document.getElementById(
-      "totalCustomers"
-    ).innerText =
-      customers.length || 0;
-
-    list.innerHTML = "";
-
-    customers.forEach(c => {
-
-      list.innerHTML += `
-
-        <div class="order-card">
-
-          <strong>
-            ${c.phone}
-          </strong>
-
-          <div>
-            Orders:
-            ${c.totalOrders}
-          </div>
-
-          <div>
-            Spent:
-            KES ${c.totalSpent}
-          </div>
-
-        </div>
-      `;
-    });
-
-  }
-
-  catch (err) {
-
-    console.error(err);
-
-  }
-
-}
-
-/* ================= EXPENSES ================= */
-
-async function loadExpenses() {
-
-  const list =
-    document.getElementById(
-      "expensesList"
-    );
-
-  if (!list) return;
-
-  try {
-
-    const business =
-      JSON.parse(
-        localStorage.getItem(
-          "business"
-        )
-      );
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/expense?whatsappNumber=" +
-
-        encodeURIComponent(
-          business.whatsappNumber
-        )
-      );
-
-    const data =
-      await res.json();
-
-    document.getElementById(
-      "totalExpenses"
-    ).innerText =
-      `KES ${data.totalExpenses || 0}`;
-
-    list.innerHTML = "";
-
-    data.expenses.forEach(e => {
-
-      list.innerHTML += `
-
-        <div class="order-card">
-
-          <strong>
-            ${e.title}
-          </strong>
-
-          <div>
-            KES ${e.amount}
-          </div>
-
-          <div>
-            ${e.category || ""}
-          </div>
-
-        </div>
-      `;
-    });
-
-  }
-
-  catch (err) {
-
-    console.error(err);
-
-  }
-
-}
-
-async function addExpense() {
-
-  const business =
-    JSON.parse(
-      localStorage.getItem(
-        "business"
-      )
-    );
-
-  try {
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/expense/create",
-
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              whatsappNumber:
-                business.whatsappNumber,
-
-              title:
-                document.getElementById(
-                  "expenseTitle"
-                ).value,
-
-              amount:
-                document.getElementById(
-                  "expenseAmount"
-                ).value,
-
-              category:
-                document.getElementById(
-                  "expenseCategory"
-                ).value,
-
-              note:
-                document.getElementById(
-                  "expenseNote"
-                ).value
-            })
+  whatsappNumber: whatsapp,
+  name: businessName
+})
+  whatsappNumber: whatsapp,
+  name: businessName
+})
         }
       );
 
@@ -831,37 +557,12 @@ async function addDebt() {
               "application/json"
           },
 
-          body:
-            JSON.stringify({
-
-              phone:
-                business.whatsappNumber,
-
-              customerName:
-                document.getElementById(
-                  "debtCustomerName"
-                ).value,
-
-              customerPhone:
-                document.getElementById(
-                  "debtCustomerPhone"
-                ).value,
-
-              totalAmount:
-                document.getElementById(
-                  "debtTotalAmount"
-                ).value,
-
-              amountPaid:
-                document.getElementById(
-                  "debtAmountPaid"
-                ).value,
-
-              note:
-                document.getElementById(
-                  "debtNote"
-                ).value
-            })
+  whatsappNumber: whatsapp,
+  name: businessName
+})
+  whatsappNumber: whatsapp,
+  name: businessName
+})
         }
       );
 
@@ -1075,16 +776,12 @@ async function sellCashProduct() {
               "application/json"
           },
 
-          body:
-            JSON.stringify({
-
-              productName,
-              quantity,
-              amount,
-
-              whatsappNumber:
-                business.whatsappNumber
-            })
+  whatsappNumber: whatsapp,
+  name: businessName
+})
+  whatsappNumber: whatsapp,
+  name: businessName
+})
         }
       );
 
@@ -1140,13 +837,18 @@ async function loadOrders() {
     const res =
       await fetch(
 
-  headers: authHeaders()
-const res = await fetch(API_BASE + "/orders", {
-  headers: authHeaders()
-});
+        API_BASE + "/orders",
 
-const orders = await res.json();
+        {
+          headers: {
+            Authorization:
+              "Bearer " + token
+          }
+        }
+      );
 
+    const orders =
+      await res.json();
 
     if (!res.ok) {
 
@@ -1499,10 +1201,12 @@ async function updateOrderStatus(orderId, status) {
               "Bearer " + token
           },
 
-          body:
-            JSON.stringify({
-              status
-            })
+  whatsappNumber: whatsapp,
+  name: businessName
+})
+  whatsappNumber: whatsapp,
+  name: businessName
+})
         }
       );
 
@@ -1717,8 +1421,9 @@ async function addService() {
               "Bearer " + token
           },
 
-          body:
-            JSON.stringify(
+  whatsappNumber: whatsapp,
+  name: businessName
+})
               payload
             )
         }
@@ -1913,10 +1618,12 @@ async function updateBookingStatus(
               "Bearer " + token
           },
 
-          body:
-            JSON.stringify({
-              status
-            })
+  whatsappNumber: whatsapp,
+  name: businessName
+})
+  whatsappNumber: whatsapp,
+  name: businessName
+})
         }
       );
 
@@ -1998,41 +1705,4 @@ const res =
         Authorization:
           "Bearer " + token
       },
-
-      body: JSON.stringify({
-        orderId:
-          currentChatOrderId,
-
-        message
-      })
-    }
-  );
-
-const data =
-  await res.json();
-
-if (!res.ok) {
-
-  alert(
-    data.error ||
-    "Failed to send message"
-  );
-
-  return;
-}
-
-alert(
-  "Message sent ✅"
-);
-
-} catch (err) {
-
-console.error(err);
-
-alert(
-  "Chat error"
-);
-
-}
-}
 

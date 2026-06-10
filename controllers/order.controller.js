@@ -1,232 +1,71 @@
-const Order = require("../models/Order.js");
-const Product = require("../models/Product.js");
-const Business = require("../models/Business.js");
-const Receipt = require("../models/Receipt.js");
-const Transaction = require("../models/Transaction.js");
-const fetch = require("node-fetch");
+const {
+  createOrder,
+  getOrdersByBusiness,
+  getOrderById,
+  markOrderPaid
+} = require("../services/order.service");
 
-const SMART_PAY_BASE = "https://afri-smart-pay-4.onrender.com";
+const Business = require("../models/Business");
 
 /**
- * 🧾 CREATE ORDER
+ * GET ORDERS (Dashboard)
  */
-exports.createOrder = async (req, res) => {
+exports.getOrders = async (req, res) => {
   try {
-    const { business, items, paymentMethod } = req.body;
+    const business = await Business.findOne({ owner: req.userId });
+    if (!business) return res.json([]);
 
-    if (!business || !items || items.length === 0) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
-
-    let orderItems = [];
-    let subtotal = 0;
-
-    for (const item of items) {
-      const product = await Product.findById(item.product);
-      if (!product) {
-        return res.status(404).json({ message: "Product not found" });
-      }
-
-      const total = product.price * item.quantity;
-      subtotal += total;
-
-      orderItems.push({
-        product: product._id,
-        name: product.name,
-        price: product.price,
-        quantity: item.quantity,
-        total
-      });
-    }
-
-    const order = await Order.create({
-      business,
-      items: orderItems,
-      subtotal,
-      tax: 0,
-      totalAmount: subtotal,
-      paymentMethod,
-      paymentStatus: "PENDING",
-      status: "OPEN"
-    });
-
-    res.status(201).json(order);
+    const orders = await getOrdersByBusiness(business._id);
+    res.json(orders);
   } catch (err) {
-    console.error("Create order error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("getOrders error:", err.message);
+    res.status(500).json({ message: "Failed to fetch orders" });
   }
 };
 
 /**
- * 💳 PAY ORDER (SMART PAY WALLET DEBIT)
+ * GET ORDER BY ID
+ */
+exports.getOrderById = async (req, res) => {
+  try {
+    const order = await getOrderById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Not found" });
+
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching order" });
+  }
+};
+
+/**
+ * CREATE ORDER (SAFE WRAPPER ONLY)
+ */
+exports.createOrder = async (req, res) => {
+  try {
+    const order = await createOrder(req.body);
+    res.status(201).json(order);
+  } catch (err) {
+    console.error("createOrder error:", err.message);
+    res.status(500).json({ message: "Failed to create order" });
+  }
+};
+
+/**
+ * MARK AS PAID
  */
 exports.markOrderPaid = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const order = await markOrderPaid(
+      req.params.id,
+      req.body.paymentRef
+    );
+
     if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-
-    // 🔒 Prevent double payment
-    if (order.paymentStatus === "PAID") {
-      return res.status(400).json({ message: "Order already paid" });
-    }
-
-    // 💰 WALLET PAYMENT
-    if (order.paymentMethod === "WALLET") {
-      const business = await Business.findById(order.business);
-      if (!business || !business.phone) {
-        return res.status(400).json({ message: "Business phone not found" });
-      }
-
-      let phone = business.phone;
-      if (phone.startsWith("0")) {
-        phone = "254" + phone.slice(1);
-      }
-
-      const payRes = await fetch(`${SMART_PAY_BASE}/api/send-money`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: phone,
-          to: phone,
-          amount: order.totalAmount
-        })
-      });
-
-      const payData = await payRes.json();
-
-      if (!payRes.ok) {
-        return res.status(400).json({
-          message: "Wallet debit failed",
-          error: payData
-        });
-      }
-    }
-
-    // ✅ Mark order paid
-    order.paymentStatus = "PAID";
-    order.status = "COMPLETED";
-    await order.save();
-
-    // ================================
-    // 🧾 AUTO-ISSUE RECEIPT (IDEMPOTENT)
-    // ================================
-    const existingReceipt = await Receipt.findOne({
-      orderId: order._id
-    });
-
-    if (!existingReceipt) {
-      const transaction = await Transaction.findOne({
-        orderId: order._id,
-        status: "SUCCESS"
-      });
-
-      await Receipt.create({
-        receiptId: `RCT-${Date.now()}`,
-        orderId: order._id,
-        transactionId: transaction ? transaction._id : null,
-        businessId: order.business,
-        customerId: order.customer || null,
-        customerPhone: order.customerPhone || "",
-        amount: order.totalAmount,
-        paymentMethod: order.paymentMethod
-      });
+      return res.status(404).json({ message: "Not found" });
     }
 
     res.json(order);
   } catch (err) {
-    console.error("Payment error:", err);
-    res.status(500).json({ message: "Payment processing failed" });
+    res.status(500).json({ message: "Failed to update order" });
   }
 };
-
-exports.getOrders = async (req, res) => {
-  const orders = await Order.find().sort({ createdAt: -1 });
-  res.json(orders);
-};
-
-exports.getOrderById = async (req, res) => {
-  const order = await Order.findById(req.params.id);
-  res.json(order);
-};
-
-// ================= SMARTBIZ EXTENSIONS =================
-
-/**
- * 💵 CREATE MANUAL SALE (CASH / WALLET)
- * Uses existing Order model safely
- */
-exports.createManualSale = async (req, res) => {
-  try {
-    const { business, totalAmount, paymentMethod } = req.body;
-
-    if (!business || !totalAmount) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
-
-    const order = await Order.create({
-      business,
-      items: [],
-      subtotal: totalAmount,
-      tax: 0,
-      totalAmount,
-      paymentMethod: paymentMethod || "CASH",
-      paymentStatus: paymentMethod === "CASH" ? "PAID" : "PENDING",
-      status: paymentMethod === "CASH" ? "COMPLETED" : "OPEN",
-      source: "MANUAL"
-    });
-
-    // 💳 If WALLET → trigger payment automatically
-    if (paymentMethod === "WALLET") {
-      req.params.id = order._id;
-      return exports.markOrderPaid(req, res);
-    }
-
-    // 💵 CASH → already paid
-    if (paymentMethod === "CASH") {
-      console.log("💵 Manual cash sale recorded:", totalAmount);
-    }
-
-    res.status(201).json(order);
-  } catch (err) {
-    console.error("Manual sale error:", err);
-    res.status(500).json({ message: "Manual sale failed" });
-  }
-};
-
-
-/**
- * 📊 GET SALES SUMMARY (SMARTBIZ DASHBOARD)
- */
-exports.getSalesSummary = async (req, res) => {
-  try {
-    const orders = await Order.find({ paymentStatus: "PAID" });
-
-    let total = 0;
-    let cash = 0;
-    let wallet = 0;
-    let mpesa = 0;
-
-    orders.forEach(o => {
-      total += o.totalAmount;
-
-      if (o.paymentMethod === "CASH") cash += o.totalAmount;
-      if (o.paymentMethod === "WALLET") wallet += o.totalAmount;
-      if (o.paymentMethod === "MPESA") mpesa += o.totalAmount;
-    });
-
-    res.json({
-      total,
-      breakdown: {
-        CASH: cash,
-        WALLET: wallet,
-        MPESA: mpesa
-      }
-    });
-  } catch (err) {
-    console.error("Summary error:", err);
-    res.status(500).json({ message: "Failed to load summary" });
-  }
-};
-
