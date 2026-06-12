@@ -26,14 +26,16 @@ module.exports = (req, res, next) => {
 
     const decoded =
       jwt.verify(
-
         token,
-
         process.env.JWT_SECRET ||
         "smartbiz_secret"
       );
 
-    req.user = decoded;
+    req.user = {
+      user: decoded.user,
+      id: decoded.user,
+      businessId: decoded.businessId
+    };
 
     next();
 
