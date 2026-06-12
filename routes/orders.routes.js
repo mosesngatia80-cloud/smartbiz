@@ -116,4 +116,52 @@ router.post("/:orderId/status", auth, async (req, res) => {
   }
 });
 
+/* ================= CUSTOMERS ================= */
+router.get("/customers/list", auth, async (req, res) => {
+  try {
+
+    const business = await Business.findOne({
+      owner: req.userId
+    });
+
+    if (!business) {
+      return res.json([]);
+    }
+
+    const orders = await Order.find({
+      business: business._id
+    });
+
+    const map = {};
+
+    orders.forEach(order => {
+
+      const phone = order.customerPhone;
+
+      if (!phone) return;
+
+      if (!map[phone]) {
+        map[phone] = {
+          phone,
+          totalOrders: 0,
+          totalSpent: 0
+        };
+      }
+
+      map[phone].totalOrders += 1;
+      map[phone].totalSpent += Number(order.total || 0);
+    });
+
+    res.json(Object.values(map));
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      message: err.message
+    });
+  }
+});
+
 module.exports = router;
