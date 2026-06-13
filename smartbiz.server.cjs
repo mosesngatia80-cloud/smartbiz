@@ -24,16 +24,27 @@ io.on("connection", (socket) => {
   console.log("🟢 User connected:", socket.id);
 
   socket.on("join_room", async (orderId) => {
+    console.log("JOIN_ROOM:", orderId);
+
     socket.join(orderId);
 
     const history = await Message.find({ orderId }).sort({ createdAt: 1 });
+
+    console.log("HISTORY_COUNT:", history.length);
+
     socket.emit("chat_history", history);
   });
 
   socket.on("send_message", async (data) => {
+    console.log("SEND_MESSAGE:", data);
+
     try {
       const msg = await Message.create(data);
+
+      console.log("MESSAGE_SAVED:", msg._id);
+
       io.to(data.orderId).emit("receive_message", msg);
+
     } catch (err) {
       console.error("Socket error:", err.message);
     }
