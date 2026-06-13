@@ -14,6 +14,12 @@ const ProductSchema = new mongoose.Schema(
       min: 0
     },
 
+    salePrice: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+
     /* ✅ PRODUCT IMAGE */
 
     image: {

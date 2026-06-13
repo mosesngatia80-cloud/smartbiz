@@ -1,0 +1,30 @@
+    if (
+      typeof window.lastOrderCount === "undefined"
+    ) {
+
+      window.lastOrderCount =
+        orders.length;
+
+    } else if (
+      orders.length >
+      window.lastOrderCount
+    ) {
+
+      const newOrders =
+        orders.length -
+        window.lastOrderCount;
+
+      alert(
+        "🔔 " +
+        newOrders +
+        " new order(s) received"
+      );
+
+      window.lastOrderCount =
+        orders.length;
+
+    } else {
+
+      window.lastOrderCount =
+        orders.length;
+    }

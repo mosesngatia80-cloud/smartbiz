@@ -1,0 +1,20 @@
+/* ================= ORDER AUTO REFRESH ================= */
+
+setInterval(() => {
+
+  const ordersView =
+    document.getElementById(
+      "orders"
+    );
+
+  if (
+    ordersView &&
+    !ordersView.classList.contains(
+      "hidden"
+    )
+  ) {
+
+    loadOrders();
+  }
+
+}, 10000);

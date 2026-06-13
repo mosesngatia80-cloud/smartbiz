@@ -474,3 +474,28 @@ th, td {
 
 }
 
+
+.chat-bubble {
+  max-width: 75%;
+  padding: 10px;
+  margin: 6px 0;
+  border-radius: 12px;
+  word-wrap: break-word;
+}
+
+.chat-business {
+  margin-left: auto;
+  background: #DCF8C6;
+}
+
+.chat-customer {
+  margin-right: auto;
+  background: #FFFFFF;
+}
+
+.chat-time {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 4px;
+}
+

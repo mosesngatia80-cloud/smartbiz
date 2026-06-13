@@ -16,14 +16,6 @@ const socket = io(
   "https://navu-smart-biz-sbdh.onrender.com"
 );
 
-socket.on("connect", () => {
-  console.log("CONNECTED:", socket.id);
-});
-
-socket.on("connect_error", (err) => {
-  console.log("SOCKET ERROR:", err.message);
-});
-
 socket.on(
   "chat_history",
   (messages) => {
@@ -38,14 +30,17 @@ socket.on(
     messages.forEach(msg => {
 
       box.innerHTML +=
-        renderChatBubble(msg);
-
+        "<div><b>" +
+        (msg.sender || "User") +
+        ":</b> " +
+        msg.message +
+        "</div>";
     });
   }
 );
 
 socket.on(
-  "receive_message",
+  "newMessage",
   (msg) => {
 
     const box =
@@ -54,7 +49,11 @@ socket.on(
       );
 
     box.innerHTML +=
-      renderChatBubble(msg);
+      "<div><b>" +
+      (msg.sender || "User") +
+      ":</b> " +
+      msg.message +
+      "</div>";
 
     box.scrollTop =
       box.scrollHeight;
@@ -63,31 +62,6 @@ socket.on(
 
 
 
-function renderChatBubble(msg) {
-
-  const bubbleClass =
-    msg.senderType === "BUSINESS"
-      ? "chat-bubble chat-business"
-      : "chat-bubble chat-customer";
-
-  const time =
-    new Date().toLocaleTimeString(
-      [],
-      {
-        hour: "2-digit",
-        minute: "2-digit"
-      }
-    );
-
-  return `
-    <div class="${bubbleClass}">
-      <div>${msg.message}</div>
-      <div class="chat-time">
-        ${time}
-      </div>
-    </div>
-  `;
-}
 /* ================= UTIL ================= */
 
 function logout() {
@@ -408,116 +382,12 @@ async function loadProducts() {
             <strong>${p.name}</strong>
           </div>
 
-          ${
-            p.salePrice > 0 &&
-            p.salePrice < p.price
-            ? `
-              <div>
-                <span
-                  style="
-                    text-decoration:line-through;
-                    color:gray;
-                  "
-                >
-                  KES ${p.price}
-                </span>
-              </div>
-
-              <div
-                style="
-                  font-weight:bold;
-                  color:green;
-                "
-              >
-                KES ${p.salePrice}
-              </div>
-
-              <div
-                style="
-                  color:red;
-                  font-weight:bold;
-                "
-              >
-                ${Math.round(
-                  ((p.price - p.salePrice) /
-                    p.price) * 100
-                )}% OFF
-              </div>
-            `
-            : `
-              <div>
-                KES ${p.price}
-              </div>
-            `
-          }
+          <div>
+            KES ${p.price}
+          </div>
 
           <div>
             Stock: ${p.stock}
-          </div>
-
-          ${
-            p.stock === 0
-            ? `
-              <div
-                style="
-                  color:red;
-                  font-weight:bold;
-                  margin-top:5px;
-                "
-              >
-                ❌ OUT OF STOCK
-              </div>
-            `
-            : p.stock <= 5
-            ? `
-              <div
-                style="
-                  color:orange;
-                  font-weight:bold;
-                  margin-top:5px;
-                "
-              >
-                ⚠️ LOW STOCK
-              </div>
-            `
-            : ""
-          }
-
-          <div
-            style="
-              margin-top:10px;
-              display:flex;
-              gap:8px;
-            "
-          >
-            <button
-              onclick="addStock('${p._id}', ${p.stock})"
-            >
-              + Stock
-            </button>
-
-            <button
-              onclick="reduceStock('${p._id}', ${p.stock})"
-            >
-              - Stock
-            </button>
-
-            <button
-              onclick="editProduct(
-                '${p._id}',
-                '${p.name}',
-                ${p.price},
-                ${p.stock}
-              )"
-            >
-              Edit
-            </button>
-
-            <button
-              onclick="deleteProduct('${p._id}')"
-            >
-              Delete
-            </button>
           </div>
 
         </div>
@@ -537,161 +407,6 @@ async function loadProducts() {
   }
 
 }
-
-
-async function deleteProduct(id) {
-
-  if (!confirm("Delete this product?")) {
-    return;
-  }
-
-  try {
-
-    const res = await fetch(
-      API_BASE + "/products/" + id,
-      {
-        method: "DELETE"
-      }
-    );
-
-    const data = await res.json();
-
-    alert(data.message || "Deleted");
-
-    loadProducts();
-
-  } catch (err) {
-
-    console.error(err);
-
-    alert("Failed to delete product");
-  }
-}
-
-async function updateStock(id, stock) {
-
-  try {
-
-    await fetch(
-      API_BASE + "/products/" + id,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          stock
-        })
-      }
-    );
-
-    loadProducts();
-
-  } catch (err) {
-
-    console.error(err);
-
-    alert("Failed to update stock");
-  }
-}
-
-async function addStock(id, currentStock) {
-
-  const qty =
-    Number(
-      prompt("Add stock quantity")
-    );
-
-  if (!qty) return;
-
-  await updateStock(
-    id,
-    currentStock + qty
-  );
-}
-
-async function reduceStock(id, currentStock) {
-
-  const qty =
-    Number(
-      prompt("Reduce stock quantity")
-    );
-
-  if (!qty) return;
-
-  await updateStock(
-    id,
-    Math.max(
-      0,
-      currentStock - qty
-    )
-  );
-}
-
-
-async function editProduct(
-  id,
-  currentName,
-  currentPrice,
-  currentStock
-) {
-
-  const name =
-    prompt(
-      "Product Name",
-      currentName
-    );
-
-  if (!name) return;
-
-  const price =
-    Number(
-      prompt(
-        "Product Price",
-        currentPrice
-      )
-    );
-
-  const stock =
-    Number(
-      prompt(
-        "Product Stock",
-        currentStock
-      )
-    );
-
-  try {
-
-    await fetch(
-      API_BASE +
-      "/products/" +
-      id,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-        body: JSON.stringify({
-          name,
-          price,
-          stock
-        })
-      }
-    );
-
-    loadProducts();
-
-  } catch (err) {
-
-    console.error(err);
-
-    alert(
-      "Failed to update product"
-    );
-  }
-}
-
 
 /* ================= IMAGE PRODUCT UPLOAD ================= */
 
@@ -723,15 +438,6 @@ async function addProduct() {
 
     );
 
-  const salePrice =
-    Number(
-
-      document.getElementById(
-        "newProductSalePrice"
-      ).value || 0
-
-    );
-
   const stock =
     Number(
 
@@ -759,11 +465,6 @@ async function addProduct() {
     formData.append(
       "price",
       price
-    );
-
-    formData.append(
-      "salePrice",
-      salePrice
     );
 
     formData.append(
@@ -823,10 +524,6 @@ async function addProduct() {
 
     document.getElementById(
       "newProductPrice"
-    ).value = "";
-
-    document.getElementById(
-      "newProductSalePrice"
     ).value = "";
 
     document.getElementById(
@@ -2416,23 +2113,20 @@ function openChat(orderId) {
   ).style.display = "block";
 
   socket.emit(
-    "join_room",
+    "joinRoom",
     orderId
   );
 }
 function sendChatMessage(message) {
 
   socket.emit(
-    "send_message",
+    "sendMessage",
     {
       orderId:
         currentChatOrderId,
 
       sender:
         "Business",
-
-      senderType:
-        "BUSINESS",
 
       message
     }

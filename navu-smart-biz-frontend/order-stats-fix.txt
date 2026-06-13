@@ -1,0 +1,17 @@
+    const paid =
+      orders.filter(
+        o => o.status === "PAID"
+      ).length;
+
+    const pending =
+      orders.filter(
+        o => o.status === "PENDING"
+      ).length;
+
+    document.getElementById(
+      "paidOrders"
+    ).innerText = paid;
+
+    document.getElementById(
+      "pendingOrders"
+    ).innerText = pending;

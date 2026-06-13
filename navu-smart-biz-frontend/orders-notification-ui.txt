@@ -1,0 +1,12 @@
+<div
+  id="orderNotification"
+  style="
+    display:none;
+    margin:10px 0;
+    padding:12px;
+    border-radius:10px;
+    font-weight:bold;
+  "
+>
+  🔔 New Order Received
+</div>

@@ -1,0 +1,25 @@
+function renderChatBubble(msg) {
+
+  const bubbleClass =
+    msg.sender === "Business"
+      ? "chat-bubble chat-business"
+      : "chat-bubble chat-customer";
+
+  const time =
+    new Date().toLocaleTimeString(
+      [],
+      {
+        hour: "2-digit",
+        minute: "2-digit"
+      }
+    );
+
+  return `
+    <div class="${bubbleClass}">
+      <div>${msg.message}</div>
+      <div class="chat-time">
+        ${time}
+      </div>
+    </div>
+  `;
+}

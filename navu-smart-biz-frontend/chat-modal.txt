@@ -1,0 +1,46 @@
+<div
+  id="chatModal"
+  style="
+    display:none;
+    position:fixed;
+    top:10%;
+    left:50%;
+    transform:translateX(-50%);
+    width:90%;
+    max-width:500px;
+    background:white;
+    border:1px solid #ccc;
+    border-radius:10px;
+    padding:15px;
+    z-index:9999;
+  "
+>
+  <h3>Order Chat</h3>
+
+  <div
+    id="chatMessages"
+    style="
+      height:300px;
+      overflow-y:auto;
+      border:1px solid #ddd;
+      margin-bottom:10px;
+      padding:10px;
+    "
+  ></div>
+
+  <input
+    id="chatInput"
+    placeholder="Type message..."
+    style="width:100%;padding:10px;"
+  >
+
+  <br><br>
+
+  <button onclick="sendCurrentChatMessage()">
+    Send
+  </button>
+
+  <button onclick="closeChatModal()">
+    Close
+  </button>
+</div>

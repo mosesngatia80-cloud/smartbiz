@@ -1,0 +1,6 @@
+<button
+  onclick="openChat('${order._id}')"
+  class="add-cart-btn"
+>
+  Chat
+</button>

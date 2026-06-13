@@ -1,0 +1,15 @@
+function sendChatMessage(message) {
+
+  socket.emit(
+    "send_message",
+    {
+      orderId:
+        currentChatOrderId,
+
+      sender:
+        "Business",
+
+      message
+    }
+  );
+}

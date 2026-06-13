@@ -7,19 +7,19 @@ export default function Chat({ businessId }) {
   const bottomRef = useRef(null);
 
   useEffect(() => {
-    socket.emit("joinRoom", businessId);
+    socket.emit("join_room", businessId);
 
     socket.on("chat_history", (history) => {
       setMessages(history);
     });
 
-    socket.on("newMessage", (msg) => {
+    socket.on("receive_message", (msg) => {
       setMessages((prev) => [...prev, msg]);
     });
 
     return () => {
       socket.off("chat_history");
-      socket.off("newMessage");
+      socket.off("receive_message");
     };
   }, [businessId]);
 
@@ -30,7 +30,7 @@ export default function Chat({ businessId }) {
   const sendMessage = () => {
     if (!text.trim()) return;
 
-    socket.emit("sendMessage", {
+    socket.emit("send_message", {
       businessId,
       message: text,
       sender: "client"

@@ -41,7 +41,6 @@ router.post("/", upload.single("image"), async (req, res) => {
       name,
       category,
       price,
-      salePrice,
       stock,
       description,
       whatsappNumber
@@ -70,7 +69,6 @@ router.post("/", upload.single("image"), async (req, res) => {
       name,
       category,
       price,
-      salePrice,
       stock,
       description,
       image: imageUrl
@@ -125,37 +123,6 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-/* ================= UPDATE PRODUCT ================= */
-router.put("/:id", async (req, res) => {
-  try {
-
-    const product =
-      await Product.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        {
-          new: true,
-          runValidators: true
-        }
-      );
-
-    if (!product) {
-      return res.status(404).json({
-        message: "Product not found"
-      });
-    }
-
-    res.json(product);
-
-  } catch (err) {
-
-    res.status(500).json({
-      error: err.message
-    });
-
-  }
-});
-
 /* ================= STORE BY SLUG ================= */
 router.get("/store/:slug", async (req, res) => {
   try {
@@ -207,162 +174,5 @@ router.get("/store-phone/:whatsappNumber", async (req, res) => {
     res.status(500).json({ message: "Failed to load store" });
   }
 });
-
-/* =========================
-   CASH SALE
-========================= */
-
-router.post(
-  "/cash-sale",
-
-  async (req, res) => {
-
-    try {
-
-      const {
-        productName,
-        amount,
-        quantity = 1,
-        whatsappNumber
-      } = req.body;
-
-      if (
-        !productName ||
-        !whatsappNumber
-      ) {
-
-        return res.status(400).json({
-          message: "Missing fields"
-        });
-      }
-
-      const business =
-        await Business.findOne({
-          whatsappNumber
-        });
-
-      if (!business) {
-
-        return res.status(404).json({
-          message: "Business not found"
-        });
-      }
-
-      const product =
-        await Product.findOne({
-          business: business._id,
-          name: {
-            $regex: new RegExp(
-              "^" + productName + "$",
-              "i"
-            )
-          }
-        });
-
-      if (!product) {
-
-        return res.status(404).json({
-          message: "Product not found"
-        });
-      }
-
-      const expectedTotal =
-        Number(product.price) *
-        Number(quantity);
-
-      if (
-        Number(amount) !==
-        Number(expectedTotal)
-      ) {
-
-        return res.status(400).json({
-          message:
-            `Incorrect amount. Expected KES ${expectedTotal}`
-        });
-      }
-
-      if (
-        product.stock <
-        quantity
-      ) {
-
-        return res.status(400).json({
-          message: "Insufficient stock"
-        });
-      }
-
-      product.stock -=
-        Number(quantity);
-
-      await product.save();
-
-      await Order.create({
-
-        business:
-          business._id,
-
-        customerPhone:
-          "CASH_CUSTOMER",
-
-        items: [
-          {
-            product:
-              product._id,
-
-            name:
-              product.name,
-
-            price:
-              product.price,
-
-            qty:
-              Number(quantity),
-
-            lineTotal:
-              expectedTotal
-          }
-        ],
-
-        total:
-          expectedTotal,
-
-        amountPaid:
-          expectedTotal,
-
-        balance: 0,
-
-        paymentStatus:
-          "PAID",
-
-        status:
-          "PAID",
-
-        paymentMethod:
-          "CASH",
-
-        source:
-          "MANUAL"
-      });
-
-      res.json({
-        success: true,
-        message: "Cash sale recorded ✅",
-        remainingStock: product.stock
-      });
-
-    } catch (err) {
-
-      console.error(
-        "CASH SALE ERROR:"
-      );
-
-      console.error(err);
-
-      res.status(500).json({
-        message: err.message
-      });
-    }
-  }
-);
 
 module.exports = router;

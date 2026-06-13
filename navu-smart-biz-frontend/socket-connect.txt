@@ -1,0 +1,3 @@
+const socket = io(
+  "https://navu-smart-biz-sbdh.onrender.com"
+);

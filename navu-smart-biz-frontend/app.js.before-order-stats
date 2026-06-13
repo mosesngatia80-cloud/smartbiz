@@ -12,82 +12,6 @@ function authHeaders() {
 const API_BASE = "https://navu-smart-biz-sbdh.onrender.com/api";
 const SITE_BASE = "https://navu-smart-biz-sbdh.onrender.com";
 
-const socket = io(
-  "https://navu-smart-biz-sbdh.onrender.com"
-);
-
-socket.on("connect", () => {
-  console.log("CONNECTED:", socket.id);
-});
-
-socket.on("connect_error", (err) => {
-  console.log("SOCKET ERROR:", err.message);
-});
-
-socket.on(
-  "chat_history",
-  (messages) => {
-
-    const box =
-      document.getElementById(
-        "chatMessages"
-      );
-
-    box.innerHTML = "";
-
-    messages.forEach(msg => {
-
-      box.innerHTML +=
-        renderChatBubble(msg);
-
-    });
-  }
-);
-
-socket.on(
-  "receive_message",
-  (msg) => {
-
-    const box =
-      document.getElementById(
-        "chatMessages"
-      );
-
-    box.innerHTML +=
-      renderChatBubble(msg);
-
-    box.scrollTop =
-      box.scrollHeight;
-  }
-);
-
-
-
-function renderChatBubble(msg) {
-
-  const bubbleClass =
-    msg.senderType === "BUSINESS"
-      ? "chat-bubble chat-business"
-      : "chat-bubble chat-customer";
-
-  const time =
-    new Date().toLocaleTimeString(
-      [],
-      {
-        hour: "2-digit",
-        minute: "2-digit"
-      }
-    );
-
-  return `
-    <div class="${bubbleClass}">
-      <div>${msg.message}</div>
-      <div class="chat-time">
-        ${time}
-      </div>
-    </div>
-  `;
-}
 /* ================= UTIL ================= */
 
 function logout() {
@@ -408,116 +332,12 @@ async function loadProducts() {
             <strong>${p.name}</strong>
           </div>
 
-          ${
-            p.salePrice > 0 &&
-            p.salePrice < p.price
-            ? `
-              <div>
-                <span
-                  style="
-                    text-decoration:line-through;
-                    color:gray;
-                  "
-                >
-                  KES ${p.price}
-                </span>
-              </div>
-
-              <div
-                style="
-                  font-weight:bold;
-                  color:green;
-                "
-              >
-                KES ${p.salePrice}
-              </div>
-
-              <div
-                style="
-                  color:red;
-                  font-weight:bold;
-                "
-              >
-                ${Math.round(
-                  ((p.price - p.salePrice) /
-                    p.price) * 100
-                )}% OFF
-              </div>
-            `
-            : `
-              <div>
-                KES ${p.price}
-              </div>
-            `
-          }
+          <div>
+            KES ${p.price}
+          </div>
 
           <div>
             Stock: ${p.stock}
-          </div>
-
-          ${
-            p.stock === 0
-            ? `
-              <div
-                style="
-                  color:red;
-                  font-weight:bold;
-                  margin-top:5px;
-                "
-              >
-                ❌ OUT OF STOCK
-              </div>
-            `
-            : p.stock <= 5
-            ? `
-              <div
-                style="
-                  color:orange;
-                  font-weight:bold;
-                  margin-top:5px;
-                "
-              >
-                ⚠️ LOW STOCK
-              </div>
-            `
-            : ""
-          }
-
-          <div
-            style="
-              margin-top:10px;
-              display:flex;
-              gap:8px;
-            "
-          >
-            <button
-              onclick="addStock('${p._id}', ${p.stock})"
-            >
-              + Stock
-            </button>
-
-            <button
-              onclick="reduceStock('${p._id}', ${p.stock})"
-            >
-              - Stock
-            </button>
-
-            <button
-              onclick="editProduct(
-                '${p._id}',
-                '${p.name}',
-                ${p.price},
-                ${p.stock}
-              )"
-            >
-              Edit
-            </button>
-
-            <button
-              onclick="deleteProduct('${p._id}')"
-            >
-              Delete
-            </button>
           </div>
 
         </div>
@@ -537,161 +357,6 @@ async function loadProducts() {
   }
 
 }
-
-
-async function deleteProduct(id) {
-
-  if (!confirm("Delete this product?")) {
-    return;
-  }
-
-  try {
-
-    const res = await fetch(
-      API_BASE + "/products/" + id,
-      {
-        method: "DELETE"
-      }
-    );
-
-    const data = await res.json();
-
-    alert(data.message || "Deleted");
-
-    loadProducts();
-
-  } catch (err) {
-
-    console.error(err);
-
-    alert("Failed to delete product");
-  }
-}
-
-async function updateStock(id, stock) {
-
-  try {
-
-    await fetch(
-      API_BASE + "/products/" + id,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          stock
-        })
-      }
-    );
-
-    loadProducts();
-
-  } catch (err) {
-
-    console.error(err);
-
-    alert("Failed to update stock");
-  }
-}
-
-async function addStock(id, currentStock) {
-
-  const qty =
-    Number(
-      prompt("Add stock quantity")
-    );
-
-  if (!qty) return;
-
-  await updateStock(
-    id,
-    currentStock + qty
-  );
-}
-
-async function reduceStock(id, currentStock) {
-
-  const qty =
-    Number(
-      prompt("Reduce stock quantity")
-    );
-
-  if (!qty) return;
-
-  await updateStock(
-    id,
-    Math.max(
-      0,
-      currentStock - qty
-    )
-  );
-}
-
-
-async function editProduct(
-  id,
-  currentName,
-  currentPrice,
-  currentStock
-) {
-
-  const name =
-    prompt(
-      "Product Name",
-      currentName
-    );
-
-  if (!name) return;
-
-  const price =
-    Number(
-      prompt(
-        "Product Price",
-        currentPrice
-      )
-    );
-
-  const stock =
-    Number(
-      prompt(
-        "Product Stock",
-        currentStock
-      )
-    );
-
-  try {
-
-    await fetch(
-      API_BASE +
-      "/products/" +
-      id,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-        body: JSON.stringify({
-          name,
-          price,
-          stock
-        })
-      }
-    );
-
-    loadProducts();
-
-  } catch (err) {
-
-    console.error(err);
-
-    alert(
-      "Failed to update product"
-    );
-  }
-}
-
 
 /* ================= IMAGE PRODUCT UPLOAD ================= */
 
@@ -723,15 +388,6 @@ async function addProduct() {
 
     );
 
-  const salePrice =
-    Number(
-
-      document.getElementById(
-        "newProductSalePrice"
-      ).value || 0
-
-    );
-
   const stock =
     Number(
 
@@ -759,11 +415,6 @@ async function addProduct() {
     formData.append(
       "price",
       price
-    );
-
-    formData.append(
-      "salePrice",
-      salePrice
     );
 
     formData.append(
@@ -823,10 +474,6 @@ async function addProduct() {
 
     document.getElementById(
       "newProductPrice"
-    ).value = "";
-
-    document.getElementById(
-      "newProductSalePrice"
     ).value = "";
 
     document.getElementById(
@@ -1505,63 +1152,12 @@ async function loadOrders() {
       "totalOrders"
     ).innerText =
       orders.length || 0;
-    if (
-      typeof window.lastOrderCount === "undefined"
-    ) {
-
-      window.lastOrderCount =
-        orders.length;
-
-    } else if (
-      orders.length >
-      window.lastOrderCount
-    ) {
-
-      const newOrders =
-        orders.length -
-        window.lastOrderCount;
-
-      const notification =
-        document.getElementById(
-          "orderNotification"
-        );
-
-      if (notification) {
-
-        notification.innerText =
-          "🔔 " +
-          newOrders +
-          " New Order" +
-          (newOrders > 1 ? "s" : "");
-
-        notification.style.display =
-          "block";
-
-        setTimeout(() => {
-
-          notification.style.display =
-            "none";
-
-        }, 5000);
-      }
-
-      window.lastOrderCount =
-        orders.length;
-
-    } else {
-
-      window.lastOrderCount =
-        orders.length;
-    }
 
     const paid =
       orders.filter(
-        o => o.status === "PAID"
-      ).length;
-
-    const pending =
-      orders.filter(
-        o => o.status === "PENDING"
+        o =>
+          o.paymentMethod === "CASH" ||
+          o.status === "PAID"
       ).length;
 
     document.getElementById(
@@ -1570,7 +1166,8 @@ async function loadOrders() {
 
     document.getElementById(
       "pendingOrders"
-    ).innerText = pending;
+    ).innerText =
+      orders.length - paid;
 
     orders.forEach(order => {
 
@@ -1672,12 +1269,6 @@ async function loadOrders() {
             >
               View Receipt
             </button>
-<button
-  onclick="openChat('${order._id}')"
-  class="add-cart-btn"
->
-  Chat
-</button>
 
             <button
               onclick="downloadReceipt('${order._id}')"
@@ -2356,85 +1947,80 @@ loadServices();
 
 loadBookings();
 
-/* ================= ORDER AUTO REFRESH ================= */
 
-setInterval(() => {
-
-  const ordersView =
-    document.getElementById(
-      "orders"
-    );
-
-  if (
-    ordersView &&
-    !ordersView.classList.contains(
-      "hidden"
-    )
-  ) {
-
-    loadOrders();
-  }
-
-}, 10000);
-
-
-
-function closeChatModal() {
-
-  document.getElementById(
-    "chatModal"
-  ).style.display = "none";
-}
-
-function sendCurrentChatMessage() {
-
-  const input =
-    document.getElementById(
-      "chatInput"
-    );
-
-  const message =
-    input.value.trim();
-
-  if (!message) return;
-
-  sendChatMessage(message);
-
-  input.value = "";
-}
-/* ================= CHAT ================= */
 /* ================= CHAT ================= */
 
 let currentChatOrderId = null;
 
 function openChat(orderId) {
 
-  currentChatOrderId = orderId;
+currentChatOrderId = orderId;
 
-  document.getElementById(
-    "chatModal"
-  ).style.display = "block";
+const message =
+prompt(
+"Send a message to the customer:"
+);
 
-  socket.emit(
-    "join_room",
-    orderId
-  );
+if (!message) return;
+
+sendChatMessage(message);
 }
-function sendChatMessage(message) {
 
-  socket.emit(
-    "send_message",
+async function sendChatMessage(message) {
+
+try {
+
+const token =
+  localStorage.getItem("token");
+
+const res =
+  await fetch(
+    API_BASE + "/chat/send",
     {
-      orderId:
-        currentChatOrderId,
+      method: "POST",
 
-      sender:
-        "Business",
+      headers: {
+        "Content-Type":
+          "application/json",
 
-      senderType:
-        "BUSINESS",
+        Authorization:
+          "Bearer " + token
+      },
 
-      message
+      body: JSON.stringify({
+        orderId:
+          currentChatOrderId,
+
+        message
+      })
     }
   );
+
+const data =
+  await res.json();
+
+if (!res.ok) {
+
+  alert(
+    data.error ||
+    "Failed to send message"
+  );
+
+  return;
 }
+
+alert(
+  "Message sent ✅"
+);
+
+} catch (err) {
+
+console.error(err);
+
+alert(
+  "Chat error"
+);
+
+}
+}
+

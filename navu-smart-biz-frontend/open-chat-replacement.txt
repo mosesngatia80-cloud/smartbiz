@@ -1,0 +1,13 @@
+function openChat(orderId) {
+
+  currentChatOrderId = orderId;
+
+  document.getElementById(
+    "chatModal"
+  ).style.display = "block";
+
+  socket.emit(
+    "join_room",
+    orderId
+  );
+}

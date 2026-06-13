@@ -1,0 +1,23 @@
+      const notification =
+        document.getElementById(
+          "orderNotification"
+        );
+
+      if (notification) {
+
+        notification.innerText =
+          "🔔 " +
+          newOrders +
+          " New Order" +
+          (newOrders > 1 ? "s" : "");
+
+        notification.style.display =
+          "block";
+
+        setTimeout(() => {
+
+          notification.style.display =
+            "none";
+
+        }, 5000);
+      }

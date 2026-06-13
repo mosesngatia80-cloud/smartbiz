@@ -1,0 +1,43 @@
+socket.on(
+  "chat_history",
+  (messages) => {
+
+    const box =
+      document.getElementById(
+        "chatMessages"
+      );
+
+    box.innerHTML = "";
+
+    messages.forEach(msg => {
+
+      box.innerHTML +=
+        "<div><b>" +
+        (msg.sender || "User") +
+        ":</b> " +
+        msg.message +
+        "</div>";
+    });
+  }
+);
+
+socket.on(
+  "receive_message",
+  (msg) => {
+
+    const box =
+      document.getElementById(
+        "chatMessages"
+      );
+
+    box.innerHTML +=
+      "<div><b>" +
+      (msg.sender || "User") +
+      ":</b> " +
+      msg.message +
+      "</div>";
+
+    box.scrollTop =
+      box.scrollHeight;
+  }
+);
