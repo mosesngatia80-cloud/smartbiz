@@ -58,6 +58,21 @@ const ProductSchema = new mongoose.Schema(
       default: 0
     },
 
+    openingStock: {
+      type: Number,
+      default: 0
+    },
+
+    stockAdded: {
+      type: Number,
+      default: 0
+    },
+
+    stockSold: {
+      type: Number,
+      default: 0
+    },
+
     /* 🔐 BUSINESS OWNER */
 
     business: {

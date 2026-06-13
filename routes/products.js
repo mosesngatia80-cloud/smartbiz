@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 
 const Product = require("../models/Product");
+const InventoryTransaction =
+  require("../models/InventoryTransaction");
 const Business = require("../models/Business");
 const Service = require("../models/Service");
 const Order = require("../models/Order");
@@ -43,6 +45,7 @@ router.post("/", upload.single("image"), async (req, res) => {
       price,
       salePrice,
       stock,
+
       description,
       whatsappNumber
     } = req.body;
@@ -72,6 +75,7 @@ router.post("/", upload.single("image"), async (req, res) => {
       price,
       salePrice,
       stock,
+
       description,
       image: imageUrl
     });
@@ -129,6 +133,61 @@ router.delete("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
 
+    const existing =
+      await Product.findById(
+        req.params.id
+      );
+
+    if (!existing) {
+      return res.status(404).json({
+        message: "Product not found"
+      });
+    }
+
+    if (
+      req.body.stock !== undefined
+    ) {
+
+      const newStock =
+        Number(req.body.stock);
+
+      const oldStock =
+        Number(existing.stock);
+
+      if (newStock > oldStock) {
+
+        req.body.stockAdded =
+          (existing.stockAdded || 0) +
+          (newStock - oldStock);
+
+        await InventoryTransaction.create({
+          product: existing._id,
+          action: "Added",
+          quantity: newStock - oldStock,
+          stockBefore: oldStock,
+          stockAfter: newStock
+        });
+
+      }
+
+      if (newStock < oldStock) {
+
+        req.body.stockSold =
+          (existing.stockSold || 0) +
+          (oldStock - newStock);
+
+        await InventoryTransaction.create({
+          product: existing._id,
+          action: "Sold",
+          quantity: oldStock - newStock,
+          stockBefore: oldStock,
+          stockAfter: newStock
+        });
+
+      }
+
+    }
+
     const product =
       await Product.findByIdAndUpdate(
         req.params.id,
@@ -138,12 +197,6 @@ router.put("/:id", async (req, res) => {
           runValidators: true
         }
       );
-
-    if (!product) {
-      return res.status(404).json({
-        message: "Product not found"
-      });
-    }
 
     res.json(product);
 
@@ -364,5 +417,34 @@ router.post(
     }
   }
 );
+
+/* ================= INVENTORY LEDGER ================= */
+router.get("/inventory-ledger", async (req, res) => {
+  try {
+
+    const ledger =
+      await InventoryTransaction
+        .find()
+        .populate(
+          "product",
+          "name"
+        )
+        .sort({
+          createdAt: -1
+        });
+
+    res.json(ledger);
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      message:
+        "Failed to load inventory ledger"
+    });
+
+  }
+});
 
 module.exports = router;

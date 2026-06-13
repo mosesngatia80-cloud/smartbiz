@@ -499,3 +499,56 @@ th, td {
   margin-top: 4px;
 }
 
+
+/* ================= INVENTORY TABLE ================= */
+
+#inventoryTable {
+
+  width: 100%;
+
+  border-collapse: collapse;
+
+  margin-top: 15px;
+
+  background: white;
+
+}
+
+#inventoryTable th {
+
+  background: #0d6efd;
+
+  color: white;
+
+  padding: 12px;
+
+  text-align: left;
+
+}
+
+#inventoryTable td {
+
+  padding: 12px;
+
+  border-bottom: 1px solid #e5e7eb;
+
+}
+
+#inventoryTable tr:hover {
+
+  background: #f8fafc;
+
+}
+
+#inventoryTable td:last-child {
+
+  font-weight: bold;
+
+}
+
+.card table {
+
+  overflow-x: auto;
+
+}
+

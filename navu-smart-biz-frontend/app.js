@@ -122,6 +122,7 @@ function showView(id) {
 
   if (id === "products") {
     loadProducts();
+loadInventoryLedger();
   }
 
   if (id === "orders") {
@@ -342,6 +343,51 @@ async function loadDashboard() {
 
 /* ================= PRODUCTS ================= */
 
+
+async function loadInventoryLedger() {
+
+  const ledgerBody =
+    document.getElementById(
+      "ledgerBody"
+    );
+
+  if (!ledgerBody) return;
+
+  try {
+
+    const res =
+      await fetch(
+        API_BASE +
+        "/products/inventory-ledger"
+      );
+
+    const ledger =
+      await res.json();
+
+    ledgerBody.innerHTML = "";
+
+    ledger.forEach(item => {
+
+      ledgerBody.innerHTML += `
+        <tr>
+          <td>${new Date(item.createdAt).toLocaleString()}</td>
+          <td>${item.product?.name || "-"}</td>
+          <td>${item.action}</td>
+          <td>${item.quantity}</td>
+          <td>${item.stockBefore}</td>
+          <td>${item.stockAfter}</td>
+        </tr>
+      `;
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+  }
+
+}
+
 async function loadProducts() {
 
   const list =
@@ -374,6 +420,85 @@ async function loadProducts() {
 
     const products =
       await res.json();
+
+    loadInventoryLedger();
+
+    document.getElementById(
+      "productsCount"
+    ).innerText =
+      products.length;
+
+    document.getElementById(
+      "lowStockCount"
+    ).innerText =
+      products.filter(
+        p => p.stock > 0 &&
+             p.stock <= 5
+      ).length;
+
+    document.getElementById(
+      "outOfStockCount"
+    ).innerText =
+      products.filter(
+        p => p.stock === 0
+      ).length;
+
+    document.getElementById(
+      "inventoryValue"
+    ).innerText =
+      "KES " +
+      products.reduce(
+        (sum, p) =>
+          sum +
+          (
+            Number(p.price || 0) *
+            Number(p.stock || 0)
+          ),
+        0
+      ).toLocaleString();
+
+    const inventoryBody =
+      document.getElementById(
+        "inventoryBody"
+      );
+
+    if (inventoryBody) {
+
+      inventoryBody.innerHTML = "";
+
+      products.forEach(p => {
+
+        const value =
+          Number(p.stock || 0) *
+          Number(p.price || 0);
+
+        inventoryBody.innerHTML += `
+          <tr>
+            <td>${p.name}</td>
+            <td>${p.openingStock || p.stock || 0}</td>
+            <td>${p.stockAdded || 0}</td>
+            <td>${p.stockSold || 0}</td>
+            <td>${p.stock || 0}</td>
+            <td>KES ${Number(
+              p.price || 0
+            ).toLocaleString()}</td>
+            <td>KES ${value.toLocaleString()}</td>
+
+            <td>
+              ${
+                p.stock === 0
+                ? "❌ Out Of Stock"
+                : p.stock <= 5
+                ? "⚠️ Low Stock"
+                : "✅ Normal"
+              }
+            </td>
+
+          </tr>
+        `;
+      });
+
+    }
 
     list.innerHTML = "";
 
@@ -507,6 +632,7 @@ async function loadProducts() {
                 '${p._id}',
                 '${p.name}',
                 ${p.price},
+                ${p.salePrice || 0},
                 ${p.stock}
               )"
             >
@@ -633,6 +759,7 @@ async function editProduct(
   id,
   currentName,
   currentPrice,
+  currentSalePrice,
   currentStock
 ) {
 
@@ -649,6 +776,14 @@ async function editProduct(
       prompt(
         "Product Price",
         currentPrice
+      )
+    );
+
+  const salePrice =
+    Number(
+      prompt(
+        "Sale Price (0 = no discount)",
+        currentSalePrice || 0
       )
     );
 
@@ -675,6 +810,7 @@ async function editProduct(
         body: JSON.stringify({
           name,
           price,
+          salePrice,
           stock
         })
       }
