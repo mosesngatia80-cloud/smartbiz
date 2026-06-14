@@ -4,6 +4,8 @@ const auth = require("../middleware/auth");
 
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const InventoryTransaction =
+  require("../models/InventoryTransaction");
 const Business = require("../models/Business");
 const Receipt = require("../models/Receipt");
 const Wallet = require("../models/Wallet");
@@ -371,6 +373,41 @@ router.post("/:orderId/mark-paid", async (req, res) => {
 
     order.paidAt =
       new Date();
+
+    for (const item of order.items) {
+
+      const product =
+        await Product.findById(
+          item.product
+        );
+
+      if (!product) continue;
+
+      const before =
+        Number(product.stock || 0);
+
+      product.stock =
+        Math.max(
+          0,
+          before - item.qty
+        );
+
+      product.stockSold =
+        Number(
+          product.stockSold || 0
+        ) + item.qty;
+
+      await product.save();
+
+      await InventoryTransaction.create({
+        product: product._id,
+        action: "Sold",
+        quantity: item.qty,
+        stockBefore: before,
+        stockAfter: product.stock
+      });
+
+    }
 
     await order.save();
 
