@@ -347,6 +347,23 @@ router.post(
       product.stock -=
         Number(quantity);
 
+      product.stockSold =
+        Number(
+          product.stockSold || 0
+        ) + Number(quantity);
+
+      const before =
+        Number(product.stock) +
+        Number(quantity);
+
+      await InventoryTransaction.create({
+        product: product._id,
+        action: "Sold",
+        quantity: Number(quantity),
+        stockBefore: before,
+        stockAfter: product.stock
+      });
+
       await product.save();
 
       await Order.create({
