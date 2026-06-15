@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 const Order = require("../models/Order");
 const Business = require("../models/Business");
 const Product = require("../models/Product");
+const InventoryTransaction =
+  require("../models/InventoryTransaction");
 
 const router = express.Router();
 
@@ -213,8 +215,29 @@ router.post("/public-checkout", async (req, res) => {
         });
       }
 
-      product.stock -= qty;
+      const before =
+        Number(product.stock || 0);
+
+      product.stock =
+        Math.max(
+          0,
+          before - qty
+        );
+
+      product.stockSold =
+        Number(
+          product.stockSold || 0
+        ) + qty;
+
       await product.save();
+
+      await InventoryTransaction.create({
+        product: product._id,
+        action: "Sold",
+        quantity: qty,
+        stockBefore: before,
+        stockAfter: product.stock
+      });
 
       const lineTotal = product.price * qty;
 
