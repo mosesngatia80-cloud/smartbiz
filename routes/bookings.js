@@ -6,6 +6,7 @@ const Booking = require("../models/Booking");
 
 const Service = require("../models/Service");
 const Business = require("../models/Business");
+const Customer = require("../models/Customer");
 
 const auth = require("../middleware/auth");
 
@@ -36,6 +37,40 @@ router.post("/", async (req, res) => {
         message:
           "Service not found"
       });
+    }
+
+    const business =
+      await Business.findById(
+        service.business
+      );
+
+    let customer =
+      await Customer.findOne({
+
+        business:
+          service.business,
+
+        phone:
+          customerPhone
+      });
+
+    if (!customer) {
+
+      customer =
+        await Customer.create({
+
+          owner:
+            business?.owner || "",
+
+          business:
+            service.business,
+
+          name:
+            "Service Customer",
+
+          phone:
+            customerPhone
+        });
     }
 
     const booking =
