@@ -520,6 +520,26 @@ async function loadProducts() {
 
     }
 
+    const expenseProduct =
+      document.getElementById(
+        "expenseProduct"
+      );
+
+    if (expenseProduct) {
+
+      expenseProduct.innerHTML =
+        '<option value="">Select Product</option>';
+
+      products.forEach(p => {
+
+        expenseProduct.innerHTML +=
+          `<option value="${p._id}">
+            ${p.name}
+          </option>`;
+      });
+
+    }
+
     list.innerHTML = "";
 
     products.forEach(p => {
@@ -1205,6 +1225,21 @@ async function addExpense() {
                 document.getElementById(
                   "expenseCategory"
                 ).value,
+
+              productId:
+                document.getElementById(
+                  "expenseProduct"
+                )?.value || "",
+
+              quantity:
+                document.getElementById(
+                  "expenseQuantity"
+                )?.value || 0,
+
+              supplier:
+                document.getElementById(
+                  "expenseSupplier"
+                )?.value || "",
 
               note:
                 document.getElementById(

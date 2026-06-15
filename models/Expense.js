@@ -36,6 +36,22 @@ const ExpenseSchema = new mongoose.Schema(
     note: {
       type: String,
       default: ""
+    },
+
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: false
+    },
+
+    quantity: {
+      type: Number,
+      default: 0
+    },
+
+    supplier: {
+      type: String,
+      default: ""
     }
   },
   { timestamps: true }

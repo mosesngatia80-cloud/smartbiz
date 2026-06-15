@@ -3,6 +3,10 @@ const router = express.Router();
 
 const Expense = require("../models/Expense");
 const Business = require("../models/Business");
+const Product =
+  require("../models/Product");
+const InventoryTransaction =
+  require("../models/InventoryTransaction");
 
 /* =========================
    CREATE EXPENSE
@@ -17,7 +21,10 @@ router.post("/create", async (req, res) => {
       title,
       amount,
       category,
-      note
+      note,
+      productId,
+      quantity,
+      supplier
     } = req.body;
 
     if (
@@ -45,6 +52,60 @@ router.post("/create", async (req, res) => {
       });
     }
 
+    if (
+      category ===
+      "INVENTORY_PURCHASE"
+    ) {
+
+      const product =
+        await Product.findById(
+          productId
+        );
+
+      if (!product) {
+
+        return res.status(404)
+        .json({
+          message:
+            "Product not found"
+        });
+      }
+
+      const qty =
+        Number(quantity || 0);
+
+      if (qty <= 0) {
+
+        return res.status(400)
+        .json({
+          message:
+            "Invalid quantity"
+        });
+      }
+
+      const before =
+        Number(product.stock || 0);
+
+      product.stock =
+        before + qty;
+
+      product.stockAdded =
+        Number(
+          product.stockAdded || 0
+        ) + qty;
+
+      await product.save();
+
+      await InventoryTransaction.create({
+        product: product._id,
+        action: "Added",
+        quantity: qty,
+        stockBefore: before,
+        stockAfter: product.stock
+      });
+
+    }
+
     /* ✅ CREATE EXPENSE */
 
     const expense =
@@ -63,6 +124,15 @@ router.post("/create", async (req, res) => {
 
         category:
           category || "GENERAL",
+
+        product:
+          productId || null,
+
+        quantity:
+          Number(quantity || 0),
+
+        supplier:
+          supplier || "",
 
         note:
           note || ""
