@@ -291,10 +291,19 @@
 
         <div class="product-form">
 
-          <input
-            id="cashProduct"
-            placeholder="Product Name"
-          />
+          <select id="cashProduct">
+            <option value="">
+              Select Product
+            </option>
+          </select>
+
+          <p id="cashPrice">
+            Price: KES 0
+          </p>
+
+          <p id="cashStock">
+            Stock: 0
+          </p>
 
           <input
             id="cashQuantity"
@@ -307,6 +316,7 @@
             id="cashAmount"
             type="number"
             placeholder="Amount (KES)"
+            readonly
           />
 
           <button onclick="sellCashProduct()">

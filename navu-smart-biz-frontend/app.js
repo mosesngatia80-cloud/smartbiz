@@ -12,6 +12,8 @@ function authHeaders() {
 const API_BASE = "https://navu-smart-biz-sbdh.onrender.com/api";
 const SITE_BASE = "https://navu-smart-biz-sbdh.onrender.com";
 
+let allProducts = [];
+
 const socket = io(
   "https://navu-smart-biz-sbdh.onrender.com"
 );
@@ -421,6 +423,8 @@ async function loadProducts() {
     const products =
       await res.json();
 
+    allProducts = products;
+
     loadInventoryLedger();
 
     document.getElementById(
@@ -540,6 +544,26 @@ async function loadProducts() {
 
     }
 
+    const cashProduct =
+      document.getElementById(
+        "cashProduct"
+      );
+
+    if (cashProduct) {
+
+      cashProduct.innerHTML =
+        '<option value="">Select Product</option>';
+
+      products.forEach(p => {
+
+        cashProduct.innerHTML +=
+          `<option value="${p.name}">
+            ${p.name}
+          </option>`;
+      });
+
+    }
+
     list.innerHTML = "";
 
     products.forEach(p => {
@@ -584,7 +608,7 @@ async function loadProducts() {
                     color:gray;
                   "
                 >
-                  KES ${p.price}
+                  KES ${Number(p.price || 0).toLocaleString()}
                 </span>
               </div>
 
@@ -594,7 +618,7 @@ async function loadProducts() {
                   color:green;
                 "
               >
-                KES ${p.salePrice}
+                KES ${Number(p.salePrice || 0).toLocaleString()}
               </div>
 
               <div
@@ -611,7 +635,7 @@ async function loadProducts() {
             `
             : `
               <div>
-                KES ${p.price}
+                KES ${Number(p.price || 0).toLocaleString()}
               </div>
             `
           }
@@ -2553,6 +2577,85 @@ async function updateBookingStatus(
 /* ================= STARTUP LOADERS ================= */
 
 loadProducts();
+
+document.addEventListener(
+  "change",
+  (e) => {
+
+    if (
+      e.target &&
+      e.target.id === "cashProduct"
+    ) {
+
+      const product =
+        allProducts.find(
+          p => p.name === e.target.value
+        );
+
+      if (!product) return;
+
+      document.getElementById(
+        "cashPrice"
+      ).innerText =
+        "Price: KES " +
+        Number(
+          product.price || 0
+        ).toLocaleString();
+
+      document.getElementById(
+        "cashStock"
+      ).innerText =
+        "Stock: " +
+        Number(
+          product.stock || 0
+        ).toLocaleString();
+
+      const qty =
+        Number(
+          document.getElementById(
+            "cashQuantity"
+          )?.value || 0
+        );
+
+      document.getElementById(
+        "cashAmount"
+      ).value =
+        qty * Number(
+          product.price || 0
+        );
+    }
+  }
+);
+
+document.addEventListener(
+  "input",
+  (e) => {
+
+    if (
+      e.target &&
+      e.target.id === "cashQuantity"
+    ) {
+
+      const productName =
+        document.getElementById(
+          "cashProduct"
+        )?.value;
+
+      const product =
+        allProducts.find(
+          p => p.name === productName
+        );
+
+      if (!product) return;
+
+      document.getElementById(
+        "cashAmount"
+      ).value =
+        Number(e.target.value || 0) *
+        Number(product.price || 0);
+    }
+  }
+);
 
 loadOrders();
 
