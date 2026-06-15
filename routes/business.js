@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Business = require("../models/Business");
+const auth = require("../middleware/authMiddleware");
 
 /* =========================
    GET ALL BUSINESSES
@@ -109,4 +110,60 @@ router.get("/store-link", async (req, res) => {
   }
 });
 
+
+/* =========================
+   UPDATE PROFILE
+========================= */
+router.put("/profile", auth, async (req, res) => {
+  try {
+
+    const {
+      name,
+      whatsappNumber,
+      phone
+    } = req.body;
+
+    const business =
+      await Business.findOne({
+        owner: req.user.user
+      });
+
+    if (!business) {
+      return res.status(404).json({
+        message: "Business not found"
+      });
+    }
+
+    if (name) {
+      business.name = name;
+    }
+
+    if (whatsappNumber) {
+      business.whatsappNumber =
+        whatsappNumber;
+    }
+
+    if (phone) {
+      business.phone = phone;
+    }
+
+    await business.save();
+
+    res.json({
+      success: true,
+      business
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      message: err.message
+    });
+
+  }
+});
+
 module.exports = router;
+
