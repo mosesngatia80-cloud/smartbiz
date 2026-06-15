@@ -627,26 +627,12 @@
 
           <div class="card">
             <h3>Business Name</h3>
-            <input
-              id="profileBusinessNameInput"
-              type="text"
-            />
+            <p id="profileBusinessName">-</p>
           </div>
 
           <div class="card">
             <h3>WhatsApp</h3>
-            <input
-              id="profileWhatsappInput"
-              type="text"
-            />
-          </div>
-
-          <div class="card">
-            <button onclick="saveBusinessProfile()">
-              Save Changes
-            </button>
-
-            <p id="profileMsg"></p>
+            <p id="profileWhatsapp">-</p>
           </div>
 
         </div>

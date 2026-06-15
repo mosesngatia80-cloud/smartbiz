@@ -124,8 +124,7 @@ function showView(id) {
 
   if (id === "products") {
     loadProducts();
-    loadInventoryLedger();
-    loadBalanceSheet();
+loadInventoryLedger();
   }
 
   if (id === "orders") {
@@ -137,7 +136,6 @@ function showView(id) {
 
   if (id === "expenses") {
     loadExpenses();
-    loadBalanceSheet();
   }
 
 
@@ -155,7 +153,6 @@ function showView(id) {
 
   if (id === "debts") {
     loadDebts();
-    loadBalanceSheet();
   }
 
   if (id === "profile") {
@@ -1299,140 +1296,6 @@ async function addExpense() {
 
 }
 
-
-async function loadBalanceSheet() {
-
-  try {
-
-    const business =
-      JSON.parse(
-        localStorage.getItem(
-          "business"
-        )
-      );
-
-    if (!business) return;
-
-    const productsRes =
-      await fetch(
-        API_BASE +
-        "/products/my-products?whatsappNumber=" +
-        encodeURIComponent(
-          business.whatsappNumber
-        )
-      );
-
-    const products =
-      await productsRes.json();
-
-    const inventoryValue =
-      products.reduce(
-        (sum, p) =>
-          sum +
-          (
-            Number(p.stock || 0) *
-            Number(p.price || 0)
-          ),
-        0
-      );
-
-    const expenseRes =
-      await fetch(
-        API_BASE +
-        "/expense?whatsappNumber=" +
-        encodeURIComponent(
-          business.whatsappNumber
-        )
-      );
-
-    const expenseData =
-      await expenseRes.json();
-
-    const debtRes =
-      await fetch(
-        API_BASE +
-        "/debt?phone=" +
-        encodeURIComponent(
-          business.whatsappNumber
-        )
-      );
-
-    const debtData =
-      await debtRes.json();
-
-    const walletBalance = 0;
-
-    const totalAssets =
-      inventoryValue +
-      Number(
-        debtData.totalDebt || 0
-      ) +
-      walletBalance;
-
-    const totalLiabilities =
-      Number(
-        expenseData.totalExpenses || 0
-      );
-
-    const netWorth =
-      totalAssets -
-      totalLiabilities;
-
-    document.getElementById(
-      "bsInventoryValue"
-    ).innerText =
-      "KES " +
-      inventoryValue.toLocaleString();
-
-    document.getElementById(
-      "bsDebts"
-    ).innerText =
-      "KES " +
-      Number(
-        debtData.totalDebt || 0
-      ).toLocaleString();
-
-    document.getElementById(
-      "bsWallet"
-    ).innerText =
-      "KES " +
-      walletBalance.toLocaleString();
-
-    document.getElementById(
-      "bsAssets"
-    ).innerText =
-      "KES " +
-      totalAssets.toLocaleString();
-
-    document.getElementById(
-      "bsExpenses"
-    ).innerText =
-      "KES " +
-      totalLiabilities.toLocaleString();
-
-    document.getElementById(
-      "bsLiabilities"
-    ).innerText =
-      "KES " +
-      totalLiabilities.toLocaleString();
-
-    document.getElementById(
-      "bsNetWorth"
-    ).innerText =
-      "KES " +
-      netWorth.toLocaleString();
-
-  } catch (err) {
-
-    console.error(
-      "Balance Sheet Error:",
-      err
-    );
-
-  }
-}
-
-
 /* ================= DEBTS ================= */
 
 async function loadDebts() {
@@ -1674,24 +1537,24 @@ function loadBusinessProfile() {
 
   const businessName =
     document.getElementById(
-      "profileBusinessNameInput"
+      "profileBusinessName"
     );
 
   const businessWhatsapp =
     document.getElementById(
-      "profileWhatsappInput"
+      "profileWhatsapp"
     );
 
   if (businessName) {
 
-    businessName.value =
-      business.name || "";
+    businessName.innerText =
+      business.name || "-";
   }
 
   if (businessWhatsapp) {
 
-    businessWhatsapp.value =
-      business.whatsappNumber || "";
+    businessWhatsapp.innerText =
+      business.whatsappNumber || "-";
   }
 
   const storeInput =
@@ -1732,89 +1595,6 @@ function loadBusinessProfile() {
    OPEN STORE
 ========================= */
 
-
-
-
-async function saveBusinessProfile() {
-
-  try {
-
-    const token =
-      localStorage.getItem("token");
-
-    const businessName =
-      document.getElementById(
-        "profileBusinessNameInput"
-      ).value.trim();
-
-    const whatsappNumber =
-      document.getElementById(
-        "profileWhatsappInput"
-      ).value.trim();
-
-    const msg =
-      document.getElementById(
-        "profileMsg"
-      );
-
-    const res =
-      await fetch(
-
-        API_BASE +
-        "/business/profile",
-
-        {
-          method: "PUT",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            Authorization:
-              "Bearer " + token
-          },
-
-          body: JSON.stringify({
-            name: businessName,
-            whatsappNumber
-          })
-        }
-      );
-
-    const data =
-      await res.json();
-
-    if (!res.ok) {
-
-      msg.innerText =
-        data.message ||
-        "Profile update failed ❌";
-
-      return;
-    }
-
-    localStorage.setItem(
-      "business",
-      JSON.stringify(
-        data.business
-      )
-    );
-
-    msg.innerText =
-      "Profile updated ✅";
-
-    loadBusinessProfile();
-
-  } catch (err) {
-
-    console.error(err);
-
-    document.getElementById(
-      "profileMsg"
-    ).innerText =
-      "Server error ❌";
-  }
-}
 
 
 /* ================= CASH POS ================= */

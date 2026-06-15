@@ -216,22 +216,6 @@
 
         </div>
 
-
-        <div class="card">
-          <h2>Balance Sheet</h2>
-          <table>
-            <tbody>
-              <tr><td><strong>Inventory Value</strong></td><td id="bsInventoryValue">KES 0</td></tr>
-              <tr><td><strong>Outstanding Debts</strong></td><td id="bsDebts">KES 0</td></tr>
-              <tr><td><strong>Wallet Balance</strong></td><td id="bsWallet">KES 0</td></tr>
-              <tr><td><strong>Total Assets</strong></td><td id="bsAssets">KES 0</td></tr>
-              <tr><td><strong>Total Expenses</strong></td><td id="bsExpenses">KES 0</td></tr>
-              <tr><td><strong>Total Liabilities</strong></td><td id="bsLiabilities">KES 0</td></tr>
-              <tr><td><strong>Net Worth</strong></td><td id="bsNetWorth">KES 0</td></tr>
-            </tbody>
-          </table>
-        </div>
-
       </section>
 
       <!-- EXPENSES -->
@@ -627,26 +611,12 @@
 
           <div class="card">
             <h3>Business Name</h3>
-            <input
-              id="profileBusinessNameInput"
-              type="text"
-            />
+            <p id="profileBusinessName">-</p>
           </div>
 
           <div class="card">
             <h3>WhatsApp</h3>
-            <input
-              id="profileWhatsappInput"
-              type="text"
-            />
-          </div>
-
-          <div class="card">
-            <button onclick="saveBusinessProfile()">
-              Save Changes
-            </button>
-
-            <p id="profileMsg"></p>
+            <p id="profileWhatsapp">-</p>
           </div>
 
         </div>
