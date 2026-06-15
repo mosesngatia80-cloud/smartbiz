@@ -323,8 +323,15 @@ router.post(
         });
       }
 
+      const sellingPrice =
+        Number(
+          product.salePrice > 0
+            ? product.salePrice
+            : product.price
+        );
+
       const expectedTotal =
-        Number(product.price) *
+        sellingPrice *
         Number(quantity);
 
       if (
@@ -387,7 +394,7 @@ router.post(
               product.name,
 
             price:
-              product.price,
+              sellingPrice,
 
             qty:
               Number(quantity),
