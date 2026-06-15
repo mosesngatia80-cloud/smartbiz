@@ -129,6 +129,9 @@ loadInventoryLedger();
 
   if (id === "orders") {
     loadOrders();
+    loadProducts();
+    loadDashboard();
+    loadInventoryLedger();
   }
 
   if (id === "expenses") {

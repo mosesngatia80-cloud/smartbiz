@@ -76,6 +76,10 @@ router.post("/", upload.single("image"), async (req, res) => {
       salePrice,
       stock,
 
+      openingStock: Number(stock || 0),
+      stockAdded: 0,
+      stockSold: 0,
+
       description,
       image: imageUrl
     });
