@@ -3,6 +3,12 @@ const mongoose = require("mongoose");
 const inventoryTransactionSchema =
   new mongoose.Schema(
     {
+      business: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Business",
+        required: true
+      },
+
       product: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Product",

@@ -232,6 +232,7 @@ router.post("/public-checkout", async (req, res) => {
       await product.save();
 
       await InventoryTransaction.create({
+        business: product.business,
         product: product._id,
         action: "Sold",
         quantity: qty,

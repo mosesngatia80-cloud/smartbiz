@@ -7,6 +7,7 @@ const InventoryTransaction =
 const Business = require("../models/Business");
 const Service = require("../models/Service");
 const Order = require("../models/Order");
+const auth = require("../middleware/auth");
 
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
@@ -165,6 +166,7 @@ router.put("/:id", async (req, res) => {
           (newStock - oldStock);
 
         await InventoryTransaction.create({
+          business: existing.business,
           product: existing._id,
           action: "Added",
           quantity: newStock - oldStock,
@@ -181,6 +183,7 @@ router.put("/:id", async (req, res) => {
           (oldStock - newStock);
 
         await InventoryTransaction.create({
+          business: existing.business,
           product: existing._id,
           action: "Sold",
           quantity: oldStock - newStock,
@@ -447,12 +450,25 @@ router.post(
 );
 
 /* ================= INVENTORY LEDGER ================= */
-router.get("/inventory-ledger", async (req, res) => {
+router.get("/inventory-ledger", auth, async (req, res) => {
   try {
+
+    const business =
+      await Business.findOne({
+        owner: req.user.user
+      });
+
+    if (!business) {
+      return res.status(404).json({
+        message: "Business not found"
+      });
+    }
 
     const ledger =
       await InventoryTransaction
-        .find()
+        .find({
+          business: business._id
+        })
         .populate(
           "product",
           "name"
