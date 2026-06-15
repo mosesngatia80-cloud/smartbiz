@@ -4,6 +4,10 @@ const router = express.Router();
 
 const Debt = require("../models/Debt");
 const Business = require("../models/Business");
+const Product =
+  require("../models/Product");
+const InventoryTransaction =
+  require("../models/InventoryTransaction");
 
 /* =========================
    CREATE DEBT
@@ -21,7 +25,10 @@ router.post(
       customerPhone,
       totalAmount,
       amountPaid,
-      note
+      note,
+      debtType,
+      productId,
+      qty
     } = req.body;
 
     const business =
@@ -38,11 +45,67 @@ router.post(
       });
     }
 
+    let total =
+      Number(totalAmount || 0);
+
+    let product;
+    let quantity = 0;
+
+    if (
+      debtType === "PRODUCT"
+    ) {
+
+      product =
+        await Product.findById(
+          productId
+        );
+
+      if (!product) {
+
+        return res.status(404)
+        .json({
+          message:
+            "Product not found"
+        });
+      }
+
+      quantity =
+        Number(qty || 0);
+
+      if (
+        quantity <= 0
+      ) {
+
+        return res.status(400)
+        .json({
+          message:
+            "Invalid quantity"
+        });
+      }
+
+      if (
+        product.stock <
+        quantity
+      ) {
+
+        return res.status(400)
+        .json({
+          message:
+            "Insufficient stock"
+        });
+      }
+
+      total =
+        Number(product.price) *
+        quantity;
+
+    }
+
     const paid =
       Number(amountPaid || 0);
 
-    const total =
-      Number(totalAmount);
+    total =
+      Number(total);
 
     const balance =
       total - paid;
@@ -85,6 +148,36 @@ router.post(
 
       note
     });
+
+    if (
+      debtType === "PRODUCT"
+    ) {
+
+      const before =
+        product.stock;
+
+      product.stock =
+        Math.max(
+          0,
+          product.stock - quantity
+        );
+
+      product.stockSold =
+        Number(
+          product.stockSold || 0
+        ) + quantity;
+
+      await product.save();
+
+      await InventoryTransaction.create({
+        product: product._id,
+        action: "Sold",
+        quantity,
+        stockBefore: before,
+        stockAfter: product.stock
+      });
+
+    }
 
     res.json({
 

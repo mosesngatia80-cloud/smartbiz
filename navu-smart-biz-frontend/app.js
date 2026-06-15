@@ -500,6 +500,26 @@ async function loadProducts() {
 
     }
 
+    const debtProduct =
+      document.getElementById(
+        "debtProduct"
+      );
+
+    if (debtProduct) {
+
+      debtProduct.innerHTML =
+        '<option value="">Select Product</option>';
+
+      products.forEach(p => {
+
+        debtProduct.innerHTML +=
+          `<option value="${p._id}">
+            ${p.name}
+          </option>`;
+      });
+
+    }
+
     list.innerHTML = "";
 
     products.forEach(p => {
@@ -1328,6 +1348,21 @@ async function addDebt() {
               customerPhone:
                 document.getElementById(
                   "debtCustomerPhone"
+                ).value,
+
+              debtType:
+                document.getElementById(
+                  "debtType"
+                ).value,
+
+              productId:
+                document.getElementById(
+                  "debtProduct"
+                ).value,
+
+              qty:
+                document.getElementById(
+                  "debtQty"
                 ).value,
 
               totalAmount:
