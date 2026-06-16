@@ -55,6 +55,15 @@ router.post(
       debtType === "PRODUCT"
     ) {
 
+        if (!productId) {
+
+          return res.status(400)
+          .json({
+            message:
+              "Please select a product"
+          });
+        }
+
       product =
         await Product.findById(
           productId
