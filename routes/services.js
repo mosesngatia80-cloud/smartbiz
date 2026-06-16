@@ -7,11 +7,65 @@ const Business = require("../models/Business");
 
 const auth = require("../middleware/auth");
 
+
+const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
+
+/* ================= CLOUDINARY CONFIG ================= */
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+/* ================= MEMORY STORAGE ================= */
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+/* ================= UPLOAD HELPER ================= */
+
+function uploadToCloudinary(
+  buffer,
+  resourceType = "image"
+) {
+  return new Promise((resolve, reject) => {
+
+    const stream =
+      cloudinary.uploader.upload_stream(
+        {
+          folder:
+            "navu-smartbiz-services",
+          resource_type:
+            resourceType
+        },
+        (error, result) => {
+
+          if (error)
+            reject(error);
+          else
+            resolve(result);
+        }
+      );
+
+    stream.end(buffer);
+  });
+}
+
+
 /* =========================
    CREATE SERVICE
 ========================= */
 
-router.post("/", auth, async (req, res) => {
+router.post(
+  "/",
+  auth,
+  upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "video", maxCount: 1 }
+  ]),
+  async (req, res) => {
 
   try {
 
@@ -30,6 +84,33 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
+    let imageUrl = "";
+    let videoUrl = "";
+
+    if (req.files?.image?.[0]) {
+
+      const uploaded =
+        await uploadToCloudinary(
+          req.files.image[0].buffer,
+          "image"
+        );
+
+      imageUrl =
+        uploaded.secure_url;
+    }
+
+    if (req.files?.video?.[0]) {
+
+      const uploaded =
+        await uploadToCloudinary(
+          req.files.video[0].buffer,
+          "video"
+        );
+
+      videoUrl =
+        uploaded.secure_url;
+    }
+
     const service =
       await Service.create({
 
@@ -46,7 +127,10 @@ router.post("/", auth, async (req, res) => {
           req.body.duration || 30,
 
         image:
-          req.body.image || "",
+          imageUrl,
+
+        video:
+          videoUrl,
 
         business:
           business._id,

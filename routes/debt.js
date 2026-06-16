@@ -95,8 +95,15 @@ router.post(
         });
       }
 
+      const sellingPrice =
+        Number(
+          product.salePrice > 0
+            ? product.salePrice
+            : product.price
+        );
+
       total =
-        Number(product.price) *
+        sellingPrice *
         quantity;
 
     }

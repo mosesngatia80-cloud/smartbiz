@@ -28,6 +28,11 @@ const ServiceSchema = new mongoose.Schema(
       default: ""
     },
 
+    video: {
+      type: String,
+      default: ""
+    },
+
     business: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Business",

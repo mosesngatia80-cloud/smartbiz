@@ -43,6 +43,7 @@ router.post("/", upload.single("image"), async (req, res) => {
     const {
       name,
       category,
+      costPrice,
       price,
       salePrice,
       stock,
@@ -73,6 +74,7 @@ router.post("/", upload.single("image"), async (req, res) => {
       business: business._id,
       name,
       category,
+      costPrice,
       price,
       salePrice,
       stock,
@@ -115,6 +117,13 @@ router.get("/my-products", async (req, res) => {
 
     const products = await Product.find({ business: business._id })
       .sort({ createdAt: -1 });
+
+    console.log(
+      "MY PRODUCTS:",
+      business.name,
+      business.whatsappNumber,
+      products.length
+    );
 
     res.json(products);
 
@@ -371,6 +380,7 @@ router.post(
         Number(quantity);
 
       await InventoryTransaction.create({
+        business: business._id,
         product: product._id,
         action: "Sold",
         quantity: Number(quantity),
@@ -471,7 +481,7 @@ router.get("/inventory-ledger", auth, async (req, res) => {
         })
         .populate(
           "product",
-          "name"
+          "name costPrice price salePrice"
         )
         .sort({
           createdAt: -1
