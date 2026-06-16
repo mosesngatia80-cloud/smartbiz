@@ -57,6 +57,9 @@ const Order =
 const Expense =
   require("../models/Expense");
 
+const Booking =
+  require("../models/Booking");
+
 /* =========================
    FULL DASHBOARD SUMMARY
 ========================= */
@@ -131,6 +134,25 @@ router.get(
         0
       );
 
+    const completedBookings =
+      await Booking.find({
+        business: business._id,
+        status: "COMPLETED",
+        paymentStatus: "PAID"
+      });
+
+    const serviceRevenue =
+      completedBookings.reduce(
+        (sum, b) =>
+          sum + Number(
+            b.servicePrice || 0
+          ),
+        0
+      );
+
+    const totalRevenue =
+      revenue + serviceRevenue;
+
     /* =========================
        EXPENSES
     ========================= */
@@ -152,7 +174,8 @@ router.get(
     ========================= */
 
     const profit =
-      revenue - totalExpenses;
+      totalRevenue -
+      totalExpenses;
 
     res.json({
 
@@ -165,7 +188,10 @@ router.get(
 
       walletBalance,
 
-      revenue,
+      revenue:
+        totalRevenue,
+
+      serviceRevenue,
 
       expenses:
         totalExpenses,

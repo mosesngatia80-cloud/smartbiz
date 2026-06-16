@@ -396,16 +396,18 @@ async function loadInventoryLedger() {
 
       const costPrice =
         Number(
-          item.product?.costPrice || 0
+          item.buyingPrice || 0
         );
 
       const sellingPrice =
         Number(
-          item.product?.price || 0
+          item.sellingPrice || 0
         );
 
       const profit =
-        sellingPrice - costPrice;
+        Number(
+          item.profitPerUnit || 0
+        );
 
       ledgerBody.innerHTML += `
         <tr>
@@ -1410,33 +1412,6 @@ async function loadBalanceSheet() {
     const products =
       await productsRes.json();
 
-    console.log("BALANCE PRODUCTS:", products);
-    console.log("INVENTORY VALUE:",
-      products.reduce(
-        (sum, p) =>
-          sum +
-          (
-            Number(p.stock || 0) *
-            Number(p.costPrice || 0)
-          ),
-        0
-      )
-    );
-
-    alert(
-      "Products: " +
-      products.length +
-      "\nInventory Value: " +
-      products.reduce(
-        (sum, p) =>
-          sum +
-          (
-            Number(p.stock || 0) *
-            Number(p.costPrice || 0)
-          ),
-        0
-      )
-    );
 
     const inventoryValue =
       products.reduce(
@@ -1475,12 +1450,30 @@ async function loadBalanceSheet() {
 
     const walletBalance = 0;
 
+    const dashboardRes =
+      await fetch(
+        API_BASE +
+        "/dashboard/summary?whatsappNumber=" +
+        encodeURIComponent(
+          business.whatsappNumber
+        )
+      );
+
+    const dashboardData =
+      await dashboardRes.json();
+
+    const serviceRevenue =
+      Number(
+        dashboardData.serviceRevenue || 0
+      );
+
     const totalAssets =
       inventoryValue +
       Number(
         debtData.totalDebt || 0
       ) +
-      walletBalance;
+      walletBalance +
+      serviceRevenue;
 
     const totalLiabilities =
       Number(
@@ -3123,4 +3116,5 @@ function filterProducts() {
 
   });
 
-}
+  }
+
