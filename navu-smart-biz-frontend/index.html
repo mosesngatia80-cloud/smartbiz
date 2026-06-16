@@ -179,8 +179,11 @@
                 <th>Added</th>
                 <th>Sold</th>
                 <th>Close</th>
-                <th>Price</th>
-                <th>Value</th>
+                <th>Buying Price</th>
+                <th>Selling Price</th>
+                <th>Cost Value</th>
+                <th>Sales Value</th>
+                <th>Profit Potential</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -204,6 +207,9 @@
                 <th>Product</th>
                 <th>Action</th>
                 <th>Qty</th>
+                <th>Buying Price</th>
+                <th>Selling Price</th>
+                <th>Profit/Unit</th>
                 <th>Before</th>
                 <th>After</th>
               </tr>
@@ -358,9 +364,15 @@
           />
 
           <input
+            id="newProductCostPrice"
+            type="number"
+            placeholder="Buying Price (KES)"
+          />
+
+          <input
             id="newProductPrice"
             type="number"
-            placeholder="Price (KES)"
+            placeholder="Selling Price (KES)"
           />
 
           <input
@@ -391,7 +403,21 @@
 
         </div>
 
-        <ul id="productsList"></ul>
+        
+<input
+  id="productSearch"
+  placeholder="🔍 Search products..."
+  oninput="filterProducts()"
+  style="
+    width:100%;
+    margin:10px 0;
+    padding:10px;
+    border-radius:8px;
+  "
+/>
+
+<ul id="productsList"></ul>
+
 
       </section>
 
@@ -480,7 +506,14 @@
 
           <input
             id="serviceImage"
-            placeholder="Image URL"
+            type="file"
+            accept="image/*"
+          />
+
+          <input
+            id="serviceVideo"
+            type="file"
+            accept="video/*"
           />
 
           <textarea

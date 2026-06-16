@@ -299,6 +299,13 @@ async function loadDashboard() {
 
     if (!business) return;
 
+    alert(
+      "Business: " +
+      business.name +
+      "\nWhatsApp: " +
+      business.whatsappNumber
+    );
+
     const res =
       await fetch(
 
@@ -363,10 +370,21 @@ async function loadInventoryLedger() {
 
   try {
 
+    const token =
+      localStorage.getItem(
+        "token"
+      );
+
     const res =
       await fetch(
         API_BASE +
-        "/products/inventory-ledger"
+        "/products/inventory-ledger",
+        {
+          headers: {
+            Authorization:
+              "Bearer " + token
+          }
+        }
       );
 
     const ledger =
@@ -376,12 +394,30 @@ async function loadInventoryLedger() {
 
     ledger.forEach(item => {
 
+      const costPrice =
+        Number(
+          item.product?.costPrice || 0
+        );
+
+      const sellingPrice =
+        Number(
+          item.product?.price || 0
+        );
+
+      const profit =
+        sellingPrice - costPrice;
+
       ledgerBody.innerHTML += `
         <tr>
           <td>${new Date(item.createdAt).toLocaleString()}</td>
           <td>${item.product?.name || "-"}</td>
           <td>${item.action}</td>
           <td>${item.quantity}</td>
+
+          <td>KES ${costPrice.toLocaleString()}</td>
+          <td>KES ${sellingPrice.toLocaleString()}</td>
+          <td>KES ${profit.toLocaleString()}</td>
+
           <td>${item.stockBefore}</td>
           <td>${item.stockAfter}</td>
         </tr>
@@ -461,7 +497,7 @@ async function loadProducts() {
         (sum, p) =>
           sum +
           (
-            Number(p.price || 0) *
+            Number(p.costPrice || 0) *
             Number(p.stock || 0)
           ),
         0
@@ -478,27 +514,54 @@ async function loadProducts() {
 
       products.forEach(p => {
 
-        const value =
-          Number(p.stock || 0) *
-          Number(p.price || 0);
+        const costPrice =
+          Number(p.costPrice || 0);
+
+        const sellingPrice =
+          Number(
+            p.salePrice > 0
+              ? p.salePrice
+              : p.price
+          );
+
+        const stock =
+          Number(p.stock || 0);
+
+        const costValue =
+          stock * costPrice;
+
+        const salesValue =
+          stock * sellingPrice;
+
+        const profitPotential =
+          salesValue - costValue;
 
         inventoryBody.innerHTML += `
           <tr>
             <td>${p.name}</td>
-            <td>${p.openingStock || p.stock || 0}</td>
+            <td>${p.openingStock || stock}</td>
             <td>${p.stockAdded || 0}</td>
             <td>${p.stockSold || 0}</td>
-            <td>${p.stock || 0}</td>
-            <td>KES ${Number(
-              p.price || 0
-            ).toLocaleString()}</td>
-            <td>KES ${value.toLocaleString()}</td>
+            <td>${stock}</td>
 
             <td>
               ${
-                p.stock === 0
+                costPrice > 0
+                ? "KES " + costPrice.toLocaleString()
+                : "⚠️ Missing"
+              }
+            </td>
+
+            <td>KES ${sellingPrice.toLocaleString()}</td>
+            <td>KES ${costValue.toLocaleString()}</td>
+            <td>KES ${salesValue.toLocaleString()}</td>
+            <td>KES ${profitPotential.toLocaleString()}</td>
+
+            <td>
+              ${
+                stock === 0
                 ? "❌ Out Of Stock"
-                : p.stock <= 5
+                : stock <= 5
                 ? "⚠️ Low Stock"
                 : "✅ Normal"
               }
@@ -701,6 +764,7 @@ async function loadProducts() {
               onclick="editProduct(
                 '${p._id}',
                 '${p.name}',
+                ${p.costPrice || 0},
                 ${p.price},
                 ${p.salePrice || 0},
                 ${p.stock}
@@ -828,6 +892,7 @@ async function reduceStock(id, currentStock) {
 async function editProduct(
   id,
   currentName,
+  currentCostPrice,
   currentPrice,
   currentSalePrice,
   currentStock
@@ -840,6 +905,14 @@ async function editProduct(
     );
 
   if (!name) return;
+
+  const costPrice =
+    Number(
+      prompt(
+        "Buying Price",
+        currentCostPrice || 0
+      )
+    );
 
   const price =
     Number(
@@ -879,6 +952,7 @@ async function editProduct(
         },
         body: JSON.stringify({
           name,
+          costPrice,
           price,
           salePrice,
           stock
@@ -920,6 +994,13 @@ async function addProduct() {
       "newProductName"
     ).value;
 
+  const costPrice =
+    Number(
+      document.getElementById(
+        "newProductCostPrice"
+      ).value || 0
+    );
+
   const price =
     Number(
 
@@ -960,6 +1041,11 @@ async function addProduct() {
     formData.append(
       "name",
       name
+    );
+
+    formData.append(
+      "costPrice",
+      costPrice
     );
 
     formData.append(
@@ -1007,7 +1093,6 @@ async function addProduct() {
     const data =
       await res.json();
 
-    console.log(data);
 
     if (!res.ok) {
 
@@ -1325,13 +1410,41 @@ async function loadBalanceSheet() {
     const products =
       await productsRes.json();
 
+    console.log("BALANCE PRODUCTS:", products);
+    console.log("INVENTORY VALUE:",
+      products.reduce(
+        (sum, p) =>
+          sum +
+          (
+            Number(p.stock || 0) *
+            Number(p.costPrice || 0)
+          ),
+        0
+      )
+    );
+
+    alert(
+      "Products: " +
+      products.length +
+      "\nInventory Value: " +
+      products.reduce(
+        (sum, p) =>
+          sum +
+          (
+            Number(p.stock || 0) *
+            Number(p.costPrice || 0)
+          ),
+        0
+      )
+    );
+
     const inventoryValue =
       products.reduce(
         (sum, p) =>
           sum +
           (
             Number(p.stock || 0) *
-            Number(p.price || 0)
+            Number(p.costPrice || 0)
           ),
         0
       );
@@ -1383,6 +1496,7 @@ async function loadBalanceSheet() {
     ).innerText =
       "KES " +
       inventoryValue.toLocaleString();
+
 
     document.getElementById(
       "bsDebts"
@@ -1767,9 +1881,6 @@ async function saveBusinessProfile() {
           method: "PUT",
 
           headers: {
-            "Content-Type":
-              "application/json",
-
             Authorization:
               "Bearer " + token
           },
@@ -2498,56 +2609,64 @@ async function addService() {
         "token"
       );
 
-    const payload = {
+    const formData =
+      new FormData();
 
-      whatsappNumber:
-        JSON.parse(
-          localStorage.getItem(
-            "business"
-          )
-        ).whatsappNumber,
+    formData.append(
+      "name",
+      document.getElementById(
+        "serviceName"
+      ).value
+    );
 
-      name:
+    formData.append(
+      "price",
+      Number(
         document.getElementById(
-          "serviceName"
-        ).value,
-
-      price:
-        Number(
-
-          document.getElementById(
-            "servicePrice"
-          ).value
-
-        ),
-
-      duration:
-        Number(
-
-          document.getElementById(
-            "serviceDuration"
-          ).value
-
-        ),
-
-      whatsappNumber:
-        JSON.parse(
-          localStorage.getItem(
-            "business"
-          )
-        ).whatsappNumber,
-
-
-      image:
-        document.getElementById(
-          "serviceImage"
-        ).value,
-
-      description:
-        document.getElementById(
-          "serviceDescription"
+          "servicePrice"
         ).value
-    };
+      )
+    );
+
+    formData.append(
+      "duration",
+      Number(
+        document.getElementById(
+          "serviceDuration"
+        ).value
+      )
+    );
+
+    formData.append(
+      "description",
+      document.getElementById(
+        "serviceDescription"
+      ).value
+    );
+
+    const image =
+      document.getElementById(
+        "serviceImage"
+      ).files[0];
+
+    const video =
+      document.getElementById(
+        "serviceVideo"
+      ).files[0];
+
+    if (image) {
+      formData.append(
+        "image",
+        image
+      );
+    }
+
+    if (video) {
+      formData.append(
+        "video",
+        video
+      );
+    }
 
     const res =
       await fetch(
@@ -2568,9 +2687,7 @@ async function addService() {
           },
 
           body:
-            JSON.stringify(
-              payload
-            )
+            formData
         }
       );
 
@@ -2977,4 +3094,33 @@ function sendChatMessage(message) {
       message
     }
   );
+}
+
+
+function filterProducts() {
+
+  const query =
+    document.getElementById(
+      "productSearch"
+    )?.value
+      ?.toLowerCase()
+      ?.trim() || "";
+
+  const cards =
+    document.querySelectorAll(
+      "#productsList .order-card"
+    );
+
+  cards.forEach(card => {
+
+    const txt =
+      card.innerText.toLowerCase();
+
+    card.style.display =
+      txt.includes(query)
+      ? ""
+      : "none";
+
+  });
+
 }

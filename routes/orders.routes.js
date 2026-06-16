@@ -240,7 +240,13 @@ router.post("/public-checkout", async (req, res) => {
         stockAfter: product.stock
       });
 
-      const lineTotal = product.price * qty;
+      const sellingPrice =
+        product.salePrice > 0
+          ? product.salePrice
+          : product.price;
+
+      const lineTotal =
+        sellingPrice * qty;
 
       total += lineTotal;
 
@@ -248,7 +254,7 @@ router.post("/public-checkout", async (req, res) => {
         product: product._id,
         name: product.name,
         image: product.image,
-        price: product.price,
+        price: sellingPrice,
         qty,
         lineTotal
       });

@@ -384,6 +384,12 @@ router.post(
         product: product._id,
         action: "Sold",
         quantity: Number(quantity),
+        buyingPrice:
+          Number(product.costPrice || 0),
+        sellingPrice,
+        profitPerUnit:
+          sellingPrice -
+          Number(product.costPrice || 0),
         stockBefore: before,
         stockAfter: product.stock
       });

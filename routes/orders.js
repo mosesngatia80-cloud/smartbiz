@@ -98,8 +98,13 @@ router.post("/", auth, async (req, res) => {
 
       await product.save();
 
+      const sellingPrice =
+        product.salePrice > 0
+          ? product.salePrice
+          : product.price;
+
       const lineTotal =
-        product.price * qty;
+        sellingPrice * qty;
 
       total += lineTotal;
 
@@ -115,7 +120,7 @@ router.post("/", auth, async (req, res) => {
           product.image,
 
         price:
-          product.price,
+          sellingPrice,
 
         qty,
 
@@ -510,8 +515,13 @@ router.post(
 
       await product.save();
 
+      const sellingPrice =
+        product.salePrice > 0
+          ? product.salePrice
+          : product.price;
+
       const lineTotal =
-        product.price * qty;
+        sellingPrice * qty;
 
       total += lineTotal;
 
@@ -527,7 +537,7 @@ router.post(
           product.image,
 
         price:
-          product.price,
+          sellingPrice,
 
         qty,
 

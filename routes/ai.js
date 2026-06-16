@@ -67,7 +67,13 @@ router.post("/", auth, async (req, res) => {
         return res.status(404).json({ message: "Product not found" });
       }
 
-      const lineTotal = product.price * qty;
+      const sellingPrice =
+        product.salePrice > 0
+          ? product.salePrice
+          : product.price;
+
+      const lineTotal =
+        sellingPrice * qty;
 
       // ✅ ORDER (already working)
       const order = await Order.create({
@@ -81,7 +87,7 @@ router.post("/", auth, async (req, res) => {
           {
             product: product._id,
             name: product.name,
-            price: product.price,
+            price: sellingPrice,
             qty,
             lineTotal
           }
