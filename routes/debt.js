@@ -189,7 +189,19 @@ router.post(
         business: product.business,
         product: product._id,
         action: "Sold",
+
         quantity,
+
+        buyingPrice:
+          Number(product.costPrice || 0),
+
+        sellingPrice:
+          Number(sellingPrice || 0),
+
+        profitPerUnit:
+          Number(sellingPrice || 0) -
+          Number(product.costPrice || 0),
+
         stockBefore: before,
         stockAfter: product.stock
       });

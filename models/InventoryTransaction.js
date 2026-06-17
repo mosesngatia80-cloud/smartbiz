@@ -30,6 +30,21 @@ const inventoryTransactionSchema =
         required: true
       },
 
+      buyingPrice: {
+        type: Number,
+        default: 0
+      },
+
+      sellingPrice: {
+        type: Number,
+        default: 0
+      },
+
+      profitPerUnit: {
+        type: Number,
+        default: 0
+      },
+
       stockBefore: {
         type: Number,
         required: true
