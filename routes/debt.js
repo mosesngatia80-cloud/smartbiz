@@ -109,7 +109,7 @@ router.post(
         });
       }
 
-      const sellingPrice =
+      sellingPrice =
         Number(
           product.salePrice > 0
             ? product.salePrice
