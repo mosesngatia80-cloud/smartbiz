@@ -13,6 +13,85 @@ const API_BASE = "https://navu-smart-biz-sbdh.onrender.com/api";
 const SITE_BASE = "https://navu-smart-biz-sbdh.onrender.com";
 
 let allProducts = [];
+let allServices = [];
+
+
+function calculateDebtAmount() {
+
+  const debtType =
+    document.getElementById(
+      "debtType"
+    )?.value;
+
+  const totalInput =
+    document.getElementById(
+      "debtTotalAmount"
+    );
+
+  if (!totalInput) return;
+
+  if (debtType === "PRODUCT") {
+
+    const productId =
+      document.getElementById(
+        "debtProduct"
+      )?.value;
+
+    const qty =
+      Number(
+        document.getElementById(
+          "debtQty"
+        )?.value || 0
+      );
+
+    const product =
+      allProducts.find(
+        p => p._id === productId
+      );
+
+    if (!product) return;
+
+    const price =
+      Number(
+        product.salePrice > 0
+          ? product.salePrice
+          : product.price
+      );
+
+    totalInput.value =
+      price * qty;
+
+    totalInput.readOnly = true;
+  }
+
+  else if (
+    debtType === "SERVICE"
+  ) {
+
+    const serviceId =
+      document.getElementById(
+        "debtService"
+      )?.value;
+
+    const service =
+      allServices.find(
+        s => s._id === serviceId
+      );
+
+    if (!service) return;
+
+    totalInput.value =
+      Number(service.price || 0);
+
+    totalInput.readOnly = true;
+  }
+
+  else {
+
+    totalInput.readOnly = false;
+  }
+}
+
 
 const socket = io(
   "https://navu-smart-biz-sbdh.onrender.com"
@@ -155,6 +234,7 @@ function showView(id) {
 
   if (id === "debts") {
     loadDebts();
+    loadServices();
     loadBalanceSheet();
   }
 
@@ -1592,14 +1672,44 @@ async function loadDebts() {
           </strong>
 
           <div>
+            Total:
+            KES ${Number(d.totalAmount || 0).toLocaleString()}
+          </div>
+
+          <div>
+            Paid:
+            KES ${Number(d.amountPaid || 0).toLocaleString()}
+          </div>
+
+          <div>
             Balance:
-            KES ${d.balance}
+            KES ${Number(d.balance || 0).toLocaleString()}
           </div>
 
           <div>
             Status:
             ${d.status}
           </div>
+
+          ${
+            d.status !== "PAID"
+            ?
+            `
+            <input
+              type="number"
+              id="pay-${d._id}"
+              placeholder="Payment Amount"
+            />
+
+            <button
+              onclick="payDebt('${d._id}')"
+            >
+              Receive Payment
+            </button>
+            `
+            :
+            '<div>✅ Fully Paid</div>'
+          }
 
         </div>
       `;
@@ -1614,6 +1724,71 @@ async function loadDebts() {
   }
 
 }
+
+async function payDebt(id) {
+
+  try {
+
+    const amount =
+      Number(
+        document.getElementById(
+          "pay-" + id
+        ).value
+      );
+
+    if (!amount || amount <= 0) {
+
+      alert(
+        "Enter payment amount"
+      );
+
+      return;
+    }
+
+    const res =
+      await fetch(
+
+        API_BASE +
+        "/debt/pay/" +
+        id,
+
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              amount
+            })
+        }
+      );
+
+    const data =
+      await res.json();
+
+    alert(
+      data.message ||
+      "Payment recorded"
+    );
+
+    loadDebts();
+    loadBalanceSheet();
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      "Payment failed"
+    );
+  }
+}
+
+
 
 async function addDebt() {
 
@@ -1874,6 +2049,9 @@ async function saveBusinessProfile() {
           method: "PUT",
 
           headers: {
+            "Content-Type":
+              "application/json",
+
             Authorization:
               "Bearer " + token
           },
@@ -2526,6 +2704,27 @@ async function loadServices() {
     const services =
       await res.json();
 
+    allServices = services;
+
+    const debtService =
+      document.getElementById(
+        "debtService"
+      );
+
+    if (debtService) {
+
+      debtService.innerHTML =
+        '<option value="">Select Service</option>';
+
+      services.forEach(s => {
+
+        debtService.innerHTML +=
+          `<option value="${s._id}">
+            ${s.name}
+          </option>`;
+      });
+    }
+
     list.innerHTML = "";
 
     services.forEach(service => {
@@ -2549,6 +2748,28 @@ async function loadServices() {
                 margin-bottom:10px;
               "
             />
+            `
+
+            :
+
+            ""
+          }
+
+          ${
+            service.video
+            ?
+
+            `
+            <video
+              controls
+              style="
+                width:100%;
+                max-height:250px;
+                border-radius:12px;
+                margin-bottom:10px;
+              "
+              src="${service.video}">
+            </video>
             `
 
             :
@@ -2672,8 +2893,6 @@ async function addService() {
 
           headers: {
 
-            "Content-Type":
-              "application/json",
 
             Authorization:
               "Bearer " + token
@@ -2994,6 +3213,32 @@ document.addEventListener(
                 ? product.salePrice
                 : product.price || 0
             );
+    }
+  }
+);
+
+document.addEventListener(
+  "change",
+  e => {
+
+    if (
+      e.target?.id === "debtType" ||
+      e.target?.id === "debtProduct" ||
+      e.target?.id === "debtService"
+    ) {
+      calculateDebtAmount();
+    }
+  }
+);
+
+document.addEventListener(
+  "input",
+  e => {
+
+    if (
+      e.target?.id === "debtQty"
+    ) {
+      calculateDebtAmount();
     }
   }
 );
