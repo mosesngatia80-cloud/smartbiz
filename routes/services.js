@@ -67,6 +67,10 @@ router.post(
   ]),
   async (req, res) => {
 
+  console.log("=== SERVICE REQUEST RECEIVED ===");
+  console.log("BODY:", req.body);
+  console.log("FILES:", Object.keys(req.files || {}));
+
   try {
 
     const business =
@@ -152,7 +156,7 @@ router.post(
 
     res.status(500).json({
       message:
-        "Failed to create service"
+        err.message
     });
   }
 });
