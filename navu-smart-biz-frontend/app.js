@@ -2801,6 +2801,36 @@ async function loadServices() {
             ${service.description || ""}
           </div>
 
+          <div style="margin-top:10px">
+
+            ${
+              service.image
+              ?
+              `<button onclick="deleteServiceImage('${service._id}')">
+                Delete Image
+              </button>`
+              :
+              ""
+            }
+
+            ${
+              service.video
+              ?
+              `<button onclick="deleteServiceVideo('${service._id}')">
+                Delete Video
+              </button>`
+              :
+              ""
+            }
+
+            <button
+              onclick="deleteService('${service._id}')"
+            >
+              Delete Service
+            </button>
+
+          </div>
+
         </div>
       `;
     });
@@ -3368,3 +3398,114 @@ function filterProducts() {
 
   }
 
+
+
+async function deleteService(id) {
+
+  if (!confirm("Delete service?")) {
+    return;
+  }
+
+  try {
+
+    const token =
+      localStorage.getItem("token");
+
+    const res =
+      await fetch(
+        API_BASE +
+        "/services/" +
+        id,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization:
+              "Bearer " + token
+          }
+        }
+      );
+
+    const data =
+      await res.json();
+
+    alert(data.message);
+
+    loadServices();
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert("Delete failed");
+  }
+}
+
+async function deleteServiceImage(id) {
+
+  try {
+
+    const token =
+      localStorage.getItem("token");
+
+    const res =
+      await fetch(
+        API_BASE +
+        "/services/" +
+        id +
+        "/image",
+        {
+          method: "DELETE",
+          headers: {
+            Authorization:
+              "Bearer " + token
+          }
+        }
+      );
+
+    const data =
+      await res.json();
+
+    alert(data.message);
+
+    loadServices();
+
+  } catch (err) {
+
+    console.error(err);
+  }
+}
+
+async function deleteServiceVideo(id) {
+
+  try {
+
+    const token =
+      localStorage.getItem("token");
+
+    const res =
+      await fetch(
+        API_BASE +
+        "/services/" +
+        id +
+        "/video",
+        {
+          method: "DELETE",
+          headers: {
+            Authorization:
+              "Bearer " + token
+          }
+        }
+      );
+
+    const data =
+      await res.json();
+
+    alert(data.message);
+
+    loadServices();
+
+  } catch (err) {
+
+    console.error(err);
+  }
+}

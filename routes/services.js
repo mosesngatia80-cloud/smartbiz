@@ -212,4 +212,113 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
+
+/* =========================
+   DELETE SERVICE
+========================= */
+
+router.delete("/:id", auth, async (req, res) => {
+
+  try {
+
+    const service =
+      await Service.findByIdAndDelete(
+        req.params.id
+      );
+
+    if (!service) {
+      return res.status(404).json({
+        message: "Service not found"
+      });
+    }
+
+    res.json({
+      message: "Service deleted ✅"
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      message: err.message
+    });
+  }
+});
+
+/* =========================
+   DELETE IMAGE
+========================= */
+
+router.delete("/:id/image", auth, async (req, res) => {
+
+  try {
+
+    const service =
+      await Service.findById(
+        req.params.id
+      );
+
+    if (!service) {
+      return res.status(404).json({
+        message: "Service not found"
+      });
+    }
+
+    service.image = "";
+
+    await service.save();
+
+    res.json({
+      message: "Image removed ✅"
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      message: err.message
+    });
+  }
+});
+
+/* =========================
+   DELETE VIDEO
+========================= */
+
+router.delete("/:id/video", auth, async (req, res) => {
+
+  try {
+
+    const service =
+      await Service.findById(
+        req.params.id
+      );
+
+    if (!service) {
+      return res.status(404).json({
+        message: "Service not found"
+      });
+    }
+
+    service.video = "";
+
+    await service.save();
+
+    res.json({
+      message: "Video removed ✅"
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      message: err.message
+    });
+  }
+});
+
+
 module.exports = router;
