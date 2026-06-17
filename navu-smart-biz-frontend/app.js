@@ -1841,6 +1841,11 @@ async function addDebt() {
                   "debtProduct"
                 ).value,
 
+              serviceId:
+                document.getElementById(
+                  "debtService"
+                )?.value || "",
+
               qty:
                 document.getElementById(
                   "debtQty"

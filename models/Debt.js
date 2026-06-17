@@ -57,6 +57,36 @@ const DebtSchema = new mongoose.Schema(
       default: ""
     },
 
+    debtType: {
+      type: String,
+      enum: [
+        "GENERAL",
+        "PRODUCT",
+        "SERVICE"
+      ],
+      default: "GENERAL"
+    },
+
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product"
+    },
+
+    service: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Service"
+    },
+
+    quantity: {
+      type: Number,
+      default: 0
+    },
+
+    sellingPrice: {
+      type: Number,
+      default: 0
+    },
+
     source: {
       type: String,
       enum: [

@@ -6,6 +6,10 @@ const Debt = require("../models/Debt");
 const Business = require("../models/Business");
 const Product =
   require("../models/Product");
+
+const Service =
+  require("../models/Service");
+
 const InventoryTransaction =
   require("../models/InventoryTransaction");
 
@@ -28,6 +32,7 @@ router.post(
       note,
       debtType,
       productId,
+      serviceId,
       qty
     } = req.body;
 
