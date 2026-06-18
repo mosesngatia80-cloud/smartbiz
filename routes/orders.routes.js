@@ -231,19 +231,32 @@ router.post("/public-checkout", async (req, res) => {
 
       await product.save();
 
-      await InventoryTransaction.create({
-        business: product.business,
-        product: product._id,
-        action: "Sold",
-        quantity: qty,
-        stockBefore: before,
-        stockAfter: product.stock
-      });
-
       const sellingPrice =
         product.salePrice > 0
           ? product.salePrice
           : product.price;
+
+      await InventoryTransaction.create({
+        business: product.business,
+        product: product._id,
+
+        action: "Sold",
+
+        quantity: qty,
+
+        buyingPrice:
+          Number(product.costPrice || 0),
+
+        sellingPrice:
+          Number(sellingPrice || 0),
+
+        profitPerUnit:
+          Number(sellingPrice || 0) -
+          Number(product.costPrice || 0),
+
+        stockBefore: before,
+        stockAfter: product.stock
+      });
 
       const lineTotal =
         sellingPrice * qty;
