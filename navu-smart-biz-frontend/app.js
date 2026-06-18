@@ -489,6 +489,10 @@ async function loadInventoryLedger() {
           item.profitPerUnit || 0
         );
 
+      const totalProfit =
+        Number(item.quantity || 0) *
+        profit;
+
       ledgerBody.innerHTML += `
         <tr>
           <td>${new Date(item.createdAt).toLocaleString()}</td>
@@ -499,6 +503,7 @@ async function loadInventoryLedger() {
           <td>KES ${costPrice.toLocaleString()}</td>
           <td>KES ${sellingPrice.toLocaleString()}</td>
           <td>KES ${profit.toLocaleString()}</td>
+          <td>KES ${totalProfit.toLocaleString()}</td>
 
           <td>${item.stockBefore}</td>
           <td>${item.stockAfter}</td>
