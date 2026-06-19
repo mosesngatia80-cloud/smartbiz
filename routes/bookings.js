@@ -59,9 +59,6 @@ router.post("/", async (req, res) => {
       customer =
         await Customer.create({
 
-          owner:
-            business?.owner || "",
-
           business:
             service.business,
 
