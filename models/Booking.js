@@ -57,6 +57,11 @@ const BookingSchema = new mongoose.Schema(
       ],
 
       default: "UNPAID"
+    },
+
+    servicePrice: {
+      type: Number,
+      default: 0
     }
   },
 

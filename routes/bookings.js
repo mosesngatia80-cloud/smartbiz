@@ -88,9 +88,23 @@ router.post("/", async (req, res) => {
 
         bookingTime,
 
+        servicePrice:
+          service.price,
+
         notes:
           notes || ""
       });
+
+    const io =
+      req.app.get("io");
+
+    if (io) {
+
+      io.emit(
+        "new_booking",
+        booking
+      );
+    }
 
     res.status(201).json(
       booking
@@ -255,6 +269,58 @@ router.get(
     }
   }
 );
+
+
+
+/* =========================
+   MARK BOOKING PAID
+========================= */
+
+router.patch(
+  "/:id/payment",
+  auth,
+  async (req, res) => {
+
+    try {
+
+      const booking =
+        await Booking.findById(
+          req.params.id
+        );
+
+      if (!booking) {
+
+        return res.status(404).json({
+          message:
+            "Booking not found"
+        });
+      }
+
+      booking.paymentStatus =
+        "PAID";
+
+      await booking.save();
+
+      res.json({
+        success: true,
+        booking
+      });
+
+    } catch (err) {
+
+      console.error(
+        "BOOKING PAYMENT ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        message:
+          "Failed to update payment"
+      });
+    }
+  }
+);
+
 
 module.exports = router;
 
