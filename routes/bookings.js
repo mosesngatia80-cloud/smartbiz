@@ -7,6 +7,7 @@ const Booking = require("../models/Booking");
 const Service = require("../models/Service");
 const Business = require("../models/Business");
 const Customer = require("../models/Customer");
+const Debt = require("../models/Debt");
 
 const auth = require("../middleware/auth");
 
@@ -206,6 +207,54 @@ router.patch(
 
       booking.status =
         status;
+
+      if (
+        status === "COMPLETED" &&
+        booking.paymentStatus !== "PAID"
+      ) {
+
+        const service =
+          await Service.findById(
+            booking.service
+          );
+
+        const existingDebt =
+          await Debt.findOne({
+            service: booking.service,
+            customerPhone:
+              booking.customerPhone,
+            debtType: "SERVICE"
+          });
+
+        if (
+          !existingDebt &&
+          service
+        ) {
+
+          await Debt.create({
+            business:
+              booking.business,
+            customerName:
+              "Service Customer",
+            customerPhone:
+              booking.customerPhone,
+            totalAmount:
+              booking.servicePrice ||
+              service.price,
+            amountPaid: 0,
+            balance:
+              booking.servicePrice ||
+              service.price,
+            status: "UNPAID",
+            debtType: "SERVICE",
+            service:
+              booking.service,
+            note:
+              "Created automatically from completed booking"
+          });
+
+        }
+      }
 
       await booking.save();
 
