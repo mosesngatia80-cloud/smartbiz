@@ -345,6 +345,29 @@ router.patch(
       booking.paymentStatus =
         "PAID";
 
+      const debt =
+        await Debt.findOne({
+          service:
+            booking.service,
+          customerPhone:
+            booking.customerPhone,
+          debtType:
+            "SERVICE"
+        });
+
+      if (debt) {
+
+        debt.status =
+          "PAID";
+
+        debt.amountPaid =
+          debt.totalAmount;
+
+        debt.balance = 0;
+
+        await debt.save();
+      }
+
       await booking.save();
 
       res.json({
