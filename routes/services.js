@@ -184,6 +184,9 @@ router.get("/", auth, async (req, res) => {
       });
     }
 
+    console.log("AUTH USER:", req.user);
+    console.log("BUSINESS FOUND:", business);
+
     const services =
       await Service.find({
 
