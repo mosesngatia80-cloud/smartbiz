@@ -73,4 +73,55 @@ router.get(
   }
 );
 
+
+router.post(
+  "/activate/:id",
+  async (req, res) => {
+
+    try {
+
+      const subscription =
+        await Subscription.findById(
+          req.params.id
+        );
+
+      if (!subscription) {
+        return res.status(404).json({
+          message:
+            "Subscription not found"
+        });
+      }
+
+      subscription.status =
+        "ACTIVE";
+
+      subscription.startDate =
+        new Date();
+
+      subscription.expiryDate =
+        new Date(
+          Date.now() +
+          (30 * 24 * 60 * 60 * 1000)
+        );
+
+      await subscription.save();
+
+      res.json({
+        success: true,
+        subscription
+      });
+
+    } catch (err) {
+
+      res.status(500).json({
+        message:
+          err.message
+      });
+
+    }
+
+  }
+);
+
 module.exports = router;
+
