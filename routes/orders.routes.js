@@ -169,11 +169,24 @@ router.get("/customers/list", auth, async (req, res) => {
 router.post("/public-checkout", async (req, res) => {
   try {
 
-    const {
+    let {
       businessSlug,
       customerPhone,
       items
     } = req.body;
+
+    customerPhone =
+      customerPhone
+        .replace(/\s+/g, "")
+        .replace(/^\+/, "");
+
+    if (
+      customerPhone.startsWith("254")
+    ) {
+      customerPhone =
+        "0" +
+        customerPhone.slice(3);
+    }
 
     if (!businessSlug || !customerPhone || !items || !items.length) {
       return res.status(400).json({
