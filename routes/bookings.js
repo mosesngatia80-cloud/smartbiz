@@ -218,5 +218,43 @@ router.patch(
   }
 );
 
+
+/* =========================
+   CUSTOMER BOOKINGS
+========================= */
+
+router.get(
+  "/customer/:phone",
+  async (req, res) => {
+
+    try {
+
+      const bookings =
+        await Booking.find({
+          customerPhone:
+            req.params.phone
+        })
+        .populate("service")
+        .sort({
+          createdAt: -1
+        });
+
+      res.json(bookings);
+
+    } catch (err) {
+
+      console.error(
+        "CUSTOMER BOOKINGS ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        message:
+          "Failed to load bookings"
+      });
+    }
+  }
+);
+
 module.exports = router;
 
