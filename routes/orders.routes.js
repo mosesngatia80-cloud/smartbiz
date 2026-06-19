@@ -299,4 +299,38 @@ router.post("/public-checkout", async (req, res) => {
   }
 });
 
+/* ================= CUSTOMER ORDERS ================= */
+
+router.get(
+  "/customer/:phone",
+  async (req, res) => {
+
+    try {
+
+      const orders =
+        await Order.find({
+          customerPhone:
+            req.params.phone
+        })
+        .sort({
+          createdAt: -1
+        });
+
+      res.json(orders);
+
+    } catch (err) {
+
+      console.error(
+        "CUSTOMER ORDERS ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        message:
+          "Failed to load orders"
+      });
+    }
+  }
+);
+
 module.exports = router;
