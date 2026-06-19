@@ -38,6 +38,15 @@ const SubscriptionSchema =
 
       expiryDate: Date,
 
+      graceUntil: Date,
+
+      lastReminderSent: Date,
+
+      autoRenew: {
+        type: Boolean,
+        default: false
+      },
+
       paymentReference: String
     },
     {

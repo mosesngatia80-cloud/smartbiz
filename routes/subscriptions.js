@@ -104,6 +104,12 @@ router.post(
           (30 * 24 * 60 * 60 * 1000)
         );
 
+      subscription.graceUntil =
+        new Date(
+          subscription.expiryDate.getTime() +
+          (2 * 24 * 60 * 60 * 1000)
+        );
+
       await subscription.save();
 
       res.json({
