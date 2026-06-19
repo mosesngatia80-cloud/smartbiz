@@ -8,6 +8,9 @@ const { Server } = require("socket.io");
 
 const Message = require("./models/Message");
 
+const checkSubscription =
+  require("./middleware/checkSubscription");
+
 const app = express();
 const server = http.createServer(app);
 
@@ -82,7 +85,11 @@ app.use("/api/customer", require("./routes/customer"));
 
 app.use("/api/services", require("./routes/services"));
 app.use("/api/bookings", require("./routes/bookings"));
-app.use("/api/dashboard", require("./routes/dashboard"));
+app.use(
+  "/api/dashboard",
+  checkSubscription,
+  require("./routes/dashboard")
+);
 app.use("/api/subscriptions", require("./routes/subscriptions"));
 
 app.use("/api/wallet", require("./routes/wallet"));
