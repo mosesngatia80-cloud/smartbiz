@@ -33,6 +33,13 @@ const ProductSchema = new mongoose.Schema(
       default: ""
     },
 
+    /* 🏷️ PRODUCT CATEGORY */
+
+    category: {
+      type: String,
+      default: "General"
+    },
+
     /* ✅ UNIT SYSTEM */
 
     unitType: {

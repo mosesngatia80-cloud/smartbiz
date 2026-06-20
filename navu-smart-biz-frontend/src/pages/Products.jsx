@@ -5,6 +5,8 @@ export default function Products() {
   const [products, setProducts] = useState([]);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [category, setCategory] = useState("General");
+  const [customCategory, setCustomCategory] = useState("");
   const [error, setError] = useState("");
 
   async function loadProducts() {
@@ -25,12 +27,18 @@ export default function Products() {
     try {
       await addProduct({
         name,
+        category:
+          category === "Other"
+            ? customCategory
+            : category,
         price: Number(price),
-        stock: 100, // ✅ REQUIRED BY BACKEND
+        stock: 100,
       });
 
       setName("");
       setPrice("");
+      setCategory("General");
+      setCustomCategory("");
       loadProducts();
     } catch (err) {
       alert("Failed to add product");
@@ -53,6 +61,31 @@ export default function Products() {
         value={price}
         onChange={e => setPrice(e.target.value)}
       />
+
+      <select
+        value={category}
+        onChange={e => setCategory(e.target.value)}
+      >
+        <option value="General">General</option>
+        <option value="Cars">Cars</option>
+        <option value="Electronics">Electronics</option>
+        <option value="Fashion">Fashion</option>
+        <option value="Food">Food</option>
+        <option value="Agriculture">Agriculture</option>
+        <option value="Hardware">Hardware</option>
+        <option value="Pharmacy">Pharmacy</option>
+        <option value="Beauty">Beauty</option>
+        <option value="Home & Furniture">Home & Furniture</option>
+        <option value="Other">Other...</option>
+      </select>
+
+      {category === "Other" && (
+        <input
+          placeholder="Enter custom category"
+          value={customCategory}
+          onChange={e => setCustomCategory(e.target.value)}
+        />
+      )}
 
       <button onClick={handleAdd}>➕ Add Product</button>
 
