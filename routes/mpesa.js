@@ -3,6 +3,7 @@ const router = express.Router();
 
 const mpesaRequest = require("../services/mpesaRequest");
 const PaymentEvent = require("../models/PaymentEvent");
+const Subscription = require("../models/Subscription");
 
 /* =========================
    STK PUSH (OUTBOUND)
@@ -75,6 +76,46 @@ router.post("/callback", async (req, res) => {
       rawPayload: req.body,
       processed: false,
     });
+
+    if (
+      reference &&
+      reference.startsWith("SUB-")
+    ) {
+
+      const subscription =
+        await Subscription.findOne({
+          paymentReference:
+            reference
+        });
+
+      if (subscription) {
+
+        subscription.status =
+          "ACTIVE";
+
+        subscription.startDate =
+          new Date();
+
+        subscription.expiryDate =
+          new Date(
+            Date.now() +
+            (30 * 24 * 60 * 60 * 1000)
+          );
+
+        subscription.graceUntil =
+          new Date(
+            subscription.expiryDate.getTime() +
+            (2 * 24 * 60 * 60 * 1000)
+          );
+
+        await subscription.save();
+
+        console.log(
+          "✅ Subscription activated:",
+          reference
+        );
+      }
+    }
 
     console.log("📥 M-PESA payment event recorded:", {
       checkoutRequestId: CheckoutRequestID,

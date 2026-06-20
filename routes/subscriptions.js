@@ -25,7 +25,9 @@ router.post(
           business,
           plan,
           amount,
-          status: "PENDING"
+          status: "PENDING",
+          paymentReference:
+            "SUB-" + Date.now()
         });
 
       res.json({
