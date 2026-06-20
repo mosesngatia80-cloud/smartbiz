@@ -172,6 +172,8 @@ router.post("/public-checkout", async (req, res) => {
     let {
       businessSlug,
       customerPhone,
+      customerName,
+      deliveryAddress,
       items
     } = req.body;
 
@@ -289,6 +291,8 @@ router.post("/public-checkout", async (req, res) => {
     const order = await Order.create({
       business: business._id,
       customerPhone,
+      customerName,
+      deliveryAddress,
       items: orderItems,
       total,
       status: "PENDING",

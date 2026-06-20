@@ -25,6 +25,16 @@ const OrderSchema = new mongoose.Schema(
       required: false
     },
 
+    customerName: {
+      type: String,
+      required: false
+    },
+
+    deliveryAddress: {
+      type: String,
+      required: false
+    },
+
     items: [
       {
         product: {
