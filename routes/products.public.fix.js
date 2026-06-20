@@ -175,6 +175,35 @@ router.post(
   }
 });
 
+
+
+/* =========================
+   PUBLIC MARKETPLACE
+========================= */
+
+router.get("/public", async (req, res) => {
+
+  try {
+
+    const products = await Product.find({
+      isActive: true
+    })
+    .populate("business", "name slug")
+    .sort({ createdAt: -1 });
+
+    res.json(products);
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      message: err.message
+    });
+  }
+});
+
+
 module.exports = router;
 
 /* =========================
