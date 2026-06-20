@@ -54,7 +54,7 @@ router.get("/public", async (req, res) => {
     const products = await Product.find({
       isActive: true
     })
-    .populate("business", "name")
+    .populate("business", "name slug whatsappNumber")
     .sort({ createdAt: -1 });
 
     res.json(products);
