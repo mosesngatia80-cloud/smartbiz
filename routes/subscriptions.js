@@ -4,6 +4,9 @@ const router = express.Router();
 const Subscription =
   require("../models/Subscription");
 
+const { stkPush } =
+  require("../services/mpesa");
+
 /* =========================
    CREATE SUBSCRIPTION
 ========================= */
@@ -130,6 +133,68 @@ router.post(
 
   }
 );
+
+
+/* =========================
+   PAY SUBSCRIPTION
+========================= */
+
+router.post(
+  "/pay/:id",
+  async (req, res) => {
+
+    try {
+
+      const { phone } = req.body;
+
+      const subscription =
+        await Subscription.findById(
+          req.params.id
+        );
+
+      if (!subscription) {
+
+        return res.status(404).json({
+          message:
+            "Subscription not found"
+        });
+
+      }
+
+      const response =
+        await stkPush({
+
+          phone,
+
+          amount:
+            subscription.amount,
+
+          reference:
+            subscription.paymentReference,
+
+          description:
+            subscription.plan +
+            " Subscription"
+
+        });
+
+      res.json({
+        success: true,
+        response
+      });
+
+    } catch (err) {
+
+      res.status(500).json({
+        message:
+          err.message
+      });
+
+    }
+
+  }
+);
+
 
 module.exports = router;
 
