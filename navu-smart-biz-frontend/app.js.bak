@@ -106,21 +106,6 @@ socket.on("connect_error", (err) => {
 });
 
 socket.on(
-  "new_booking",
-  (booking) => {
-
-    alert(
-      "🔔 New booking received from " +
-      booking.customerPhone
-    );
-
-    try {
-      loadBookings();
-    } catch (err) {}
-  }
-);
-
-socket.on(
   "chat_history",
   (messages) => {
 
@@ -476,26 +461,6 @@ async function loadDashboard() {
       "revenue"
     ).innerText =
       `KES ${data.revenue || 0}`;
-
-    document.getElementById(
-      "profit"
-    ).innerText =
-      `KES ${data.profit || 0}`;
-
-    document.getElementById(
-      "dashboardExpenses"
-    ).innerText =
-      `KES ${data.expenses || 0}`;
-
-    document.getElementById(
-      "outstandingDebt"
-    ).innerText =
-      `KES ${data.outstandingDebt || 0}`;
-
-    document.getElementById(
-      "grossProductProfit"
-    ).innerText =
-      `KES ${data.grossProductProfit || 0}`;
 
     document.getElementById(
       "ordersCount"
@@ -2497,42 +2462,6 @@ async function loadOrders() {
 
               `
               <button
-                onclick="updateOrderStatus('${order._id}','PREPARING')"
-                class="add-cart-btn"
-              >
-                Preparing
-              </button>
-              `
-
-              :
-
-              ""
-            }
-
-            ${
-              order.status === "PREPARING"
-              ?
-
-              `
-              <button
-                onclick="updateOrderStatus('${order._id}','DELIVERED')"
-                class="add-cart-btn"
-              >
-                Delivered
-              </button>
-              `
-
-              :
-
-              ""
-            }
-
-            ${
-              order.status === "DELIVERED"
-              ?
-
-              `
-              <button
                 onclick="updateOrderStatus('${order._id}','PAID')"
                 class="add-cart-btn"
               >
@@ -3170,29 +3099,16 @@ async function loadBookings() {
 
           <div>
             Status:
-            ${
-              booking.status === "PENDING"
-              ? "🟡 PENDING"
-              : booking.status === "ACCEPTED"
-              ? "🔵 ACCEPTED"
-              : booking.status === "COMPLETED"
-              ? "🟢 COMPLETED"
-              : "🔴 REJECTED"
-            }
+            ${booking.status}
           </div>
 
           <div>
             Payment:
-            ${
-              booking.paymentStatus === "PAID"
-              ? "💰 PAID"
-              : "⚪ UNPAID"
-            }
+            ${booking.paymentStatus || "UNPAID"}
           </div>
 
           <div style="margin-top:12px;">
 
-            ${booking.status === "PENDING" ? `
             <div
               onclick="updateBookingStatus('${booking._id}','ACCEPTED')"
               style="
@@ -3206,10 +3122,7 @@ async function loadBookings() {
             >
               Accept Booking
             </div>
-            ` : ""}
 
-            ${booking.status !== "COMPLETED" &&
-              booking.status !== "REJECTED" ? `
             <div
               onclick="updateBookingStatus('${booking._id}','REJECTED')"
               style="
@@ -3223,9 +3136,7 @@ async function loadBookings() {
             >
               Reject Booking
             </div>
-            ` : ""}
 
-            ${booking.status === "ACCEPTED" ? `
             <div
               onclick="updateBookingStatus('${booking._id}','COMPLETED')"
               style="
@@ -3239,10 +3150,7 @@ async function loadBookings() {
             >
               Complete Booking
             </div>
-            ` : ""}
 
-            ${booking.status === "COMPLETED" &&
-              booking.paymentStatus !== "PAID" ? `
             <div
               onclick="markBookingPaid('${booking._id}')"
               style="
@@ -3256,7 +3164,6 @@ async function loadBookings() {
             >
               Mark Paid
             </div>
-            ` : ""}
 
           </div>
 
@@ -3465,27 +3372,6 @@ loadCustomers();
 loadServices();
 
 loadBookings();
-
-/* ================= BOOKING AUTO REFRESH ================= */
-
-setInterval(() => {
-
-  const bookingsView =
-    document.getElementById(
-      "bookings"
-    );
-
-  if (
-    bookingsView &&
-    !bookingsView.classList.contains(
-      "hidden"
-    )
-  ) {
-
-    loadBookings();
-  }
-
-}, 10000);
 
 /* ================= ORDER AUTO REFRESH ================= */
 

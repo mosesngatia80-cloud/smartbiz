@@ -8,6 +8,7 @@ const Service = require("../models/Service");
 const Business = require("../models/Business");
 const Customer = require("../models/Customer");
 const Debt = require("../models/Debt");
+const Revenue = require("../models/Revenue");
 
 const auth = require("../middleware/auth");
 
@@ -366,6 +367,28 @@ router.patch(
         debt.balance = 0;
 
         await debt.save();
+      }
+
+      const existingRevenue =
+        await Revenue.findOne({
+          sourceType: "BOOKING",
+          sourceId: booking._id
+        });
+
+      if (!existingRevenue) {
+
+        await Revenue.create({
+          business: booking.business,
+          sourceType: "BOOKING",
+          sourceId: booking._id,
+          grossAmount:
+            booking.servicePrice || 0,
+          fee: 0,
+          netAmount:
+            booking.servicePrice || 0,
+          channel: "wallet"
+        });
+
       }
 
       await booking.save();

@@ -7,11 +7,15 @@ const RevenueSchema = new mongoose.Schema(
       ref: "Business",
       required: true,
     },
-    order: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Order",
+    sourceType: {
+      type: String,
+      enum: ["ORDER", "BOOKING"],
       required: true,
-      unique: true,
+    },
+
+    sourceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
     },
     grossAmount: { type: Number, required: true },
     fee: { type: Number, required: true },

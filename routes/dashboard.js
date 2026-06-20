@@ -43,7 +43,6 @@ router.get("/alerts/low-stock", async (req, res) => {
   }
 });
 
-module.exports = router;
 
 const Business =
   require("../models/Business");
@@ -59,6 +58,15 @@ const Expense =
 
 const Booking =
   require("../models/Booking");
+
+const Revenue =
+  require("../models/Revenue");
+
+const Debt =
+  require("../models/Debt");
+
+const InventoryTransaction =
+  require("../models/InventoryTransaction");
 
 /* =========================
    FULL DASHBOARD SUMMARY
@@ -127,31 +135,35 @@ router.get(
     const totalSales =
       paidOrders.length;
 
-    const revenue =
-      paidOrders.reduce(
-        (sum, o) =>
-          sum + Number(o.total),
-        0
-      );
 
-    const completedBookings =
-      await Booking.find({
-        business: business._id,
-        status: "COMPLETED",
-        paymentStatus: "PAID"
+    const revenues =
+      await Revenue.find({
+        business: business._id
       });
 
-    const serviceRevenue =
-      completedBookings.reduce(
-        (sum, b) =>
+    const totalRevenue =
+      revenues.reduce(
+        (sum, r) =>
           sum + Number(
-            b.servicePrice || 0
+            r.netAmount || 0
           ),
         0
       );
 
-    const totalRevenue =
-      revenue + serviceRevenue;
+    const serviceRevenue =
+      revenues
+        .filter(
+          r =>
+            r.sourceType ===
+            "BOOKING"
+        )
+        .reduce(
+          (sum, r) =>
+            sum + Number(
+              r.netAmount || 0
+            ),
+          0
+        );
 
     /* =========================
        EXPENSES
@@ -166,6 +178,46 @@ router.get(
       expenses.reduce(
         (sum, e) =>
           sum + Number(e.amount),
+        0
+      );
+
+    const debts =
+      await Debt.find({
+        business: business._id
+      });
+
+    const totalDebt =
+      debts.reduce(
+        (sum, d) =>
+          sum + Number(d.totalAmount || 0),
+        0
+      );
+
+    const outstandingDebt =
+      debts.reduce(
+        (sum, d) =>
+          sum + Number(d.balance || 0),
+        0
+      );
+
+    const paidDebt =
+      totalDebt -
+      outstandingDebt;
+
+    const inventoryTransactions =
+      await InventoryTransaction.find({
+        business: business._id,
+        action: "Sold"
+      });
+
+    const grossProductProfit =
+      inventoryTransactions.reduce(
+        (sum, t) =>
+          sum +
+          (
+            Number(t.profitPerUnit || 0) *
+            Number(t.quantity || 0)
+          ),
         0
       );
 
@@ -196,6 +248,14 @@ router.get(
       expenses:
         totalExpenses,
 
+      totalDebt,
+
+      outstandingDebt,
+
+      paidDebt,
+
+      grossProductProfit,
+
       profit,
 
       totalOrders:
@@ -216,3 +276,6 @@ router.get(
   }
 });
 
+
+
+module.exports = router;

@@ -404,11 +404,29 @@ router.post("/:orderId/mark-paid", async (req, res) => {
 
       await product.save();
 
+      const sellingPrice =
+        product.salePrice > 0
+          ? product.salePrice
+          : product.price;
+
       await InventoryTransaction.create({
         business: product.business,
         product: product._id,
+
         action: "Sold",
+
         quantity: item.qty,
+
+        buyingPrice:
+          Number(product.costPrice || 0),
+
+        sellingPrice:
+          Number(sellingPrice || 0),
+
+        profitPerUnit:
+          Number(sellingPrice || 0) -
+          Number(product.costPrice || 0),
+
         stockBefore: before,
         stockAfter: product.stock
       });

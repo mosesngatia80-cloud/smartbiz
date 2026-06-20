@@ -45,26 +45,4 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-
-/**
- * 🌍 PUBLIC PRODUCTS FOR NAVU SMART MARKET
- */
-router.get("/public", async (req, res) => {
-  try {
-    const products = await Product.find({
-      isActive: true
-    })
-    .populate("business", "name")
-    .sort({ createdAt: -1 });
-
-    res.json(products);
-  } catch (err) {
-    console.error("Public products error:", err.message);
-    res.status(500).json({
-      message: "Failed to fetch products"
-    });
-  }
-});
-
-
 module.exports = router;

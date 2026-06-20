@@ -6,6 +6,7 @@ const router = express.Router();
 const Wallet = require("../models/Wallet");
 const Order = require("../models/Order");
 const Transaction = require("../models/Transaction");
+const Revenue = require("../models/Revenue");
 
 // 📲 WhatsApp utils
 const sendWhatsAppMessage = require("../utils/sendWhatsAppMessage");
@@ -106,6 +107,26 @@ router.post("/wallet", async (req, res) => {
     order.paymentRef = reference;
     order.paidAt = new Date();
     await order.save();
+
+    const existingRevenue =
+      await Revenue.findOne({
+        sourceType: "ORDER",
+        sourceId: order._id
+      });
+
+    if (!existingRevenue) {
+
+      await Revenue.create({
+        business: order.business,
+        sourceType: "ORDER",
+        sourceId: order._id,
+        grossAmount: amount,
+        fee,
+        netAmount: amount - fee,
+        channel: "wallet"
+      });
+
+    }
 
     try {
       const receiptMessage = formatReceipt({
