@@ -53,8 +53,8 @@ router.post("/create", async (req, res) => {
     }
 
     if (
-      category ===
-      "INVENTORY_PURCHASE"
+      productId &&
+      Number(quantity || 0) > 0
     ) {
 
       const product =
@@ -125,13 +125,20 @@ router.post("/create", async (req, res) => {
         title,
 
         amount:
-          category ===
-          "INVENTORY_PURCHASE"
+          (
+            productId &&
+            Number(quantity || 0) > 0
+          )
             ? calculatedAmount
             : Number(amount),
 
         category:
-          category || "GENERAL",
+          (
+            productId &&
+            Number(quantity || 0) > 0
+          )
+            ? "INVENTORY_PURCHASE"
+            : (category || "GENERAL"),
 
         product:
           productId || null,

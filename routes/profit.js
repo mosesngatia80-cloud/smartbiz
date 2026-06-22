@@ -80,11 +80,17 @@ router.get(
       });
 
     const totalExpenses =
-      expenses.reduce(
-        (sum, expense) =>
-          sum + Number(expense.amount),
-        0
-      );
+      expenses
+        .filter(
+          expense =>
+            expense.category !==
+            "INVENTORY_PURCHASE"
+        )
+        .reduce(
+          (sum, expense) =>
+            sum + Number(expense.amount),
+          0
+        );
 
     /* =========================
        PROFIT

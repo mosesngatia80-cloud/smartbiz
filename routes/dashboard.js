@@ -175,11 +175,17 @@ router.get(
       });
 
     const totalExpenses =
-      expenses.reduce(
-        (sum, e) =>
-          sum + Number(e.amount),
-        0
-      );
+      expenses
+        .filter(
+          e =>
+            e.category !==
+            "INVENTORY_PURCHASE"
+        )
+        .reduce(
+          (sum, e) =>
+            sum + Number(e.amount),
+          0
+        );
 
     const debts =
       await Debt.find({
