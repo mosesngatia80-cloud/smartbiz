@@ -52,6 +52,9 @@ router.post("/create", async (req, res) => {
       });
     }
 
+    let calculatedAmount =
+      Number(amount || 0);
+
     if (
       productId &&
       Number(quantity || 0) > 0
@@ -74,7 +77,7 @@ router.post("/create", async (req, res) => {
       const qty =
         Number(quantity || 0);
 
-      const calculatedAmount =
+      calculatedAmount =
         Number(product.costPrice || 0) *
         qty;
 
