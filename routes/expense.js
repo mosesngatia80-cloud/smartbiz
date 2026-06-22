@@ -74,6 +74,10 @@ router.post("/create", async (req, res) => {
       const qty =
         Number(quantity || 0);
 
+      const calculatedAmount =
+        Number(product.costPrice || 0) *
+        qty;
+
       if (qty <= 0) {
 
         return res.status(400)
@@ -121,7 +125,10 @@ router.post("/create", async (req, res) => {
         title,
 
         amount:
-          Number(amount),
+          category ===
+          "INVENTORY_PURCHASE"
+            ? calculatedAmount
+            : Number(amount),
 
         category:
           category || "GENERAL",

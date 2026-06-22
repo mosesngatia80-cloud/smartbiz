@@ -1204,6 +1204,11 @@ async function addProduct() {
 
     );
 
+  const category =
+    document.getElementById(
+      "newProductCategory"
+    ).value;
+
   const stock =
     Number(
 
@@ -1241,6 +1246,11 @@ async function addProduct() {
     formData.append(
       "salePrice",
       salePrice
+    );
+
+    formData.append(
+      "category",
+      category
     );
 
     formData.append(
@@ -1304,6 +1314,10 @@ async function addProduct() {
     document.getElementById(
       "newProductSalePrice"
     ).value = "";
+
+    document.getElementById(
+      "newProductCategory"
+    ).value = "General";
 
     document.getElementById(
       "newProductStock"
