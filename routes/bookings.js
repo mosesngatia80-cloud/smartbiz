@@ -12,6 +12,9 @@ const Revenue = require("../models/Revenue");
 
 const auth = require("../middleware/auth");
 
+const sendWhatsAppMessage =
+  require("../utils/sendWhatsAppMessage");
+
 /* =========================
    CREATE BOOKING
 ========================= */
@@ -258,6 +261,49 @@ router.patch(
       }
 
       await booking.save();
+
+      const serviceInfo =
+        await Service.findById(
+          booking.service
+        );
+
+      let message = "";
+
+      if(status === "ACCEPTED"){
+
+        message =
+          "✅ Your booking has been accepted.\n\n" +
+          "Service: " +
+          serviceInfo?.name;
+
+      }
+
+      if(status === "REJECTED"){
+
+        message =
+          "❌ Your booking has been rejected.\n\n" +
+          "Service: " +
+          serviceInfo?.name;
+
+      }
+
+      if(status === "COMPLETED"){
+
+        message =
+          "🎉 Your booking has been completed.\n\n" +
+          "Service: " +
+          serviceInfo?.name;
+
+      }
+
+      if(message){
+
+        await sendWhatsAppMessage(
+          booking.customerPhone,
+          message
+        );
+
+      }
 
       res.json({
         success: true,
