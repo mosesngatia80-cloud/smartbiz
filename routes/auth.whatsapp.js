@@ -3,6 +3,8 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Business = require("../models/Business");
+const Subscription =
+  require("../models/Subscription");
 
 // =========================
 // LOGIN / AUTO CREATE BUSINESS
@@ -41,6 +43,23 @@ router.post("/login-whatsapp", async (req, res) => {
         whatsappNumber,
         owner: whatsappNumber,
         password: await bcrypt.hash(password || "123456", 10)
+      });
+
+      await Subscription.create({
+        business: business._id,
+        plan: "STARTER",
+        amount: 0,
+        status: "ACTIVE",
+        startDate: new Date(),
+        expiryDate: new Date(
+          Date.now() + (30 * 24 * 60 * 60 * 1000)
+        ),
+        graceUntil: new Date(
+          Date.now() + (32 * 24 * 60 * 60 * 1000)
+        ),
+        autoRenew: false,
+        paymentReference:
+          "TRIAL-" + Date.now()
       });
     }
 
