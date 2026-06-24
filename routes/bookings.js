@@ -298,6 +298,12 @@ router.patch(
 
       if(message){
 
+        console.log(
+          "📱 Booking notification:",
+          booking.customerPhone,
+          status
+        );
+
         await sendWhatsAppMessage(
           booking.customerPhone,
           message
