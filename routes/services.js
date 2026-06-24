@@ -162,6 +162,43 @@ router.post(
 });
 
 /* =========================
+   PUBLIC SERVICES
+========================= */
+
+router.get("/public", async (req, res) => {
+
+  try {
+
+    const services =
+      await Service.find({
+        isActive: true
+      })
+      .populate(
+        "business",
+        "name slug whatsappNumber"
+      )
+      .sort({
+        createdAt: -1
+      });
+
+    res.json(services);
+
+  } catch (err) {
+
+    console.error(
+      "PUBLIC SERVICES ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      message:
+        "Failed to load services"
+    });
+  }
+});
+
+
+/* =========================
    GET BUSINESS SERVICES
 ========================= */
 
