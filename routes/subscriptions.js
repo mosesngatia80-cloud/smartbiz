@@ -198,3 +198,162 @@ router.post(
 
 module.exports = router;
 
+
+/* =========================
+   AVAILABLE PLANS
+========================= */
+
+router.get(
+  "/plans",
+  async (req, res) => {
+
+    res.json([
+      {
+        plan: "STARTER",
+        price: 0,
+        durationDays: 30,
+        features: [
+          "Inventory",
+          "Products",
+          "Sales",
+          "Customers"
+        ]
+      },
+      {
+        plan: "BUSINESS",
+        price: 1000,
+        durationDays: 30,
+        features: [
+          "Everything in STARTER",
+          "Smart Order",
+          "Reports",
+          "Analytics"
+        ]
+      },
+      {
+        plan: "PREMIUM",
+        price: 3000,
+        durationDays: 30,
+        features: [
+          "Everything in BUSINESS",
+          "Priority Support",
+          "Advanced Reports",
+          "Future AI Features"
+        ]
+      }
+    ]);
+
+  }
+);
+
+
+/* =========================
+   ALL SUBSCRIPTIONS (ADMIN)
+========================= */
+
+router.get(
+  "/all",
+  async (req, res) => {
+
+    try {
+
+      const subscriptions =
+        await Subscription
+          .find()
+          .populate(
+            "business",
+            "name whatsappNumber slug"
+          )
+          .sort({
+            createdAt: -1
+          });
+
+      res.json({
+        success: true,
+        count: subscriptions.length,
+        subscriptions
+      });
+
+    } catch (err) {
+
+      res.status(500).json({
+        success: false,
+        message: err.message
+      });
+
+    }
+
+  }
+);
+
+
+/* =========================
+   RENEW SUBSCRIPTION
+========================= */
+
+router.post(
+  "/renew/:id",
+  async (req, res) => {
+
+    try {
+
+      const subscription =
+        await Subscription.findById(
+          req.params.id
+        );
+
+      if (!subscription) {
+
+        return res.status(404).json({
+          success: false,
+          message:
+            "Subscription not found"
+        });
+
+      }
+
+      const now = new Date();
+
+      const start =
+        subscription.expiryDate &&
+        subscription.expiryDate > now
+          ? subscription.expiryDate
+          : now;
+
+      subscription.status = "ACTIVE";
+
+      subscription.startDate = now;
+
+      subscription.expiryDate =
+        new Date(
+          start.getTime() +
+          (30 * 24 * 60 * 60 * 1000)
+        );
+
+      subscription.graceUntil =
+        new Date(
+          subscription.expiryDate.getTime() +
+          (2 * 24 * 60 * 60 * 1000)
+        );
+
+      await subscription.save();
+
+      res.json({
+        success: true,
+        message:
+          "Subscription renewed successfully",
+        subscription
+      });
+
+    } catch (err) {
+
+      res.status(500).json({
+        success: false,
+        message: err.message
+      });
+
+    }
+
+  }
+);
+

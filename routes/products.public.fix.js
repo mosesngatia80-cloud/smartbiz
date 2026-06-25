@@ -283,3 +283,53 @@ router.get(
   }
 );
 
+
+/* =========================
+   PUBLIC MARKET SEARCH
+========================= */
+
+router.get(
+  "/public/search",
+  async (req, res) => {
+
+    try {
+
+      const q =
+        (req.query.q || "").trim();
+
+      const products =
+        await Product.find({
+
+          isActive: true,
+
+          name: {
+            $regex: q,
+            $options: "i"
+          }
+
+        })
+
+        .populate(
+          "business",
+          "name slug"
+        )
+
+        .sort({
+          createdAt: -1
+        });
+
+      res.json(products);
+
+    } catch (err) {
+
+      console.error(err);
+
+      res.status(500).json({
+        message: err.message
+      });
+
+    }
+
+  }
+);
+

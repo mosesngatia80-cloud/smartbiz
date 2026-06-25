@@ -90,15 +90,24 @@ router.post("/callback", async (req, res) => {
 
       if (subscription) {
 
+        const now =
+          new Date();
+
+        const start =
+          subscription.expiryDate &&
+          subscription.expiryDate > now
+            ? subscription.expiryDate
+            : now;
+
         subscription.status =
           "ACTIVE";
 
         subscription.startDate =
-          new Date();
+          now;
 
         subscription.expiryDate =
           new Date(
-            Date.now() +
+            start.getTime() +
             (30 * 24 * 60 * 60 * 1000)
           );
 
