@@ -458,8 +458,8 @@ router.patch(
       );
 
       res.status(500).json({
-        message:
-          "Failed to update payment"
+        message: err.message,
+        error: String(err)
       });
     }
   }
