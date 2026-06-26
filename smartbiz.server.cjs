@@ -158,7 +158,10 @@ app.use("/api/smartpay-webhook", require("./routes/smartpay.webhook"));
 
 /* ================= DB ================= */
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("🟢 Smart Biz DB connected"))
+  .then(() => {
+  console.log("🟢 Smart Biz DB connected");
+  console.log("DATABASE:", mongoose.connection.name);
+})
   .catch(err => console.error("DB error:", err));
 
 /* ================= START ================= */
