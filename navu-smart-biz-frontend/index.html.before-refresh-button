@@ -723,21 +723,11 @@ align-items:center;
 flex-wrap:wrap;
 margin-bottom:15px;
 ">
-
-<div style="
-display:flex;
-justify-content:space-between;
-align-items:center;
-flex-wrap:wrap;
-margin-bottom:15px;
-">
 <h1>Sales Analytics</h1>
 
 <button onclick="loadSales()">
 🔄 Refresh
 </button>
-</div>
-
 </div>
 
 

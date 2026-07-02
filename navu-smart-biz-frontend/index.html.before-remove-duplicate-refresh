@@ -738,6 +738,10 @@ margin-bottom:15px;
 </button>
 </div>
 
+
+<button onclick="loadSales()">
+🔄 Refresh
+</button>
 </div>
 
 

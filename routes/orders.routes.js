@@ -257,6 +257,12 @@ router.post("/public-checkout", async (req, res) => {
 
         action: "Sold",
 
+        saleType: "ORDER",
+        source: "STOREFRONT",
+
+        customerName,
+        customerPhone,
+
         quantity: qty,
 
         buyingPrice:

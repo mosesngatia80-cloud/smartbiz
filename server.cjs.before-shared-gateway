@@ -222,34 +222,210 @@ app.post(
       .trim()
       .toLowerCase();
 
-    
-    const gatewayResp = await fetch(
-      `${SMART_BIZ_BASE}/api/whatsapp-orders/message`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(INTERNAL_KEY
-            ? { "x-internal-key": INTERNAL_KEY }
-            : {})
-        },
-        body: JSON.stringify({
-          sender: from,
-          text
-        })
-      }
-    );
+    if (!sessions[from]) {
 
-    const result = await gatewayResp.json();
+      sessions[from] = {
+        businessId: null
+      };
+    }
+
+    /* =========================
+       DIRECT SHOW PRODUCTS
+    ========================= */
+
+    if (
+      text ===
+      "show products"
+    ) {
+
+      const bizResp =
+        await fetch(
+          `${SMART_BIZ_BASE}/api/business`
+        );
+
+      const businesses =
+        await bizResp.json();
+
+      if (
+        !businesses.length
+      ) {
+
+        await sendWhatsAppMessage(
+          from,
+          "❌ No businesses found"
+        );
+
+        return res.sendStatus(200);
+      }
+
+      const business =
+        businesses[0];
+
+      sessions[from]
+        .businessId =
+          business._id;
+
+      const resp =
+        await fetch(
+          `${SMART_BIZ_BASE}/api/products/my-products?businessId=${business._id}`
+        );
+
+      const products =
+        await resp.json();
+
+      if (
+        !products.length
+      ) {
+
+        await sendWhatsAppMessage(
+          from,
+          "❌ No products available"
+        );
+
+        return res.sendStatus(200);
+      }
+
+      let reply =
+        `🏪 ${business.name}\n\n`;
+
+      reply +=
+        "🛒 Available Products\n\n";
+
+      products.forEach(
+        (p, i) => {
+
+        reply +=
+          `${i + 1}. ${p.name} - KES ${p.price}\n`;
+      });
+
+      reply +=
+        "\nUse:\nbuy product qty";
+
+      await sendWhatsAppMessage(
+        from,
+        reply
+      );
+
+      return res.sendStatus(200);
+    }
+
+    /* =========================
+       HANDLE ORDER
+    ========================= */
+
+    const parsed =
+      parseOrder(text);
+
+    if (parsed) {
+
+      const businessId =
+        sessions[from]
+        .businessId;
+
+      if (!businessId) {
+
+        await sendWhatsAppMessage(
+          from,
+          "❌ First type:\nshow products"
+        );
+
+        return res.sendStatus(200);
+      }
+
+      const productResp =
+        await fetch(
+          `${SMART_BIZ_BASE}/api/products/search/by-name?name=${parsed.productName}&businessId=${businessId}`
+        );
+
+      const product =
+        await productResp.json();
+
+      if (
+        !product ||
+        !product._id
+      ) {
+
+        await sendWhatsAppMessage(
+          from,
+          "❌ Product not found"
+        );
+
+        return res.sendStatus(200);
+      }
+
+      const orderResp =
+        await fetch(
+          `${SMART_BIZ_BASE}/api/internal-secure/orders`,
+          {
+
+          method: "POST",
+
+          headers: {
+            "x-internal-key":
+              INTERNAL_KEY,
+
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+
+            business:
+              product.business,
+
+            items: [
+              {
+                productId:
+                  product._id,
+
+                qty:
+                  parsed.qty
+              }
+            ]
+          })
+        });
+
+      const orderData =
+        await orderResp.json();
+
+      if (
+        orderData.payment
+        ?.status === "PAID"
+      ) {
+
+        await sendWhatsAppMessage(
+          from,
+          `✅ Payment Successful
+
+🛒 ${product.name} x${parsed.qty}
+
+💰 KES ${orderData.order.total}`
+        );
+
+      } else {
+
+        await sendWhatsAppMessage(
+          from,
+          `⚠️ Payment failed: ${orderData.payment?.reason || "Unknown"}`
+        );
+      }
+
+      return res.sendStatus(200);
+    }
+
+    /* =========================
+       DEFAULT MESSAGE
+    ========================= */
 
     await sendWhatsAppMessage(
       from,
-      result.reply || "❌ Unable to process your request."
+      "👋 Welcome to SmartBiz\n\nType:\nshow products"
     );
 
     return res.sendStatus(200);
 
-} catch (err) {
+  } catch (err) {
 
     console.error(
       "❌ Webhook error:",

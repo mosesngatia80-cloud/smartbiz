@@ -525,21 +525,7 @@
 
         </div>
 
-        
-<input
-  id="ordersSearch"
-  placeholder="🔍 Search orders..."
-  oninput="filterOrders()"
-  style="
-    width:100%;
-    margin:12px 0;
-    padding:10px;
-    border-radius:8px;
-  "
-/>
-
-<ul id="ordersList"></ul>
-
+        <ul id="ordersList"></ul>
 
       </section>
 
@@ -715,31 +701,7 @@
       <!-- SALES -->
       <section id="sales" class="view hidden">
 
-        
-<div style="
-display:flex;
-justify-content:space-between;
-align-items:center;
-flex-wrap:wrap;
-margin-bottom:15px;
-">
-
-<div style="
-display:flex;
-justify-content:space-between;
-align-items:center;
-flex-wrap:wrap;
-margin-bottom:15px;
-">
-<h1>Sales Analytics</h1>
-
-<button onclick="loadSales()">
-🔄 Refresh
-</button>
-</div>
-
-</div>
-
+        <h1>Sales Analytics</h1>
 
         <div class="dashboard-grid">
 

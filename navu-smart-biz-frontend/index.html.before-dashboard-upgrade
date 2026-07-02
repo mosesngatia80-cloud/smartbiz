@@ -186,20 +186,6 @@
 
         </div>
 
-        <div class="dashboard-grid">
-
-          <div class="card">
-            <h2>Sales Trend</h2>
-            <canvas id="salesTrendChart" height="120"></canvas>
-          </div>
-
-          <div class="card">
-            <h2>Revenue Distribution</h2>
-            <canvas id="salesPieChart" height="120"></canvas>
-          </div>
-
-        </div>
-
         <div class="card">
 
           <h2>Inventory</h2>
@@ -525,21 +511,7 @@
 
         </div>
 
-        
-<input
-  id="ordersSearch"
-  placeholder="🔍 Search orders..."
-  oninput="filterOrders()"
-  style="
-    width:100%;
-    margin:12px 0;
-    padding:10px;
-    border-radius:8px;
-  "
-/>
-
-<ul id="ordersList"></ul>
-
+        <ul id="ordersList"></ul>
 
       </section>
 
@@ -715,31 +687,7 @@
       <!-- SALES -->
       <section id="sales" class="view hidden">
 
-        
-<div style="
-display:flex;
-justify-content:space-between;
-align-items:center;
-flex-wrap:wrap;
-margin-bottom:15px;
-">
-
-<div style="
-display:flex;
-justify-content:space-between;
-align-items:center;
-flex-wrap:wrap;
-margin-bottom:15px;
-">
-<h1>Sales Analytics</h1>
-
-<button onclick="loadSales()">
-🔄 Refresh
-</button>
-</div>
-
-</div>
-
+        <h1>Sales</h1>
 
         <div class="dashboard-grid">
 
@@ -748,82 +696,6 @@ margin-bottom:15px;
             <p id="todaySales">KES 0</p>
           </div>
 
-          <div class="card">
-            <h3>This Week</h3>
-            <p id="weekSales">KES 0</p>
-          </div>
-
-          <div class="card">
-            <h3>This Month</h3>
-            <p id="monthSales">KES 0</p>
-          </div>
-
-          <div class="card">
-            <h3>This Year</h3>
-            <p id="yearSales">KES 0</p>
-          </div>
-
-          <div class="card">
-            <h3>Revenue</h3>
-            <p id="salesRevenue">KES 0</p>
-          </div>
-
-          <div class="card">
-            <h3>Gross Profit</h3>
-            <p id="salesGrossProfit">KES 0</p>
-          </div>
-
-          <div class="card">
-            <h3>Net Profit</h3>
-            <p id="salesNetProfit">KES 0</p>
-          </div>
-
-          <div class="card">
-            <h3>Average Sale</h3>
-            <p id="averageSale">KES 0</p>
-          </div>
-
-        </div>
-
-        <div class="card">
-          <h2>🔥 Fastest Selling Products</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Sold</th>
-              </tr>
-            </thead>
-            <tbody id="topSellingProducts">
-              <tr>
-                <td colspan="2">No data yet</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="card">
-          <h2>🐢 Slow Moving Products</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Stock</th>
-              </tr>
-            </thead>
-            <tbody id="slowMovingProducts">
-              <tr>
-                <td colspan="2">No data yet</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="card">
-          <h2>Business Alerts</h2>
-          <ul id="salesAlerts">
-            <li>No alerts.</li>
-          </ul>
         </div>
 
       </section>
@@ -931,7 +803,6 @@ margin-bottom:15px;
     Close
   </button>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
 <script src="app.js"></script>
 

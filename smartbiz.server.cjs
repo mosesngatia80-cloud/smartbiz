@@ -155,6 +155,7 @@ app.use("/api/internal-register", require("./routes/internal.register"));
 app.use("/api/whatsapp-orders", require("./routes/whatsapp.orders"));
 app.use("/api/mpesa", require("./routes/mpesa"));
 app.use("/api/smartpay-webhook", require("./routes/smartpay.webhook"));
+app.use("/", require("./routes/meta.webhook"));
 
 /* ================= DB ================= */
 mongoose.connect(process.env.MONGO_URI)

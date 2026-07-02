@@ -415,6 +415,15 @@ router.post("/:orderId/mark-paid", async (req, res) => {
 
         action: "Sold",
 
+        saleType: "ORDER",
+        source: "POS",
+
+        customerName:
+          order.customerName || "",
+
+        customerPhone:
+          order.customerPhone || "",
+
         quantity: item.qty,
 
         buyingPrice:

@@ -36,19 +36,35 @@ router.post("/register", async (req, res) => {
       });
 
       /* CREATE BUSINESS */
-      await Business.create({
+      const business = await Business.create({
         name: businessName,
         whatsapp,
         owner: user._id
       });
 
-      /* CREATE WALLET */
+      /* CREATE USER WALLET */
       await Wallet.create({
         owner: user._id,
         ownerType: "USER",
         balance: 0,
         currency: "KES",
       });
+
+      /* CREATE BUSINESS WALLET */
+      const existingBusinessWallet =
+        await Wallet.findOne({
+          owner: business._id,
+          ownerType: "BUSINESS"
+        });
+
+      if (!existingBusinessWallet) {
+        await Wallet.create({
+          owner: business._id,
+          ownerType: "BUSINESS",
+          balance: 0,
+          currency: "KES"
+        });
+      }
     }
 
     if (!process.env.JWT_SECRET) {

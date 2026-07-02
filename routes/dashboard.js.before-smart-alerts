@@ -380,78 +380,14 @@ router.get("/sales-analytics", async (req, res) => {
 
     const alerts=[];
 
-/* =========================
-   LOW STOCK
-========================= */
+    const low =
+      products.filter(p=>Number(p.stock)<=5);
 
-const low =
-  products.filter(
-    p => Number(p.stock) <= 5 &&
-         Number(p.stock) > 0
-  );
-
-low.forEach(p=>{
-  alerts.push(
-    `${p.name} is low in stock (${p.stock} left).`
-  );
-});
-
-/* =========================
-   OUT OF STOCK
-========================= */
-
-const out =
-  products.filter(
-    p => Number(p.stock) === 0
-  );
-
-out.forEach(p=>{
-  alerts.push(
-    `${p.name} is out of stock.`
-  );
-});
-
-/* =========================
-   SALES SUMMARY
-========================= */
-
-if(orders.length===0){
-
-  alerts.push(
-    "No completed sales yet."
-  );
-
-}else{
-
-  alerts.push(
-    `Completed sales: ${orders.length}.`
-  );
-
-}
-
-/* =========================
-   TOP SELLER
-========================= */
-
-if(topProducts.length){
-
-  alerts.push(
-    `Top seller: ${topProducts[0].name}.`
-  );
-
-}
-
-/* =========================
-   TODAY
-========================= */
-
-if(todayOrders.length===0){
-
-  alerts.push(
-    "No sales recorded today."
-  );
-
-}
+    if(low.length){
+      alerts.push(
+        low.length+" products are low in stock."
+      );
+    }
 
     const revenue =
       sumOrders(orders);

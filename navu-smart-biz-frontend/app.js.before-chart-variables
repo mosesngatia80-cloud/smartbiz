@@ -9,9 +9,6 @@ function authHeaders() {
   return headers;
 }
 
-let salesTrendChart = null;
-let salesPieChart = null;
-
 const API_BASE = "https://navu-smart-biz-sbdh.onrender.com/api";
 const SITE_BASE = "https://navu-smart-biz-sbdh.onrender.com";
 
@@ -381,51 +378,6 @@ async function loadSales() {
         "<li>No alerts.</li>";
 
     }
-
-
-    if (salesTrendChart) {
-      salesTrendChart.destroy();
-    }
-
-    salesTrendChart = new Chart(
-      document.getElementById("salesTrendChart"),
-      {
-        type: "bar",
-        data: {
-          labels: ["Today", "Week", "Month", "Year"],
-          datasets: [{
-            label: "Sales (KES)",
-            data: [
-              data.todaySales || 0,
-              data.weekSales || 0,
-              data.monthSales || 0,
-              data.yearSales || 0
-            ]
-          }]
-        }
-      }
-    );
-
-    if (salesPieChart) {
-      salesPieChart.destroy();
-    }
-
-    salesPieChart = new Chart(
-      document.getElementById("salesPieChart"),
-      {
-        type: "pie",
-        data: {
-          labels: ["Revenue", "Average Sale"],
-          datasets: [{
-            data: [
-              data.revenue || 0,
-              data.averageSale || 0
-            ]
-          }]
-        }
-      }
-    );
-
 
     console.log("✅ Sales Analytics loaded.");
 
@@ -3935,33 +3887,3 @@ async function markBookingPaid(id) {
     );
   }
 }
-
-
-function filterOrders() {
-
-  const query =
-    document
-      .getElementById("ordersSearch")
-      ?.value
-      ?.toLowerCase()
-      ?.trim() || "";
-
-  const cards =
-    document.querySelectorAll(
-      "#ordersList .order-card"
-    );
-
-  cards.forEach(card => {
-
-    const txt =
-      card.innerText.toLowerCase();
-
-    card.style.display =
-      txt.includes(query)
-        ? ""
-        : "none";
-
-  });
-
-}
-

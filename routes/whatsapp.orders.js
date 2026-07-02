@@ -5,6 +5,9 @@ const Product  = require("../models/Product");
 const Order    = require("../models/Order");
 const Wallet   = require("../models/Wallet");
 const Business = require("../models/Business");
+const BusinessWhatsApp = require("../models/BusinessWhatsApp");
+const ConversationSession =
+  require("../models/ConversationSession");
 
 /* 🔥 NEW: SERVICE LAYER */
 const { createOrder } = require("../services/order.service");
@@ -25,19 +28,109 @@ router.post("/message", async (req, res) => {
 
     const { sender, text, businessNumber } = req.body;
 
-    if (!sender || !text || !businessNumber) {
+    if (!sender || !text) {
       return res.json({ reply: "⚠️ Invalid message format" });
     }
 
     const message = text.trim().toLowerCase();
 
-    const business = await Business.findOne({
-      whatsappNumber: businessNumber
-    });
+    /* =========================
+       SHARED NAVU GATEWAY
+    ========================= */
+
+    if (!businessNumber) {
+
+      let session =
+        await ConversationSession.findOne({
+          sender,
+          status: "ACTIVE"
+        });
+
+      if (!session) {
+
+        const business =
+          await Business.findOne({
+            slug: message
+          });
+
+        if (!business) {
+          return res.json({
+            reply:
+              "❌ Business not found. Send the business store code."
+          });
+        }
+
+        await ConversationSession.findOneAndUpdate(
+          { sender },
+          {
+            sender,
+            business: business._id,
+            businessSlug: business.slug,
+            status: "ACTIVE",
+            lastActivity: new Date()
+          },
+          {
+            upsert: true,
+            new: true
+          }
+        );
+
+        return res.json({
+          reply:
+            "🏪 Welcome to " +
+            business.name +
+            "\n\nNow send:\n\nbuy rice 2"
+        });
+      }
+
+      const linkedBusiness =
+        await Business.findById(session.business);
+
+      if (!linkedBusiness) {
+        return res.json({
+          reply: "❌ Business session expired."
+        });
+      }
+    }
+
+    let business;
+
+    if (businessNumber) {
+
+      const linked = await BusinessWhatsApp.findOne({
+        whatsappNumber: businessNumber,
+        active: true
+      });
+
+      if (!linked) {
+        return res.json({
+          reply: "❌ Business not linked"
+        });
+      }
+
+      business = await Business.findById(linked.business);
+
+    } else {
+
+      const session =
+        await ConversationSession.findOne({
+          sender,
+          status: "ACTIVE"
+        });
+
+      if (!session) {
+        return res.json({
+          reply: "❌ No active shopping session. Send the business store code first."
+        });
+      }
+
+      business =
+        await Business.findById(session.business);
+    }
 
     if (!business) {
       return res.json({
-        reply: "❌ Business not linked"
+        reply: "❌ Business not found"
       });
     }
 
@@ -54,11 +147,49 @@ router.post("/message", async (req, res) => {
        🛒 BUY FLOW (UPDATED)
        ========================= */
 
+    /* =========================
+       GREETING / MENU
+    ========================= */
+
+    if (
+      message === "hi" ||
+      message === "hello" ||
+      message === "menu" ||
+      message === "products"
+    ) {
+
+      const products = await Product.find({
+        business: business._id
+      }).sort({ name: 1 });
+
+      if (!products.length) {
+        return res.json({
+          reply: "⚠️ No products available."
+        });
+      }
+
+      let reply =
+        `🏪 Welcome to ${business.name}\n\n` +
+        `🛒 Available Products\n\n`;
+
+      products.forEach((p, i) => {
+        reply += `${i + 1}. ${p.name} - KES ${p.price}\n`;
+      });
+
+      reply +=
+        `\nReply:\n` +
+        `buy product-name quantity\n\n` +
+        `Example:\n` +
+        `buy sugar 2`;
+
+      return res.json({ reply });
+    }
+
     const parts = message.split(/\s+/);
 
     if (parts[0] !== "buy") {
       return res.json({
-        reply: "❌ Use: buy <product> <qty>"
+        reply: "Type:\n\nhi\nor\nmenu\n\nto see available products."
       });
     }
 

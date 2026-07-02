@@ -382,51 +382,6 @@ async function loadSales() {
 
     }
 
-
-    if (salesTrendChart) {
-      salesTrendChart.destroy();
-    }
-
-    salesTrendChart = new Chart(
-      document.getElementById("salesTrendChart"),
-      {
-        type: "bar",
-        data: {
-          labels: ["Today", "Week", "Month", "Year"],
-          datasets: [{
-            label: "Sales (KES)",
-            data: [
-              data.todaySales || 0,
-              data.weekSales || 0,
-              data.monthSales || 0,
-              data.yearSales || 0
-            ]
-          }]
-        }
-      }
-    );
-
-    if (salesPieChart) {
-      salesPieChart.destroy();
-    }
-
-    salesPieChart = new Chart(
-      document.getElementById("salesPieChart"),
-      {
-        type: "pie",
-        data: {
-          labels: ["Revenue", "Average Sale"],
-          datasets: [{
-            data: [
-              data.revenue || 0,
-              data.averageSale || 0
-            ]
-          }]
-        }
-      }
-    );
-
-
     console.log("✅ Sales Analytics loaded.");
 
   } catch (err) {
@@ -3935,33 +3890,3 @@ async function markBookingPaid(id) {
     );
   }
 }
-
-
-function filterOrders() {
-
-  const query =
-    document
-      .getElementById("ordersSearch")
-      ?.value
-      ?.toLowerCase()
-      ?.trim() || "";
-
-  const cards =
-    document.querySelectorAll(
-      "#ordersList .order-card"
-    );
-
-  cards.forEach(card => {
-
-    const txt =
-      card.innerText.toLowerCase();
-
-    card.style.display =
-      txt.includes(query)
-        ? ""
-        : "none";
-
-  });
-
-}
-

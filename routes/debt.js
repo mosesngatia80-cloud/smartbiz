@@ -195,6 +195,14 @@ router.post(
         product: product._id,
         action: "Sold",
 
+        saleType: "DEBT",
+        source: "POS",
+
+        customerName,
+        customerPhone,
+
+        debtId: debt._id,
+
         quantity,
 
         buyingPrice:

@@ -53,6 +53,56 @@ const inventoryTransactionSchema =
       stockAfter: {
         type: Number,
         required: true
+      },
+
+      saleType: {
+        type: String,
+        enum: [
+          "CASH",
+          "DEBT",
+          "ORDER",
+          "RETURN",
+          "ADJUSTMENT"
+        ],
+        default: "CASH"
+      },
+
+      source: {
+        type: String,
+        enum: [
+          "POS",
+          "WHATSAPP",
+          "STOREFRONT",
+          "MANUAL"
+        ],
+        default: "POS"
+      },
+
+      customerName: {
+        type: String,
+        default: ""
+      },
+
+      customerPhone: {
+        type: String,
+        default: ""
+      },
+
+      orderId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Order",
+        default: null
+      },
+
+      debtId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Debt",
+        default: null
+      },
+
+      reference: {
+        type: String,
+        default: ""
       }
 
     },

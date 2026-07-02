@@ -186,20 +186,6 @@
 
         </div>
 
-        <div class="dashboard-grid">
-
-          <div class="card">
-            <h2>Sales Trend</h2>
-            <canvas id="salesTrendChart" height="120"></canvas>
-          </div>
-
-          <div class="card">
-            <h2>Revenue Distribution</h2>
-            <canvas id="salesPieChart" height="120"></canvas>
-          </div>
-
-        </div>
-
         <div class="card">
 
           <h2>Inventory</h2>
@@ -525,21 +511,7 @@
 
         </div>
 
-        
-<input
-  id="ordersSearch"
-  placeholder="🔍 Search orders..."
-  oninput="filterOrders()"
-  style="
-    width:100%;
-    margin:12px 0;
-    padding:10px;
-    border-radius:8px;
-  "
-/>
-
-<ul id="ordersList"></ul>
-
+        <ul id="ordersList"></ul>
 
       </section>
 
@@ -715,31 +687,7 @@
       <!-- SALES -->
       <section id="sales" class="view hidden">
 
-        
-<div style="
-display:flex;
-justify-content:space-between;
-align-items:center;
-flex-wrap:wrap;
-margin-bottom:15px;
-">
-
-<div style="
-display:flex;
-justify-content:space-between;
-align-items:center;
-flex-wrap:wrap;
-margin-bottom:15px;
-">
-<h1>Sales Analytics</h1>
-
-<button onclick="loadSales()">
-🔄 Refresh
-</button>
-</div>
-
-</div>
-
+        <h1>Sales Analytics</h1>
 
         <div class="dashboard-grid">
 
@@ -931,7 +879,6 @@ margin-bottom:15px;
     Close
   </button>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
 <script src="app.js"></script>
 
